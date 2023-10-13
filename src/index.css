@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .panel {
+    --aug-border: 0.2vh;
+    --aug-inset: 5px;
+  }
+
+  .tron {
+    --aug-border-bg: #aacfd1;
+  }
+
+  .apollo {
+    --aug-border-bg: #ebebebff;
+  }
+
+  .blade {
+    --aug-border-bg: #cc5e37;
+  }
+
+  .cyborg {
+    --aug-border-bg: #a3c2c2;
+  }
+
+  .interstellar {
+    --aug-border-bg: #03a9f4;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
+@font-face {
+  font-family: 'united-sans-light';
+  src: url('/fonts/united_sans_light.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'united-sans-medium';
+  src: url('/fonts/united_sans_medium.woff2') format('woff2');
+}

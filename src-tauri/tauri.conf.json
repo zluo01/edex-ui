@@ -1,0 +1,80 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run vite-dev",
+    "beforeBuildCommand": "npm run vite-build",
+    "devPath": "http://localhost:1874",
+    "distDir": "../dist",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "edex",
+    "version": "0.0.1"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "os": {
+        "all": true
+      },
+      "shell": {
+        "open": "^.+\/[^\/]+$"
+      },
+      "http": {
+        "scope": [
+          "http://ip-api.com/json/*",
+          "https://1.1.1.1/*"
+        ]
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/256x256.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "edex",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": true,
+        "resizable": true,
+        "fileDropEnabled": false,
+        "title": "EDEX-UI",
+        "maximized": true,
+        "minWidth": 1280,
+        "minHeight": 720
+      }
+    ]
+  }
+}
