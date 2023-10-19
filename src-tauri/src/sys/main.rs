@@ -1,8 +1,10 @@
+use std::process::Command;
+use std::str;
+
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use sysinfo::{CpuExt, System, SystemExt, ComponentExt, PidExt, ProcessExt, NetworkExt, DiskExt};
-use std::str;
+use sysinfo::{ComponentExt, CpuExt, DiskExt, NetworkExt, PidExt, ProcessExt, System, SystemExt};
 
 #[derive(Serialize, Deserialize)]
 pub struct IPInformation {
@@ -153,15 +155,13 @@ fn extract_temperature(sys: &System) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
     for component in sys.components() {
-        let temp = component.temperature();
-
         if component.label().to_lowercase().contains("tctl") {
             temperature.set_cpu(component.temperature());
             break;
         }
     }
 
-    temperature.set_battery(get_nvidia_gpu_temp());
+    temperature.set_gpu(get_nvidia_gpu_temp());
     temperature
 }
 
@@ -173,19 +173,19 @@ fn get_nvidia_gpu_temp() -> f32 {
 
     if let Err(e) = response {
         error!("Fail to run command. Error: {}", e);
-        return 0;
+        return 0.0;
     }
 
     let output = response.unwrap();
     if output.status.success() {
         let result = str::from_utf8(&output.stdout);
         if let Err(e) = result {
-            error!("Fail to parse terminal output to string. Output: {:?}", &output.stdout)
+            error!("Fail to parse terminal output to string. Error: {:?}. Output: {:?}", e, &output.stdout)
         }
-        return result.unwrap().trim().map(|v| v.parse()).map_or(0f32);
+        return result.unwrap().trim().parse().unwrap_or(0.0);
     }
     error!("Command failed with error: {:?}", output.status);
-    return 0;
+    return 0.0;
 }
 
 pub fn extract_cpu_data(sys: &System) -> Value {
