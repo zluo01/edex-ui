@@ -1,14 +1,23 @@
 import Banner from '@/components/banner';
-import Divider from '@/components/divider';
-import DiskUsage from '@/components/network/disk';
 import classNames from '@/lib/utils/style';
 import ThemeContext from '@/themes/provider';
-import { useContext } from 'react';
-import ConnectionStatus from 'src/components/network/status';
-import NetworkTraffic from 'src/components/network/traffic';
+import { lazy, Suspense, useContext, useEffect, useState } from 'react';
+
+const NetworkContent = lazy(() => import('@/components/network/content'));
 
 function Network() {
   const theme = useContext(ThemeContext);
+
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShow(true);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [show]);
+
   return (
     <div
       className={classNames(
@@ -17,12 +26,7 @@ function Network() {
       )}
     >
       <Banner title={'PANEL'} name={'NETWORK'} />
-      <Divider />
-      <ConnectionStatus />
-      <Divider />
-      <NetworkTraffic />
-      <Divider />
-      <DiskUsage />
+      <Suspense>{show && <NetworkContent />}</Suspense>
     </div>
   );
 }

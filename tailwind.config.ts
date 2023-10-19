@@ -20,6 +20,15 @@ const config: Config = {
         fira_code: ['fira-code'],
         fira_mono: ['fira-mono'],
       },
+      animation: {
+        fade: 'fadeOut 0.25s ease-in-out',
+      },
+      keyframes: {
+        fadeOut: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '100' },
+        },
+      },
     },
   },
   plugins: [],
