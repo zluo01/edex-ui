@@ -1,6 +1,8 @@
+use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sysinfo::{CpuExt, System, SystemExt, ComponentExt, PidExt, ProcessExt, NetworkExt, DiskExt};
+use std::str;
 
 #[derive(Serialize, Deserialize)]
 pub struct IPInformation {
@@ -99,7 +101,7 @@ struct DiskUsage {
     internal: bool,
     total: u64,
     available: u64,
-    usage: u64
+    usage: u64,
 }
 
 pub fn extract_memory(sys: &System) -> Value {
@@ -130,6 +132,7 @@ pub fn extract_memory(sys: &System) -> Value {
     })
 }
 
+#[cfg(target_os = "macos")]
 fn extract_temperature(sys: &System) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
@@ -142,8 +145,47 @@ fn extract_temperature(sys: &System) -> Temperature {
             _ => (),
         }
     }
-
     temperature
+}
+
+#[cfg(target_os = "linux")]
+fn extract_temperature(sys: &System) -> Temperature {
+    let mut temperature: Temperature = Default::default();
+
+    for component in sys.components() {
+        let temp = component.temperature();
+
+        if component.label().to_lowercase().contains("tctl") {
+            temperature.set_cpu(component.temperature());
+            break;
+        }
+    }
+
+    temperature.set_battery(get_nvidia_gpu_temp());
+    temperature
+}
+
+#[cfg(target_os = "linux")]
+fn get_nvidia_gpu_temp() -> f32 {
+    let response = Command::new("nvidia-smi")
+        .args(&["--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"])
+        .output();
+
+    if let Err(e) = response {
+        error!("Fail to run command. Error: {}", e);
+        return 0;
+    }
+
+    let output = response.unwrap();
+    if output.status.success() {
+        let result = str::from_utf8(&output.stdout);
+        if let Err(e) = result {
+            error!("Fail to parse terminal output to string. Output: {:?}", &output.stdout)
+        }
+        return result.unwrap().trim().map(|v| v.parse()).map_or(0f32);
+    }
+    error!("Command failed with error: {:?}", output.status);
+    return 0;
 }
 
 pub fn extract_cpu_data(sys: &System) -> Value {
@@ -233,7 +275,7 @@ pub fn extract_disk_usage(sys: &System) -> Value {
             internal: !disk.is_removable(),
             total: disk.total_space(),
             available: disk.available_space(),
-            usage: disk.available_space() * 100 / disk.total_space()
+            usage: disk.available_space() * 100 / disk.total_space(),
         })
     }
 
