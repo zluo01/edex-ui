@@ -215,14 +215,27 @@ pub fn extract_cpu_data(sys: &System) -> Value {
 
     let temp = extract_temperature(sys);
 
+    let cpu_name = extract_cpu_name(sys.global_cpu_info().brand())
+        .unwrap_or(String::from("UNKNOWN"));
     json!({
-        "name": sys.global_cpu_info().brand().to_string(),
+        "name": cpu_name,
         "cores": core_count,
         "divide": divide,
         "temperature": temp,
         "load":vec![first_half_usage, second_half_usage],
         "usage": usage
     })
+}
+
+fn extract_cpu_name(input: &str) -> Option<String> {
+    if input.starts_with("Intel") {
+        return input.split("CPU").next().map(|v| v.to_string());
+    }
+
+    if input.starts_with("AMD") {
+        return Some(input.split(' ').into_iter().take(4).collect::<Vec<&str>>().join(" "));
+    }
+    None
 }
 
 pub fn extract_process(sys: &System) -> Vec<Process> {
