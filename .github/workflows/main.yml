@@ -1,16 +1,16 @@
-name: "CI / CD Pipeline"
+name: 'CI / CD Pipeline'
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-tauri:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ macos-latest, ubuntu-20.04 ]
+        platform: [macos-latest, ubuntu-20.04]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -21,8 +21,7 @@ jobs:
           node-version: 18
 
       - name: Install Rust (Stable)
-        run:
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+        run: curl https://sh.rustup.rs -sSf | sh -s -- -y
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
@@ -34,12 +33,12 @@ jobs:
         run: npm i && npm run build
 
   publish-tauri:
-    needs: [ build-tauri ]
+    needs: [build-tauri]
     if: github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
-        platform: [ macos-latest, ubuntu-20.04 ]
+        platform: [macos-latest, ubuntu-20.04]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -50,8 +49,7 @@ jobs:
           node-version: 18
 
       - name: Install Rust (Stable)
-        run:
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
+        run: curl https://sh.rustup.rs -sSf | sh -s -- -y
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
@@ -67,8 +65,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__ # tauri-action replaces \_\_VERSION\_\_ with the app version
-          releaseName: "edex-ui v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
+          releaseName: 'edex-ui v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
           includeDebug: true
