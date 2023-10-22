@@ -17,7 +17,7 @@ function CpuUsage(
   return (
     <div className="flex w-full flex-row flex-nowrap items-center justify-between">
       <div className="flex flex-col items-start justify-around">
-        <span className="font-united_sans_medium font-semibold not-italic sm:text-xxs md:text-sm lg:text-xl xl:text-2xl">
+        <span className="font-united_sans_medium font-semibold not-italic sm:text-xxs md:text-sm lg:text-lg xl:text-xl">
           # {from} - {to}
         </span>
         <span className="opacity-50 sm:text-xxxs md:text-xs lg:text-base xl:text-lg">

@@ -7,19 +7,6 @@ function colorify(color: string, theme: string) {
   return Color(color).grayscale().mix(Color(theme), 0.3).hex();
 }
 
-function getFontSize() {
-  const screenWidth = window.innerWidth;
-
-  if (screenWidth < 1920) {
-    return 12;
-  } else if (screenWidth < 2560) {
-    return 16;
-  } else if (screenWidth < 3840) {
-    return 22;
-  }
-  return 28;
-}
-
 const FALL_BACK_FONTS = ['Ubuntu Mono', 'Courier New'];
 export default function generateTerminalTheme(
   style: IStyle,
@@ -32,7 +19,6 @@ export default function generateTerminalTheme(
     cursorStyle: style.terminal.cursorStyle,
     allowTransparency: false,
     fontFamily: join([style.terminal.fontFamily, ...FALL_BACK_FONTS], ', '),
-    fontSize: getFontSize(),
     fontWeight: 'normal',
     fontWeightBold: 'bold',
     letterSpacing: 0,

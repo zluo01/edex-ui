@@ -104,7 +104,7 @@ function NetworkTraffic() {
         <span className="sm:text-xs md:text-base lg:text-xl xl:text-4xl">
           TOTAL
         </span>
-        <span className="opacity-50 sm:text-xxs md:text-sm lg:text-lg  xl:text-3xl">
+        <span className="sm:text-xxs md:text-sm lg:text-lg xl:text-3xl">
           {`${prettyBytes(traffic?.totalTransmitted || 0)} OUT, ${prettyBytes(
             traffic?.totalReceive || 0,
           )} IN`}

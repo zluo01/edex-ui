@@ -17,8 +17,6 @@ const config: Config = {
       fontFamily: {
         united_sans_light: ['united-sans-light'],
         united_sans_medium: ['united-sans-medium'],
-        fira_code: ['fira-code'],
-        fira_mono: ['fira-mono'],
       },
       animation: {
         fade: 'fadeOut 0.25s ease-in-out',
