@@ -20,7 +20,7 @@ tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", br
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1.34.0", features = ["time"] }
 log = "0.4"
-sysinfo = "0.29.10"
+sysinfo = "0.29.11"
 portable-pty = "0.8.1"
 
 [features]
