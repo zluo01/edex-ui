@@ -17,7 +17,7 @@ serde = { version = "1.0.197", features = ["derive"] }
 tauri = { version = "1.6.1", features = [ "shell-open", "os-all"] }
 tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1.36.0", features = ["time"] }
 log = "0.4"
 sysinfo = "0.29.11"
