@@ -15,7 +15,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@headlessui/react": "1.7.18",
+    "@headlessui/react": "1.7.19",
     "@tauri-apps/api": "1.5.3",
     "augmented-ui": "1.1.2",
     "color": "4.2.3",
