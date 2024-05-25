@@ -1,5 +1,11 @@
 import { CursorStyle } from 'xterm/src/common/Types';
 
+export interface ITemperatureInformation {
+  cpu: number;
+  gpu: number;
+  battery: number;
+}
+
 export interface ICPUData {
   name: string;
   cores: number;
@@ -7,12 +13,6 @@ export interface ICPUData {
   temperature: ITemperatureInformation;
   load: number[];
   usage: number[];
-}
-
-export interface ITemperatureInformation {
-  cpu: number;
-  gpu: number;
-  battery: number;
 }
 
 export interface IMemoryInformation {
@@ -40,10 +40,10 @@ export interface IIPAddressInformation {
   location: string;
 }
 
-export interface INetworkInformation {
-  status: NETWORK_STATUS;
-  information?: IIPAddressInformation;
-}
+export const OFFLINE = 'OFFLINE';
+export const ONLINE = 'ONLINE';
+
+export type NETWORK_STATUS = typeof OFFLINE | typeof ONLINE;
 
 export interface INetworkTraffic {
   receive: number;
@@ -85,13 +85,7 @@ export interface IFileSystem {
   files: IFileInfo[];
 }
 
-export const UNKNOWN = 'UNKNOWN';
-export const OFFLINE = 'OFFLINE';
-export const ONLINE = 'ONLINE';
-
-export type NETWORK_STATUS = typeof UNKNOWN | typeof OFFLINE | typeof ONLINE;
-
-export interface IStyle {
+export type IStyle = {
   name: string;
   backgroundColor: {
     main: string;
@@ -140,4 +134,4 @@ export interface IStyle {
     cursor: string;
     cursorAccent: string;
   };
-}
+};

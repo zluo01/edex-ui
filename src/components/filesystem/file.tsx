@@ -1,6 +1,5 @@
 import FileTile from '@/components/filesystem/tile';
 import { openFile, writeToPty } from '@/lib/os';
-import { useGetShowHiddenFileStatusQuery } from '@/lib/queries';
 import {
   BACKWARD,
   DIRECTORY,
@@ -9,16 +8,15 @@ import {
   IFileSystem,
   SETTING,
 } from '@/models';
-import { Fragment } from 'react';
+import { For, Resource } from 'solid-js';
 
 interface IFileSectionProps {
   open: VoidFunction;
-  fileSystem?: IFileSystem;
+  showHidden: Resource<boolean>;
+  fileSystem: () => IFileSystem | undefined;
 }
 
-function FileSection({ open, fileSystem }: IFileSectionProps) {
-  const { data: hidden } = useGetShowHiddenFileStatusQuery();
-
+function FileSection({ open, showHidden, fileSystem }: IFileSectionProps) {
   async function fileAction(file: IFileInfo) {
     if (file.t === DIRECTORY) {
       await writeToPty(`cd '${file.path}'\n`);
@@ -28,7 +26,7 @@ function FileSection({ open, fileSystem }: IFileSectionProps) {
   }
 
   return (
-    <Fragment>
+    <>
       <FileTile name={'Setting'} t={SETTING} hidden={false} onClick={open} />
       <FileTile
         name={'Go back'}
@@ -36,12 +34,11 @@ function FileSection({ open, fileSystem }: IFileSectionProps) {
         hidden={false}
         onClick={() => writeToPty('cd ../\n')}
       />
-      {fileSystem?.files
-        .filter(o => !o.hidden || hidden)
-        .map((file, i) => (
-          <FileTile key={i} {...file} onClick={() => fileAction(file)} />
-        ))}
-    </Fragment>
+      <For each={fileSystem()?.files.filter(o => !o.hidden || showHidden())}>
+        {file => <FileTile {...file} onClick={() => fileAction(file)} />}
+      </For>
+    </>
   );
 }
+
 export default FileSection;

@@ -1,32 +1,25 @@
 import Banner from '@/components/banner';
-import classNames from '@/lib/utils/style';
-import ThemeContext from '@/themes/provider';
-import { lazy, Suspense, useContext, useEffect, useState } from 'react';
+import { useCurrentTheme } from '@/themes';
+import clsx from 'clsx';
+import { lazy } from 'solid-js';
 
-const NetworkContent = lazy(() => import('@/components/network/content'));
+const NetworkContent = lazy(async () => {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return import('@/components/network/content');
+});
 
 function Network() {
-  const theme = useContext(ThemeContext);
-
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShow(true);
-    }, 200);
-
-    return () => clearTimeout(timeout);
-  }, [show]);
+  const theme = useCurrentTheme();
 
   return (
     <div
-      className={classNames(
-        theme.borderColor['30'],
+      class={clsx(
+        theme().borderColor['30'],
         'relative box-border flex h-full w-[16vw] flex-col items-end sm:px-1 md:px-2 lg:px-3',
       )}
     >
       <Banner title={'PANEL'} name={'NETWORK'} />
-      <Suspense>{show && <NetworkContent />}</Suspense>
+      <NetworkContent />
     </div>
   );
 }

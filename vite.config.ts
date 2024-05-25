@@ -1,9 +1,12 @@
-import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [solidPlugin(), tsconfigPaths()],
+  build: {
+    target: 'esnext',
+  },
   server: {
     port: 1874,
     strictPort: true,

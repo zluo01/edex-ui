@@ -1,80 +1,69 @@
-import classNames from '@/lib/utils/style';
-import ThemeContext from '@/themes/provider';
-import { Fragment, useContext, useEffect } from 'react';
+import { useCurrentTheme } from '@/themes';
+import clsx from 'clsx';
 
 interface ITerminalSelectionTab {
-  index: number;
+  active: () => number;
   size: number;
   switchTab: (id: number) => void;
   addTerminal: VoidFunction;
 }
 
 function TerminalSelectionTab({
-  index,
+  active,
   size,
   switchTab,
 }: ITerminalSelectionTab) {
-  const theme = useContext(ThemeContext);
-
-  useEffect(() => {
-    const item = document.getElementById(`#${index}`);
-    if (item) {
-      item.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-    }
-  }, [index]);
+  const theme = useCurrentTheme();
 
   function generateTabStyle(current: number) {
     const styles: string[] = [
-      theme.borderColor['75'],
+      theme().borderColor['75'],
       'w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid',
     ];
-    if (index === current) {
+    if (active() === current) {
       styles.push(
-        theme.backgroundColor.active,
-        theme.textColor.active,
+        theme().backgroundColor.active,
+        theme().textColor.active,
         'font-medium skew-x-[35deg] scale-125',
       );
     } else {
-      styles.push(theme.backgroundColor.main, theme.textColor.main);
+      styles.push(theme().backgroundColor.main, theme().textColor.main);
     }
-    return classNames(...styles);
+    return clsx(...styles);
   }
 
   return (
     <div
-      className={classNames(
-        theme.borderColor['75'],
+      class={clsx(
+        theme().borderColor['75'],
         'flex w-full flex-row flex-nowrap items-center rounded-t-sm border-b-2 p-0 font-united_sans_medium',
       )}
     >
-      <div className="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
-        <Fragment>
-          {Array.from({ length: size }, (_, i) => (
-            <div
-              key={i}
-              id={`#${i}`}
-              className={generateTabStyle(i)}
-              onClick={() => switchTab(i)}
-            >
-              <p className="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-                {i === 0 ? 'MAIN' : `#${i}`}
-              </p>
-            </div>
-          ))}
-        </Fragment>
+      <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
+        {Array.from({ length: size }, (_, i) => (
+          <div
+            id={`#${i}`}
+            class={generateTabStyle(i)}
+            onClick={() => switchTab(i)}
+          >
+            <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+              {i === 0 ? 'MAIN' : `#${i}`}
+            </p>
+          </div>
+        ))}
       </div>
       <div
         // onClick={addTerminal}
-        className={classNames(
-          theme.borderColor['75'],
-          theme.textColor.hoverActive,
-          theme.backgroundColor.hoverActive,
+        class={clsx(
+          theme().borderColor['75'],
+          theme().textColor.hoverActive,
+          theme().backgroundColor.hoverActive,
           'flex h-full w-[5%] skew-x-[35deg] cursor-pointer items-center justify-center border-l-2 border-solid font-normal',
           'sm:text-xs md:text-base lg:text-xl xl:text-3xl',
         )}
       >
         <svg
-          className="h-6 w-6 skew-x-[-35deg] fill-current"
+          class="size-6 skew-x-[-35deg] fill-current"
           height="1em"
           viewBox="0 0 448 512"
         >

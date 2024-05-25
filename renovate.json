@@ -1,12 +1,87 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", ":disableDependencyDashboard"],
-  "schedule": ["every weekend"],
+  "extends": [
+    "config:base",
+    ":disableDependencyDashboard"
+  ],
+  "schedule": [
+    "every weekend"
+  ],
   "packageRules": [
     {
-      "updateTypes": ["minor", "patch", "pin", "digest"],
+      "updateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "automerge": true
+    },
+    {
+      "matchDepTypes": [
+        "formatter"
+      ],
+      "matchPackagePrefixes": [
+        "lint-staged",
+        "prettier",
+        "@trivago/",
+        "husky"
+      ],
+      "automerge": true
+    },
+    {
+      "groupName": "definitelyTyped",
+      "matchPackagePrefixes": [
+        "@types/"
+      ]
+    },
+    {
+      "groupName": "eslint",
+      "matchPackagePrefixes": [
+        "eslint",
+        "@typescript-eslint/"
+      ],
+      "automerge": true
+    },
+    {
+      "groupName": "tauri",
+      "matchPackagePrefixes": [
+        "@tauri-apps/"
+      ]
+    },
+    {
+      "groupName": "styling",
+      "matchPackagePrefixes": [
+        "tailwindcss",
+        "autoprefixer",
+        "postcss"
+      ]
+    },
+    {
+      "groupName": "build-tools",
+      "matchPackagePrefixes": [
+        "vite",
+        "@vitejs/"
+      ]
+    },
+    {
+      "groupName": "utilities",
+      "matchPackagePrefixes": [
+        "lodash",
+        "color",
+        "clsx",
+        "pretty-bytes",
+        "smoothie"
+      ]
+    },
+    {
+      "groupName": "terminal",
+      "matchPackagePrefixes": [
+        "xterm"
+      ]
     }
   ],
-  "postUpdateOptions": ["npmDedupe"]
+  "postUpdateOptions": [
+    "npmDedupe"
+  ]
 }

@@ -1,18 +1,18 @@
-import { ReactElement } from 'react';
+import { JSX, Resource } from 'solid-js';
 
-interface IBaseInformationProps {
+type IBaseInformationProps = {
   header: string;
-  value?: string | ReactElement;
-}
+  value: Resource<Element> | Resource<string> | (() => JSX.Element);
+};
 
 function BaseInformation({ header, value }: IBaseInformationProps) {
   return (
-    <div className="box-border flex h-full flex-col items-start justify-end py-[0.925vh]">
-      <span className="m-0 opacity-50 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+    <div class="box-border flex h-full flex-col items-start justify-end py-[0.925vh]">
+      <span class="m-0 opacity-50 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
         {header}
       </span>
-      <span className="m-0 sm:text-xs md:text-base lg:text-xl  xl:text-3xl">
-        {value}
+      <span class="m-0 sm:text-xs md:text-base lg:text-xl  xl:text-3xl">
+        {value()}
       </span>
     </div>
   );

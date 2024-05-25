@@ -1,48 +1,39 @@
 import { IProcessInformation } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
-import { Fragment, useEffect, useState } from 'react';
+import { createSignal, For, onCleanup } from 'solid-js';
 
 function ProcessTable() {
-  const [processes, setProcesses] = useState<IProcessInformation[]>();
+  const [processes, setProcesses] = createSignal<IProcessInformation[]>();
 
-  useEffect(() => {
-    const unListen = listen(
-      'process_short',
-      (e: Event<IProcessInformation[]>) => setProcesses(e.payload),
-    );
+  const unListen = listen('process_short', (e: Event<IProcessInformation[]>) =>
+    setProcesses(e.payload),
+  );
 
-    return () => {
-      unListen.then(f => f()).catch(e => console.error(e));
-    };
-  }, []);
-
-  function TableRows() {
-    return (
-      <Fragment>
-        {processes?.map(o => (
-          <tr key={o.pid}>
-            <td className="sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-              {o.pid}
-            </td>
-            <td className="max-w-[7vw] truncate font-bold sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-              {o.name}
-            </td>
-            <td className="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-              {Math.round(o.cpu_usage * 10) / 10}%
-            </td>
-            <td className="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-              {Math.round(o.memory_usage * 10) / 10}%
-            </td>
-          </tr>
-        ))}
-      </Fragment>
-    );
-  }
+  onCleanup(() => {
+    unListen.then(f => f()).catch(e => console.error(e));
+  });
 
   return (
-    <table className="w-full table-auto">
+    <table class="w-full table-auto hover:cursor-pointer hover:opacity-75">
       <tbody>
-        <TableRows />
+        <For each={processes()}>
+          {process => (
+            <tr>
+              <td class="sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+                {process.pid}
+              </td>
+              <td class="max-w-[7vw] truncate font-bold sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+                {process.name}
+              </td>
+              <td class="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+                {Math.round(process.cpu_usage * 10) / 10}%
+              </td>
+              <td class="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+                {Math.round(process.memory_usage * 10) / 10}%
+              </td>
+            </tr>
+          )}
+        </For>
       </tbody>
     </table>
   );

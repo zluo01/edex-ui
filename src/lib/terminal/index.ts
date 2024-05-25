@@ -6,24 +6,22 @@
  */
 import { IStyle } from '@/models';
 import generateTerminalTheme from '@/themes/terminal';
-import { RefObject } from 'react';
 import { Terminal as TerminalType, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { Unicode11Addon } from 'xterm-addon-unicode11';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
-export interface IWindowWithTerminal extends Window {
+export type Addons = ReturnType<typeof getAddons>;
+
+export interface ITerminalProps {
   term: TerminalType;
-  Terminal?: typeof TerminalType;
-  FitAddon?: typeof FitAddon;
-  WebLinksAddon?: typeof WebLinksAddon;
-  Unicode11Addon?: typeof Unicode11Addon;
+  addons: Addons;
 }
 
 export function createTerminal(
-  terminalContainer: RefObject<HTMLDivElement>,
+  terminalContainer: HTMLDivElement,
   theme: IStyle,
-) {
+): ITerminalProps {
   const term = new Terminal(generateTerminalTheme(theme));
 
   const typedTerm = term as TerminalType;
@@ -32,7 +30,8 @@ export function createTerminal(
   typedTerm.loadAddon(new WebLinksAddon());
   typedTerm.loadAddon(addons.fit);
   typedTerm.loadAddon(addons.unicode11);
-  term.open(terminalContainer.current as HTMLDivElement);
+
+  term.open(terminalContainer);
   term.focus();
   addons.fit.fit();
 
@@ -40,8 +39,9 @@ export function createTerminal(
     initAddons(term, addons);
   }, 0);
 
-  return { xterm: term, addons };
+  return { term, addons };
 }
+
 function getAddons() {
   return {
     fit: new FitAddon(),
@@ -49,11 +49,6 @@ function getAddons() {
   };
 }
 
-export type Addons = ReturnType<typeof getAddons>;
-
-function initAddons(
-  term: Terminal,
-  _addons: ReturnType<typeof getAddons>,
-): void {
+function initAddons(term: Terminal, _addons: Addons): void {
   term.unicode.activeVersion = '11';
 }

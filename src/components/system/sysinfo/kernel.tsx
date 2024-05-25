@@ -1,9 +1,11 @@
 import BaseInformation from '@/components/system/sysinfo/base';
-import { useGetKernelVersionQuery } from '@/lib/queries';
+import { version } from '@tauri-apps/api/os';
+import { createResource } from 'solid-js';
 
 function Kernel() {
-  const { data: kernel } = useGetKernelVersionQuery();
-  return <BaseInformation header={'KERNEL'} value={kernel || 'UNKNOWN'} />;
+  const [kernel] = createResource<string>(version);
+
+  return <BaseInformation header={'KERNEL'} value={kernel} />;
 }
 
 export default Kernel;

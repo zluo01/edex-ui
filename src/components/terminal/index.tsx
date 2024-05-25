@@ -1,64 +1,50 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
-import classNames from '@/lib/utils/style';
-import ThemeContext from '@/themes/provider';
-import { useContext, useEffect, useState } from 'react';
+import THEME_LIST from '@/themes/styles';
+import clsx from 'clsx';
+import { createEffect, createSignal, on } from 'solid-js';
 
 import './index.css';
 
 function TerminalSection() {
-  const theme = useContext(ThemeContext);
+  const [active, setActive] = createSignal(0);
 
-  const [active, setActive] = useState(0);
+  const terminals = [<XTerm id={0} theme={THEME_LIST[0]} />];
 
-  const [terminals, setTerminals] = useState([
-    <XTerm key={0} id={0} theme={theme} />,
-  ]);
-
-  useEffect(() => {
-    const item = document.getElementById(`#${active}`);
-    if (item) {
-      item.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-    }
-  }, [active]);
+  createEffect(
+    on(active, active => {
+      const item = document.getElementById(`#${active}`);
+      if (item) {
+        item.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      }
+    }),
+  );
 
   function addTerminal() {
-    const newTerminals = [
-      ...terminals,
-      <XTerm key={terminals.length} id={terminals.length} theme={theme} />,
-    ];
-    setTerminals(newTerminals);
-    setActive(newTerminals.length - 1);
+    terminals.push(<XTerm id={terminals.length} theme={THEME_LIST[0]} />);
+    setActive(terminals.length - 1);
   }
 
   function switchTerminal(index: number) {
     setActive(index);
   }
 
-  function TerminalView() {
-    return (
-      <div className="m-0 h-full w-full overflow-hidden">
-        {terminals[active]}
-      </div>
-    );
-  }
-
   return (
-    <section className="relative h-full w-[68vw] overflow-hidden pt-[2.5vh] sm:px-1 md:px-2 lg:px-3">
+    <section class="relative h-full w-[68vw] overflow-hidden pt-[2.5vh] sm:px-1 md:px-2 lg:px-3">
       <div
-        className={classNames(
-          theme.name,
-          'shell flex h-full w-full flex-col items-start justify-start',
+        class={clsx(
+          THEME_LIST[0].name,
+          'shell flex size-full flex-col items-start justify-start',
         )}
         augmented-ui="bl-clip tr-clip exe"
       >
         <TerminalSelectionTab
           addTerminal={addTerminal}
-          index={active}
+          active={active}
           size={terminals.length}
           switchTab={switchTerminal}
         />
-        <TerminalView />
+        <div class="m-0 size-full overflow-hidden">{terminals[0]}</div>
       </div>
     </section>
   );
