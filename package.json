@@ -53,7 +53,7 @@
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-tailwindcss": "3.15.2",
     "husky": "8.0.3",
-    "lint-staged": "15.2.2",
+    "lint-staged": "15.2.4",
     "postcss": "8.4.38",
     "prettier": "3.2.5",
     "prettier-plugin-tailwindcss": "0.5.14",
