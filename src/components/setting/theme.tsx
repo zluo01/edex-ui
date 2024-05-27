@@ -13,6 +13,8 @@ function ChangeThemeSelection() {
     }
   }
 
+  const currentSelect = () => findIndex(THEME_LIST, theme());
+
   return (
     <div class="flex flex-row flex-nowrap items-center justify-between py-1">
       <span
@@ -31,7 +33,7 @@ function ChangeThemeSelection() {
           'relative block w-32 cursor-pointer border-2 border-solid px-2 text-center focus:outline-none',
           'appearance-none sm:text-sm md:text-lg lg:text-2xl xl:text-3xl',
         )}
-        value={findIndex(THEME_LIST, theme())}
+        value={currentSelect()}
         onInput={e => onChangeTheme(e.currentTarget.value)}
       >
         <Index each={THEME_LIST}>
