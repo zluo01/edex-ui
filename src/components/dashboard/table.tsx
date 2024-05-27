@@ -23,10 +23,9 @@ function ActiveProcessTable({ theme }: IActiveProcessTableProps) {
         )}
       >
         <span class={clsx(headerStyle, 'w-[10%]')}>PID</span>
-        <span class={clsx(headerStyle, 'w-[23%]')}>Name</span>
-        <span class={clsx(headerStyle, 'w-[9%]')}>CPU</span>
-        <span class={clsx(headerStyle, 'w-[9%]')}>Memory</span>
-        <span class={clsx(headerStyle, 'w-[6%]')}>UID</span>
+        <span class={clsx(headerStyle, 'w-1/4')}>Name</span>
+        <span class={clsx(headerStyle, 'w-[11%]')}>CPU</span>
+        <span class={clsx(headerStyle, 'w-[11%]')}>Memory</span>
         <span class={clsx(headerStyle, 'w-[12%]')}>State</span>
         <span class={clsx(headerStyle, 'w-[19%]')}>Started</span>
         <span class={clsx(headerStyle, 'w-[12%]')}>Runtime</span>

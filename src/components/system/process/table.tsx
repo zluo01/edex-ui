@@ -26,10 +26,10 @@ function ProcessTable() {
                 {process.name}
               </td>
               <td class="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-                {Math.round(process.cpu_usage * 10) / 10}%
+                {process.cpu_usage}%
               </td>
               <td class="text-right sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-                {Math.round(process.memory_usage * 10) / 10}%
+                {process.memory_usage}%
               </td>
             </tr>
           )}

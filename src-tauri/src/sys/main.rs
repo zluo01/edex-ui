@@ -90,7 +90,6 @@ impl Temperature {
 pub struct Process {
     pid: u32,
     name: String,
-    uid: String,
     cpu_usage: f32,
     memory_usage: f32,
     state: String,
@@ -242,13 +241,13 @@ fn extract_cpu_name(input: &str) -> Option<String> {
 pub fn extract_process(sys: &System) -> Vec<Process> {
     let mut new_processes = Vec::new(); // Create a new vector to hold the processes
     let total_memory = sys.total_memory();
+    let core_count = sys.cpus().len() as f32;
     for (pid, process) in sys.processes() {
         new_processes.push(Process {
             pid: pid.as_u32(),
             name: process.name().parse().unwrap(),
-            uid: process.user_id().map_or(String::from("0"), |uid| uid.to_string()),
-            cpu_usage: process.cpu_usage(),
-            memory_usage: process.memory() as f32 / total_memory as f32 * 100.0,
+            cpu_usage: (process.cpu_usage() / core_count).round(),
+            memory_usage: (process.memory() as f32 / total_memory as f32 * 100.0).round(),
             state: process.status().to_string(),
             start_time: process.start_time(),
             run_time: process.run_time(),

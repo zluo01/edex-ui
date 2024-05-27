@@ -27,7 +27,6 @@ export interface IMemoryInformation {
 export interface IProcessInformation {
   pid: number;
   name: string;
-  uid: string;
   cpu_usage: number;
   memory_usage: number;
   state: string;

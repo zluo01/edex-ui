@@ -45,16 +45,11 @@ function TableRows({ theme }: ITableRowsProps): JSX.Element {
           )}
         >
           <span class={clsx(styles, 'w-[10%]')}>{process.pid}</span>
-          <span class={clsx(styles, 'w-[23%]')} title={process.name}>
+          <span class={clsx(styles, 'w-1/4')} title={process.name}>
             {process.name}
           </span>
-          <span class={clsx(styles, 'w-[9%]')}>
-            {Math.round(process.cpu_usage * 10) / 10}%
-          </span>
-          <span class={clsx(styles, 'w-[9%]')}>
-            {Math.round(process.memory_usage * 10) / 10}%
-          </span>
-          <span class={clsx(styles, 'w-[6%]')}>{process.uid}</span>
+          <span class={clsx(styles, 'w-[11%]')}>{process.cpu_usage}%</span>
+          <span class={clsx(styles, 'w-[11%]')}>{process.memory_usage}%</span>
           <span class={clsx(styles, 'w-[12%]')}>{process.state}</span>
           <span class={clsx(styles, 'w-[19%]')}>
             {epochTimeToActualDate(process.start_time)}
