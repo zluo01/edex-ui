@@ -1,31 +1,33 @@
 #![cfg_attr(
-all(not(debug_assertions), target_os = "windows"),
-windows_subsystem = "windows"
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
 )]
-
-mod sys;
-mod path;
-mod session;
 
 extern crate core;
 
 use std::{
+    str,
+    io::{BufRead, BufReader, Write},
     sync::Arc,
     time::Duration,
-    io::{BufRead, BufReader, Write},
 };
-use serde_json::Value;
+use std::process::Command;
+
 use log::{debug, error};
-use tauri::{Manager, Runtime};
-use sysinfo::{System, SystemExt};
-use crate::sys::main::{IPInformation, extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process};
-use crate::path::main::{get_current_pty_cwd, scan_directory};
-
-use tauri::{async_runtime::Mutex as AsyncMutex, State};
-
-use portable_pty::{CommandBuilder, native_pty_system, PtySize, PtyPair};
+use portable_pty::{CommandBuilder, native_pty_system, PtyPair, PtySize};
 use serde_json::json;
+use serde_json::Value;
+use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
+use tauri::{Manager, Runtime};
+use tauri::{async_runtime::Mutex as AsyncMutex, State};
 use tokio::time::Instant;
+
+use crate::path::main::{get_current_pty_cwd, scan_directory};
+use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, IPInformation};
+
+mod sys;
+mod path;
+mod session;
 
 struct TerminalState {
     pty_pair: Arc<AsyncMutex<PtyPair>>,
@@ -34,6 +36,31 @@ struct TerminalState {
 
 struct RequestClientState {
     client: Arc<AsyncMutex<reqwest::Client>>,
+}
+
+#[tauri::command]
+async fn kernel_version() -> Result<String, String> {
+    let response = Command::new("uname")
+        .args(&["-r"])
+        .output();
+
+    if let Err(e) = response {
+        return Err(format!("Fail to run command. Error: {}", e));
+    }
+
+    let output = response.unwrap();
+    if output.status.success() {
+        let lines = str::from_utf8(&output.stdout).expect("Invalid UTF-8");
+        let v = lines.lines()
+            .last()
+            .unwrap()
+            .chars()
+            .take_while(|&ch| ch != '-')
+            .collect::<String>();
+        Ok(v)
+    } else {
+        Err(format!("Command failed with error: {:?}", output.status))
+    }
 }
 
 #[tauri::command]
@@ -159,6 +186,7 @@ fn main() {
             client: Arc::new(AsyncMutex::new(reqwest::Client::new()))
         })
         .invoke_handler(tauri::generate_handler![
+            kernel_version,
             get_ip_information,
             get_network_latency,
             async_write_to_pty,
@@ -172,7 +200,12 @@ fn main() {
                 let pty = state.pty_pair.lock().await;
                 let pty_pid: i32 = pty.master.process_group_leader().expect("Fail to get pid for pty.");
 
-                let mut sys = System::new_all();
+                let mut sys = System::new_with_specifics(RefreshKind::new()
+                    .with_cpu(CpuRefreshKind::everything().without_frequency())
+                    .with_processes(ProcessRefreshKind::everything().without_disk_usage().without_user())
+                    .with_components_list()
+                    .with_networks_list()
+                    .with_disks_list());
 
                 let mut interval = tokio::time::interval(Duration::from_secs(1));
                 loop {

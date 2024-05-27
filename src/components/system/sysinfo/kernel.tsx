@@ -1,9 +1,9 @@
 import BaseInformation from '@/components/system/sysinfo/base';
-import { version } from '@tauri-apps/api/os';
+import { getKernelVersion } from '@/lib/os';
 import { createResource } from 'solid-js';
 
 function Kernel() {
-  const [kernel] = createResource<string>(version);
+  const [kernel] = createResource<string>(getKernelVersion);
 
   return <BaseInformation header={'KERNEL'} value={kernel} />;
 }

@@ -1,11 +1,11 @@
 import BaseInformation from '@/components/system/sysinfo/base';
-import { getVersion } from '@tauri-apps/api/app';
+import { version } from '@tauri-apps/api/os';
 import { createResource } from 'solid-js';
 
 function Version() {
-  const [version] = createResource(getVersion);
+  const [v] = createResource(version);
 
-  return <BaseInformation header={'V'} value={version} />;
+  return <BaseInformation header={'V'} value={v} />;
 }
 
 export default Version;

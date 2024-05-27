@@ -6,6 +6,10 @@ export async function openFile(path: string) {
   await open(path);
 }
 
+export async function getKernelVersion(): Promise<string> {
+  return (await invoke('kernel_version')) || 'UNKNOWN';
+}
+
 export async function getIPInformation(): Promise<IIPAddressInformation> {
   return await invoke('get_ip_information');
 }

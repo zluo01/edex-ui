@@ -1,68 +1,37 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base",
-    ":disableDependencyDashboard"
-  ],
-  "schedule": [
-    "every weekend"
-  ],
+  "extends": ["config:base", ":disableDependencyDashboard"],
+  "schedule": ["every weekend"],
   "packageRules": [
     {
-      "updateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest"
-      ],
+      "updateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
     },
     {
-      "matchDepTypes": [
-        "formatter"
-      ],
-      "matchPackagePrefixes": [
-        "lint-staged",
-        "prettier",
-        "@trivago/",
-        "husky"
-      ],
+      "matchDepTypes": ["formatter"],
+      "matchPackagePrefixes": ["lint-staged", "prettier", "@trivago/", "husky"],
       "automerge": true
     },
     {
       "groupName": "definitelyTyped",
-      "matchPackagePrefixes": [
-        "@types/"
-      ]
+      "matchPackagePrefixes": ["@types/"]
     },
     {
       "groupName": "eslint",
-      "matchPackagePrefixes": [
-        "eslint",
-        "@typescript-eslint/"
-      ],
+      "matchPackagePrefixes": ["eslint", "@typescript-eslint/"],
       "automerge": true
     },
     {
       "groupName": "tauri",
-      "matchPackagePrefixes": [
-        "@tauri-apps/"
-      ]
+      "matchPackagePrefixes": ["@tauri-apps/"]
     },
     {
       "groupName": "styling",
-      "matchPackagePrefixes": [
-        "tailwindcss",
-        "autoprefixer",
-        "postcss"
-      ]
+      "matchPackagePrefixes": ["tailwindcss", "autoprefixer", "postcss"]
     },
     {
       "groupName": "build-tools",
-      "matchPackagePrefixes": [
-        "vite",
-        "@vitejs/"
-      ]
+      "matchPackagePrefixes": ["vite", "@vitejs/"]
     },
     {
       "groupName": "utilities",
@@ -76,12 +45,8 @@
     },
     {
       "groupName": "terminal",
-      "matchPackagePrefixes": [
-        "xterm"
-      ]
+      "matchPackagePrefixes": ["xterm"]
     }
   ],
-  "postUpdateOptions": [
-    "npmDedupe"
-  ]
+  "postUpdateOptions": ["npmDedupe"]
 }

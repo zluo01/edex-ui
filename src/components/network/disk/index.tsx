@@ -27,7 +27,7 @@ function DiskUsage() {
           DISK USAGE
         </span>
       </div>
-      <div class="size-full overflow-auto">
+      <div class="mb-3 size-full overflow-auto">
         <For each={disks()}>
           {disk => (
             <div
