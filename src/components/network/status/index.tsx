@@ -1,12 +1,6 @@
 import { getIPInformation, getNetworkLatency } from '@/lib/os';
 import { NETWORK_STATUS, OFFLINE, ONLINE } from '@/models';
-import {
-  Component,
-  createResource,
-  createSignal,
-  onCleanup,
-  Resource,
-} from 'solid-js';
+import { Component, createResource, onCleanup, Resource } from 'solid-js';
 
 interface IBaseInformationProps {
   header: string;
@@ -26,16 +20,6 @@ function BaseInformation({ header, value }: IBaseInformationProps) {
   );
 }
 
-async function latencyString() {
-  try {
-    const latency = await getNetworkLatency();
-    return `${latency}ms`;
-  } catch (e) {
-    console.error(e);
-    return '--';
-  }
-}
-
 type ConnectionStatusProps = {
   connected: () => boolean;
 };
@@ -43,12 +27,12 @@ type ConnectionStatusProps = {
 const ConnectionStatus: Component<ConnectionStatusProps> = ({ connected }) => {
   const [information] = createResource(connected, getIPInformation);
 
-  const [latency, setLatency] = createSignal<string>('--');
+  const [latency, { refetch }] = createResource<string>(getNetworkLatency, {
+    initialValue: '--',
+  });
 
   const intervalId = setInterval(() => {
-    latencyString()
-      .then(v => setLatency(v))
-      .catch(e => console.error(e));
+    refetch();
   }, 1000);
 
   onCleanup(() => clearInterval(intervalId));

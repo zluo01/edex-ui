@@ -14,8 +14,14 @@ export async function getIPInformation(): Promise<IIPAddressInformation> {
   return await invoke('get_ip_information');
 }
 
-export async function getNetworkLatency(): Promise<number> {
-  return await invoke('get_network_latency');
+export async function getNetworkLatency(): Promise<string> {
+  try {
+    const latency = await invoke('get_network_latency');
+    return `${latency}ms`;
+  } catch (e) {
+    console.error(e);
+    return '--';
+  }
 }
 
 export async function fitTerminal(rows: number, cols: number) {
