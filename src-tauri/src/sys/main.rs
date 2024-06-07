@@ -1,6 +1,7 @@
-use std::path::PathBuf;
-use std::process::Command;
-use std::str;
+use std::{
+    process::Command,
+    str,
+};
 
 use log::error;
 use serde::{Deserialize, Serialize};

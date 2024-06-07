@@ -1,4 +1,4 @@
-import { fitTerminal, writeToPty } from '@/lib/os';
+import { fitTerminal, newTerminalSession, writeToPty } from '@/lib/os';
 import { Addons, createTerminal, ITerminalProps } from '@/lib/terminal';
 import { IStyle } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
@@ -58,10 +58,12 @@ function XTerm({ id, theme }: IXtermProps) {
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     terminal = createTerminal(terminalRef!, theme);
 
-    resize(terminal.term, terminal.addons).catch(e => console.error(e));
+    await newTerminalSession(id);
+
+    await resize(terminal.term, terminal.addons);
 
     terminal.term.onData(writeToPty);
 
@@ -70,7 +72,7 @@ function XTerm({ id, theme }: IXtermProps) {
     terminal.term.focus();
   });
 
-  const unListen = listen('data', (e: Event<string>) =>
+  const unListen = listen('data-' + id, (e: Event<string>) =>
     terminal?.term.write(e.payload),
   );
 

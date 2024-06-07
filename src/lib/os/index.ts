@@ -38,3 +38,7 @@ export async function fitTerminal(rows: number, cols: number) {
 export async function writeToPty(data: string) {
   await invoke('async_write_to_pty', { data });
 }
+
+export async function newTerminalSession(id: number) {
+  await invoke('new_terminal_session', { id });
+}
