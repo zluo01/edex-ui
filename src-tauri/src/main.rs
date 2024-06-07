@@ -8,7 +8,6 @@ extern crate core;
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
-    process::Command,
     str,
     sync::Arc,
     time::Duration,
@@ -44,28 +43,12 @@ struct TerminalSessionState(Arc<AsyncMutex<HashMap<u8, TerminalSession>>>);
 struct TerminalIndex(Arc<AsyncMutex<u8>>);
 
 #[tauri::command]
-async fn kernel_version() -> Result<String, String> {
-    let response = Command::new("uname")
-        .args(&["-r"])
-        .output();
-
-    if let Err(e) = response {
-        return Err(format!("Fail to run command. Error: {}", e));
-    }
-
-    let output = response.unwrap();
-    if output.status.success() {
-        let lines = str::from_utf8(&output.stdout).expect("Invalid UTF-8");
-        let v = lines.lines()
-            .last()
-            .unwrap()
-            .chars()
-            .take_while(|&ch| ch != '-')
-            .collect::<String>();
-        Ok(v)
-    } else {
-        Err(format!("Command failed with error: {:?}", output.status))
-    }
+async fn kernel_version() -> Result<String, ()> {
+    let sys = System::new_with_specifics(RefreshKind::new());
+    let kernel_version = sys.kernel_version()
+        .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
+        .expect("Fail to get kernel version.");
+    Ok(kernel_version)
 }
 
 #[tauri::command]
@@ -234,6 +217,7 @@ fn main() {
             let system_info_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let mut sys = System::new_with_specifics(RefreshKind::new()
+                    .with_memory()
                     .with_cpu(CpuRefreshKind::everything().without_frequency())
                     .with_processes(ProcessRefreshKind::everything().without_disk_usage().without_user())
                     .with_components_list()
