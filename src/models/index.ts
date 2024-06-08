@@ -1,4 +1,5 @@
-import { CursorStyle } from 'xterm/src/common/Types';
+import { CursorStyle } from '@xterm/xterm/src/common/Types';
+import { JSXElement } from 'solid-js';
 
 export interface ITemperatureInformation {
   cpu: number;
@@ -134,3 +135,17 @@ export type IStyle = {
     cursorAccent: string;
   };
 };
+
+export type TerminalRef = {
+  cleanup: VoidFunction;
+};
+
+export interface ITerminalContainer {
+  id: number;
+  terminal: () => JSXElement;
+}
+
+export interface ITerminalDestroyPayload {
+  deleted: number;
+  newIndex: number;
+}

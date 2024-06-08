@@ -13,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-use log::{debug, error};
+use log::{debug, error, info};
 use portable_pty::{native_pty_system, PtySize};
 use serde_json::{
     json,
@@ -35,6 +35,12 @@ use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, ext
 mod sys;
 mod path;
 mod session;
+
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+    args: Vec<String>,
+    cwd: String,
+}
 
 struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
@@ -108,6 +114,7 @@ async fn async_write_to_pty(terminal_session_state: State<'_, TerminalSessionSta
 
 #[tauri::command]
 async fn new_terminal_session<R: Runtime>(app_handle: tauri::AppHandle<R>,
+                                          terminal_index_state: State<'_, TerminalIndex>,
                                           terminal_session_state: State<'_, TerminalSessionState>,
                                           id: u8) -> Result<(), ()> {
     let pty_system = native_pty_system();
@@ -131,7 +138,7 @@ async fn new_terminal_session<R: Runtime>(app_handle: tauri::AppHandle<R>,
 
     let terminal_process = app_handle.clone();
     tauri::async_runtime::spawn(async move {
-        let event_key = format!("data-{}", id);
+        let event_key = format!("data-{}", &id);
         let reader = reader.lock().await.take();
         let mut interval = tokio::time::interval(Duration::from_millis(1));
         if let Some(mut reader) = reader {
@@ -149,18 +156,49 @@ async fn new_terminal_session<R: Runtime>(app_handle: tauri::AppHandle<R>,
     let child_process_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
         let status = child.wait().unwrap();
-        debug!("Exit status {}", status.exit_code());
-        // exit the application if there is only one terminal left
+        debug!("Exit status {}. Id: {}", status.exit_code(), &id);
+
+        let terminal_index_state: State<TerminalIndex> = child_process_handle.state::<TerminalIndex>();
+
         let terminal_state: State<TerminalSessionState> = child_process_handle.state::<TerminalSessionState>();
         let mut terminal_sessions = terminal_state.0.lock().await;
-        if terminal_sessions.len() == 1 {
+
+        // exit the application if there is only one terminal left
+        // or exit on the main terminal
+        if terminal_sessions.len() == 1 || 0 == id {
             child_process_handle.exit(status.exit_code() as i32)
         } else {
+            // find the next terminal index
+            let mut ids = terminal_sessions.iter()
+                .map(|t| t.0)
+                .collect::<Vec<&u8>>();
+            ids.sort();
+            let current_index = ids.iter().position(|&r| r == &id).unwrap();
+
+            let new_index;
+            if current_index == ids.len() - 1 {
+                new_index = ids[current_index - 1];
+            } else {
+                new_index = ids[current_index + 1];
+            }
+
+            // remove the terminal and update the index
+            let payload = json!({
+                "deleted": &id,
+                "newIndex": &new_index
+            });
+            debug!("Destroy terminal {}. New Active Terminal Id: {}", &id, &new_index);
+            update_current_terminal(*new_index, terminal_index_state).await.expect("Fail to set index to newly created terminal");
             terminal_sessions.remove(&id);
+            child_process_handle.emit_all("destroy", payload).unwrap();
         }
     });
 
+    // set the current index to the newly created terminal
+    update_current_terminal(id, terminal_index_state).await.expect("Fail to set index to newly created terminal");
+
     let pid = pty_pair.master.process_group_leader().expect("Fail to get pid.");
+    debug!("Create new terminal: {}", pid);
     terminal_session_state.0.lock().await.insert(id, TerminalSession {
         pid,
         pty_pair,
@@ -200,6 +238,10 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            info!("{}, {argv:?}, {cwd}", app.package_info().name);
+            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+        }))
         .manage(TerminalSessionState(Arc::new(AsyncMutex::new(HashMap::new()))))
         .manage(TerminalIndex(Arc::new(AsyncMutex::new(0))))
         .manage(RequestClientState(Arc::new(AsyncMutex::new(reqwest::Client::new()))))

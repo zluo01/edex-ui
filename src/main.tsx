@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@/themes';
-import 'augmented-ui/augmented.css';
+import 'augmented-ui/augmented-ui.min.css';
 import { render } from 'solid-js/web';
 
 import App from './App';

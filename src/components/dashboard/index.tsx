@@ -34,7 +34,7 @@ function ActiveProcess({ open, close }: ISettingProps) {
             'panel flex size-full items-center justify-center text-center font-united_sans_light',
             'relative animate-fade overflow-hidden shadow-xl transition-all duration-300 ease-in',
           )}
-          augmented-ui="tr-clip bl-clip exe"
+          data-augmented-ui="tr-clip bl-clip both"
         >
           <div
             class={clsx(

@@ -1,7 +1,7 @@
 import { IStyle } from '@/models';
+import { ITerminalInitOnlyOptions, ITerminalOptions } from '@xterm/xterm';
 import Color from 'color';
 import join from 'lodash/join';
-import { ITerminalInitOnlyOptions, ITerminalOptions } from 'xterm';
 
 function colorify(color: string, theme: string) {
   return Color(color).grayscale().mix(Color(theme), 0.3).hex();

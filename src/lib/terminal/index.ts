@@ -1,15 +1,11 @@
-/**
- * Copyright (c) 2018 The xterm.js authors. All rights reserved.
- * @license MIT
- *
- * This file is the entry point for browserify.
- */
 import { IStyle } from '@/models';
 import generateTerminalTheme from '@/themes/terminal';
-import { Terminal as TerminalType, Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import { Unicode11Addon } from 'xterm-addon-unicode11';
-import { WebLinksAddon } from 'xterm-addon-web-links';
+import { CanvasAddon } from '@xterm/addon-canvas';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { FitAddon } from '@xterm/addon-fit';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { Terminal as TerminalType, Terminal } from '@xterm/xterm';
 
 export type Addons = ReturnType<typeof getAddons>;
 
@@ -27,11 +23,12 @@ export function createTerminal(
   const typedTerm = term as TerminalType;
 
   const addons = getAddons();
-  typedTerm.loadAddon(new WebLinksAddon());
-  typedTerm.loadAddon(addons.fit);
-  typedTerm.loadAddon(addons.unicode11);
+  Object.values(addons).forEach(addon => typedTerm.loadAddon(addon));
 
   term.open(terminalContainer);
+
+  typedTerm.loadAddon(new CanvasAddon());
+
   term.focus();
   addons.fit.fit();
 
@@ -46,6 +43,8 @@ function getAddons() {
   return {
     fit: new FitAddon(),
     unicode11: new Unicode11Addon(),
+    clipboard: new ClipboardAddon(),
+    webLink: new WebLinksAddon(),
   };
 }
 

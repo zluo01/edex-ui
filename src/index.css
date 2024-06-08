@@ -4,7 +4,7 @@
 
 @layer components {
   .panel {
-    --aug-border: 0.2vh;
+    --aug-border-all: 0.2vh;
     --aug-inset: 5px;
   }
 

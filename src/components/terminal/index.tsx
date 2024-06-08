@@ -1,15 +1,27 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
-import THEME_LIST from '@/themes/styles';
+import { updateTerminal } from '@/lib/os';
+import { ITerminalContainer, ITerminalDestroyPayload } from '@/models';
+import { useCurrentTheme } from '@/themes';
+import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
-import { createEffect, createSignal, on } from 'solid-js';
+import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
 
 import './index.css';
 
 function TerminalSection() {
+  const theme = useCurrentTheme();
+
   const [active, setActive] = createSignal(0);
 
-  const terminals = [<XTerm id={0} theme={THEME_LIST[0]} />];
+  const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
+    {
+      id: 0,
+      terminal: () => <XTerm id={0} active={active} theme={theme} />,
+    },
+  ]);
+
+  const terminalIds = () => terminals().map(o => o.id);
 
   createEffect(
     on(active, active => {
@@ -20,12 +32,35 @@ function TerminalSection() {
     }),
   );
 
+  const unListen = listen('destroy', (e: Event<ITerminalDestroyPayload>) => {
+    const { deleted, newIndex } = e.payload;
+    setTerminals(prevState => prevState.filter(o => o.id !== deleted));
+    setActive(newIndex);
+  });
+
+  onCleanup(() => {
+    unListen.then(f => f()).catch(e => console.error(e));
+  });
+
+  /**
+   * Create new terminal node
+   * Internally, will create a new pty sessions in the backend
+   * it will also handle updating the current index on creation.
+   */
   function addTerminal() {
-    terminals.push(<XTerm id={terminals.length} theme={THEME_LIST[0]} />);
-    setActive(terminals.length - 1);
+    const id = terminals().length;
+    setActive(id);
+    setTerminals(prevState => [
+      ...prevState,
+      {
+        id,
+        terminal: () => <XTerm id={id} active={active} theme={theme} />,
+      },
+    ]);
   }
 
-  function switchTerminal(index: number) {
+  async function switchTerminal(index: number) {
+    await updateTerminal(index);
     setActive(index);
   }
 
@@ -33,18 +68,21 @@ function TerminalSection() {
     <section class="relative h-full w-[68vw] overflow-hidden pt-[2.5vh] sm:px-1 md:px-2 lg:px-3">
       <div
         class={clsx(
-          THEME_LIST[0].name,
+          theme().name,
           'shell flex size-full flex-col items-start justify-start',
         )}
-        augmented-ui="bl-clip tr-clip exe"
+        data-augmented-ui="bl-clip tr-clip border"
       >
         <TerminalSelectionTab
           addTerminal={addTerminal}
           active={active}
-          size={terminals.length}
+          terminalIds={terminalIds}
           switchTab={switchTerminal}
+          theme={theme}
         />
-        <div class="m-0 size-full overflow-hidden">{terminals[0]}</div>
+        <div class="m-0 size-full overflow-hidden">
+          <For each={terminals()}>{({ terminal }) => terminal()}</For>
+        </div>
       </div>
     </section>
   );

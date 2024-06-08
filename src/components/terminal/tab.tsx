@@ -1,20 +1,22 @@
-import { useCurrentTheme } from '@/themes';
+import { IStyle } from '@/models';
 import clsx from 'clsx';
+import { For, InitializedResource } from 'solid-js';
 
 interface ITerminalSelectionTab {
   active: () => number;
-  size: number;
+  terminalIds: () => number[];
   switchTab: (id: number) => void;
   addTerminal: VoidFunction;
+  theme: InitializedResource<IStyle>;
 }
 
 function TerminalSelectionTab({
   active,
-  size,
+  terminalIds,
   switchTab,
+  addTerminal,
+  theme,
 }: ITerminalSelectionTab) {
-  const theme = useCurrentTheme();
-
   function generateTabStyle(current: number) {
     const styles: string[] = [
       theme().borderColor['75'],
@@ -40,20 +42,22 @@ function TerminalSelectionTab({
       )}
     >
       <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
-        {Array.from({ length: size }, (_, i) => (
-          <div
-            id={`#${i}`}
-            class={generateTabStyle(i)}
-            onClick={() => switchTab(i)}
-          >
-            <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-              {i === 0 ? 'MAIN' : `#${i}`}
-            </p>
-          </div>
-        ))}
+        <For each={terminalIds()}>
+          {id => (
+            <div
+              id={`#${id}`}
+              class={generateTabStyle(id)}
+              onClick={() => switchTab(id)}
+            >
+              <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+                {id === 0 ? 'MAIN' : `#${id}`}
+              </p>
+            </div>
+          )}
+        </For>
       </div>
       <div
-        // onClick={addTerminal}
+        onClick={addTerminal}
         class={clsx(
           theme().borderColor['75'],
           theme().textColor.hoverActive,

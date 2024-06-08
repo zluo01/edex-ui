@@ -45,7 +45,7 @@
     },
     {
       "groupName": "terminal",
-      "matchPackagePrefixes": ["xterm"]
+      "matchPackagePrefixes": ["@xterm"]
     }
   ],
   "postUpdateOptions": ["npmDedupe"]

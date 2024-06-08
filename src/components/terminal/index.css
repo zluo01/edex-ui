@@ -1,5 +1,5 @@
 .shell {
-  --aug-border: 2px;
+  --aug-border-all: 2px;
   --aug-border-opacity: 0.75;
 
   transition:

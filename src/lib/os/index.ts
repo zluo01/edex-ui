@@ -42,3 +42,7 @@ export async function writeToPty(data: string) {
 export async function newTerminalSession(id: number) {
   await invoke('new_terminal_session', { id });
 }
+
+export async function updateTerminal(id: number) {
+  await invoke('update_current_terminal', { id });
+}
