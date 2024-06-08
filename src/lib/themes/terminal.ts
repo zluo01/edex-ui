@@ -8,6 +8,7 @@ function colorify(color: string, theme: string) {
 }
 
 const FALL_BACK_FONTS = ['Ubuntu Mono', 'Courier New'];
+
 export default function generateTerminalTheme(
   style: IStyle,
 ): ITerminalOptions | ITerminalInitOnlyOptions {

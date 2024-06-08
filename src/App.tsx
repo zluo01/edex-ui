@@ -2,7 +2,7 @@ import FileSystem from '@/components/filesystem';
 import Network from '@/components/network';
 import System from '@/components/system';
 import Terminal from '@/components/terminal';
-import { useCurrentTheme } from '@/themes';
+import { useCurrentTheme } from '@/lib/themes';
 import clsx from 'clsx';
 
 function App() {

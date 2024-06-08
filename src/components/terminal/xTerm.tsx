@@ -1,6 +1,6 @@
 import { fitTerminal, newTerminalSession, writeToPty } from '@/lib/os';
-import { Addons, createTerminal, ITerminalProps } from '@/lib/terminal';
-import { IStyle } from '@/models';
+import { Addons, createTerminal } from '@/lib/terminal';
+import { IStyle, ITerminalProps } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { ITerminalDimensions } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
@@ -18,7 +18,7 @@ function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-async function resize(term: Terminal, addons: Addons) {
+async function resize(id: number, term: Terminal, addons: Addons) {
   const fitAddon = addons.fit;
   if (!fitAddon.proposeDimensions()) {
     console.error('Fail to get propose dimensions');
@@ -49,7 +49,7 @@ async function resize(term: Terminal, addons: Addons) {
   if (term.cols !== cols || term.rows !== rows) {
     term.resize(cols, rows);
     fitAddon.fit();
-    await fitTerminal(term.rows, term.cols);
+    await fitTerminal(id, term.rows, term.cols);
   }
 }
 
@@ -64,9 +64,9 @@ function XTerm({ id, active, theme }: IXtermProps) {
 
   let terminal: ITerminalProps | undefined;
 
-  async function resizeTerminal() {
+  async function resizeTerminal(id: number) {
     if (terminal) {
-      await resize(terminal.term, terminal.addons);
+      await resize(id, terminal.term, terminal.addons);
     }
   }
 
@@ -82,11 +82,11 @@ function XTerm({ id, active, theme }: IXtermProps) {
 
       await newTerminalSession(id);
 
-      await resize(terminal.term, terminal.addons);
+      await resize(id, terminal.term, terminal.addons);
 
-      terminal.term.onData(writeToPty);
+      terminal.term.onData(v => writeToPty(id, v));
 
-      addEventListener('resize', resizeTerminal);
+      addEventListener('resize', () => resizeTerminal(id));
 
       terminal.term.focus();
     }),
@@ -97,10 +97,9 @@ function XTerm({ id, active, theme }: IXtermProps) {
   );
 
   onCleanup(() => {
-    console.debug(id + ' is destroyed.');
     terminal?.term.dispose();
     unListen.then(f => f()).catch(e => console.error(e));
-    removeEventListener('resize', resizeTerminal);
+    removeEventListener('resize', () => resizeTerminal(id));
   });
 
   return (

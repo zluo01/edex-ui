@@ -1,3 +1,5 @@
+import { Addons } from '@/lib/terminal';
+import { Terminal as TerminalType } from '@xterm/xterm';
 import { CursorStyle } from '@xterm/xterm/src/common/Types';
 import { JSXElement } from 'solid-js';
 
@@ -136,9 +138,10 @@ export type IStyle = {
   };
 };
 
-export type TerminalRef = {
-  cleanup: VoidFunction;
-};
+export interface ITerminalProps {
+  term: TerminalType;
+  addons: Addons;
+}
 
 export interface ITerminalContainer {
   id: number;

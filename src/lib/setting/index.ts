@@ -1,5 +1,5 @@
+import THEME_LIST from '@/lib/themes/styles';
 import { IStyle } from '@/models';
-import THEME_LIST from '@/themes/styles';
 import { Store } from 'tauri-plugin-store-api';
 
 const store = new Store('.settings.dat');

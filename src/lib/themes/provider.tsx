@@ -1,6 +1,6 @@
 import { getTheme, setTheme } from '@/lib/setting';
+import THEME_LIST from '@/lib/themes/styles';
 import { IStyle } from '@/models';
-import THEME_LIST from '@/themes/styles';
 import {
   createContext,
   useContext,
@@ -25,7 +25,7 @@ function useProviderValue() {
   return { theme, updateTheme };
 }
 
-export type ContextType = ReturnType<typeof useProviderValue>;
+type ContextType = ReturnType<typeof useProviderValue>;
 
 const ThemeContext = createContext<ContextType | undefined>(undefined);
 

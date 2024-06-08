@@ -1,8 +1,9 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
 import { updateTerminal } from '@/lib/os';
+import { useTerminal } from '@/lib/terminal';
+import { useCurrentTheme } from '@/lib/themes';
 import { ITerminalContainer, ITerminalDestroyPayload } from '@/models';
-import { useCurrentTheme } from '@/themes';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
@@ -11,8 +12,7 @@ import './index.css';
 
 function TerminalSection() {
   const theme = useCurrentTheme();
-
-  const [active, setActive] = createSignal(0);
+  const { active, setActive } = useTerminal();
 
   const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
     {

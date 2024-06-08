@@ -1,6 +1,6 @@
 import ShowHiddenFileSetting from '@/components/setting/hidden';
 import ChangeThemeSelection from '@/components/setting/theme';
-import { useCurrentTheme } from '@/themes';
+import { useCurrentTheme } from '@/lib/themes';
 import clsx from 'clsx';
 import { Resource } from 'solid-js';
 

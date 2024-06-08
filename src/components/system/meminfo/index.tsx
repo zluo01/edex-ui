@@ -1,5 +1,5 @@
+import { useCurrentTheme } from '@/lib/themes';
 import { IMemoryInformation } from '@/models';
-import { useCurrentTheme } from '@/themes';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { createSignal, onCleanup } from 'solid-js';

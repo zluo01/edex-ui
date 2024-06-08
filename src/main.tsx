@@ -1,4 +1,5 @@
-import { ThemeProvider } from '@/themes';
+import { TerminalProvider } from '@/lib/terminal';
+import { ThemeProvider } from '@/lib/themes';
 import 'augmented-ui/augmented-ui.min.css';
 import { render } from 'solid-js/web';
 
@@ -8,7 +9,9 @@ import './index.css';
 render(
   () => (
     <ThemeProvider>
-      <App />
+      <TerminalProvider>
+        <App />
+      </TerminalProvider>
     </ThemeProvider>
   ),
   document.getElementById('root') as HTMLElement,

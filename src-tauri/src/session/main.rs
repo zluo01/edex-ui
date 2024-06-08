@@ -1,11 +1,19 @@
-use std::io::Write;
+use portable_pty::CommandBuilder;
+use serde::Deserialize;
 
-use portable_pty::{CommandBuilder, PtyPair};
+#[derive(Deserialize, Debug)]
+pub struct ResizePayload {
+    rows: u16,
+    cols: u16,
+}
 
-pub struct TerminalSession {
-    pub(crate) pid: i32,
-    pub(crate) pty_pair: PtyPair,
-    pub(crate) writer: Box<dyn Write + Send>,
+impl ResizePayload {
+    pub fn rows(&self) -> u16 {
+        self.rows
+    }
+    pub fn cols(&self) -> u16 {
+        self.cols
+    }
 }
 
 pub fn construct_cmd() -> CommandBuilder {

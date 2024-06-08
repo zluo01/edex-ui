@@ -1,5 +1,5 @@
+import { useCurrentTheme } from '@/lib/themes';
 import { IDiskUsage } from '@/models';
-import { useCurrentTheme } from '@/themes';
 import { Event, listen } from '@tauri-apps/api/event';
 import isEqual from 'lodash/isEqual';
 import prettyBytes from 'pretty-bytes';

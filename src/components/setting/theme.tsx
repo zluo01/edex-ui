@@ -1,5 +1,5 @@
-import { useTheme } from '@/themes';
-import THEME_LIST from '@/themes/styles';
+import { useTheme } from '@/lib/themes';
+import THEME_LIST from '@/lib/themes/styles';
 import clsx from 'clsx';
 import findIndex from 'lodash/findIndex';
 import { Index } from 'solid-js';

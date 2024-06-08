@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 // Borrow from https://github.com/hharnisc/hypercwd/blob/master/setCwd.js
-pub fn get_current_pty_cwd(pid: i32) -> Result<PathBuf, String> {
+pub fn get_current_pty_cwd(pid: &i32) -> Result<PathBuf, String> {
     let pid_str = pid.to_string();
     let response = Command::new("lsof")
         .args(&["-a", "-p", &pid_str, "-d", "cwd", "-Fn"])

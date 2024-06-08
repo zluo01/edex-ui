@@ -1,4 +1,4 @@
-import { useCurrentTheme } from '@/themes';
+import { useCurrentTheme } from '@/lib/themes';
 import clsx from 'clsx';
 
 interface IBannerProps {

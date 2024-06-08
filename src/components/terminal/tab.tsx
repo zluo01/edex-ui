@@ -62,12 +62,12 @@ function TerminalSelectionTab({
           theme().borderColor['75'],
           theme().textColor.hoverActive,
           theme().backgroundColor.hoverActive,
-          'flex h-full w-[5%] skew-x-[35deg] cursor-pointer items-center justify-center border-l-2 border-solid font-normal',
+          'flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid font-normal',
           'sm:text-xs md:text-base lg:text-xl xl:text-3xl',
         )}
       >
         <svg
-          class="size-6 skew-x-[-35deg] fill-current"
+          class="size-6 skew-x-[-45deg] fill-current"
           height="1em"
           viewBox="0 0 448 512"
         >

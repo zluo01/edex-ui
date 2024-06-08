@@ -1,5 +1,6 @@
 import FileTile from '@/components/filesystem/tile';
 import { openFile, writeToPty } from '@/lib/os';
+import { useActiveTerminal } from '@/lib/terminal';
 import {
   BACKWARD,
   DIRECTORY,
@@ -17,9 +18,11 @@ interface IFileSectionProps {
 }
 
 function FileSection({ open, showHidden, fileSystem }: IFileSectionProps) {
+  const active = useActiveTerminal();
+
   async function fileAction(file: IFileInfo) {
     if (file.t === DIRECTORY) {
-      await writeToPty(`cd '${file.path}'\n`);
+      await writeToPty(active(), `cd '${file.path}'\n`);
     } else if (file.t === FILE) {
       await openFile(file.path);
     }
@@ -32,7 +35,7 @@ function FileSection({ open, showHidden, fileSystem }: IFileSectionProps) {
         name={'Go back'}
         t={BACKWARD}
         hidden={false}
-        onClick={() => writeToPty('cd ../\n')}
+        onClick={() => writeToPty(active(), 'cd ../\n')}
       />
       <For each={fileSystem()?.files.filter(o => !o.hidden || showHidden())}>
         {file => <FileTile {...file} onClick={() => fileAction(file)} />}

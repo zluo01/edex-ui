@@ -1,5 +1,5 @@
 import ActiveProcessTable from '@/components/dashboard/table';
-import { useCurrentTheme } from '@/themes';
+import { useCurrentTheme } from '@/lib/themes';
 import clsx from 'clsx';
 
 interface ISettingProps {

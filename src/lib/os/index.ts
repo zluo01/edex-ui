@@ -1,4 +1,5 @@
 import { IIPAddressInformation } from '@/models';
+import { emit } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 
@@ -24,19 +25,17 @@ export async function getNetworkLatency(): Promise<string> {
   }
 }
 
-export async function fitTerminal(rows: number, cols: number) {
-  await invoke<string>('async_resize_pty', {
-    rows,
-    cols,
-  });
+export async function fitTerminal(id: number, rows: number, cols: number) {
+  await emit('resize-' + id, { rows, cols });
 }
 
 /**
  * Write data from the terminal to the pty
+ * @param id terminal id
  * @param data payload
  */
-export async function writeToPty(data: string) {
-  await invoke('async_write_to_pty', { data });
+export async function writeToPty(id: number, data: string) {
+  await emit('writer-' + id, data);
 }
 
 export async function newTerminalSession(id: number) {
