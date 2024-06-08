@@ -70,6 +70,15 @@ function XTerm({ id, active, theme }: IXtermProps) {
     }
   }
 
+  // refocus on tab change
+  createEffect(
+    on(active, active => {
+      if (active === id) {
+        terminal?.term.focus();
+      }
+    }),
+  );
+
   createEffect(
     on(terminalRef, async ref => {
       // do not proceed if parent dom is not ready
