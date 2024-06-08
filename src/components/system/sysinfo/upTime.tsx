@@ -1,4 +1,5 @@
 import BaseInformation from '@/components/system/sysinfo/base';
+import { errorLog } from '@/lib/log';
 import formatTime from '@/lib/utils/format';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, JSX, onCleanup } from 'solid-js';
@@ -9,7 +10,7 @@ function UpTimeSection() {
   const unListen = listen('uptime', (e: Event<number>) => setUptime(e.payload));
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
   });
 
   const UpTime = (): JSX.Element => {

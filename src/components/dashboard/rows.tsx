@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { IProcessInformation, IStyle } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
@@ -19,7 +20,7 @@ function TableRows({ theme }: ITableRowsProps): JSX.Element {
     setProcesses(e.payload),
   );
 
-  onCleanup(() => unListen.then(f => f()).catch(e => console.error(e)));
+  onCleanup(() => unListen.then(f => f()).catch(errorLog));
 
   function epochTimeToActualDate(epochTime: number): string {
     const date = new Date(0); // The 0 represents the epoch date

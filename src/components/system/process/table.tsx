@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { IProcessInformation } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, For, onCleanup } from 'solid-js';
@@ -10,7 +11,7 @@ function ProcessTable() {
   );
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
   });
 
   return (

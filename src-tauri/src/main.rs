@@ -21,7 +21,7 @@ use std::{
     time::Duration,
 };
 
-use log::{error, info, trace};
+use log::{error, info, LevelFilter, trace};
 use portable_pty::{native_pty_system, PtySize};
 use serde_json::{
     json,
@@ -29,6 +29,7 @@ use serde_json::{
 };
 use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
 use tauri::{AppHandle, async_runtime::Mutex as AsyncMutex, Manager, Runtime, State};
+use tauri_plugin_log::LogTarget;
 use tokio::time::Instant;
 
 use crate::path::main::{get_current_pty_cwd, scan_directory};
@@ -256,8 +257,19 @@ async fn update_current_terminal(id: u8,
 }
 
 fn main() {
+    let log_level;
+    if cfg!(debug_assertions) {
+        log_level = LevelFilter::Trace;
+    } else {
+        log_level = LevelFilter::Error;
+    }
+
+    info!("Log Level: {:?}", log_level);
     tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::default().build())
+        .plugin(tauri_plugin_log::Builder::default()
+            .targets([LogTarget::LogDir, LogTarget::Stdout])
+            .level(log_level)
+            .build())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             info!("{}, {argv:?}, {cwd}", app.package_info().name);

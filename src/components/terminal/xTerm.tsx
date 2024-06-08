@@ -1,3 +1,4 @@
+import { errorLog, traceLog } from '@/lib/log';
 import { fitTerminal, newTerminalSession, writeToPty } from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
 import { IStyle, ITerminalProps } from '@/models';
@@ -21,7 +22,7 @@ function gcd(a: number, b: number): number {
 async function resize(id: number, term: Terminal, addons: Addons) {
   const fitAddon = addons.fit;
   if (!fitAddon.proposeDimensions()) {
-    console.error('Fail to get propose dimensions');
+    await errorLog('Fail to get propose dimensions');
     return;
   }
   let { cols, rows } = fitAddon.proposeDimensions() as ITerminalDimensions;
@@ -86,7 +87,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
       if (!ref || terminal !== undefined) {
         return;
       }
-      console.debug('Initialize terminal interface. Id: ' + id);
+      await traceLog('Initialize terminal interface. Id: ' + id);
       terminal = createTerminal(ref, theme());
 
       await newTerminalSession(id);
@@ -107,7 +108,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
 
   onCleanup(() => {
     terminal?.term.dispose();
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
     removeEventListener('resize', () => resizeTerminal(id));
   });
 

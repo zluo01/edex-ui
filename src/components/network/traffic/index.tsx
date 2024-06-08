@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { useCurrentTheme } from '@/lib/themes';
 import { INetworkTraffic } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
@@ -70,7 +71,7 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
   });
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
     charts.forEach(o => o.stop());
   });
 

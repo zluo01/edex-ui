@@ -1,5 +1,6 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
+import { errorLog } from '@/lib/log';
 import { updateTerminal } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
 import { useCurrentTheme } from '@/lib/themes';
@@ -39,7 +40,7 @@ function TerminalSection() {
   });
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
   });
 
   /**

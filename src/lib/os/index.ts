@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { IIPAddressInformation } from '@/models';
 import { emit } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/api/shell';
@@ -20,7 +21,7 @@ export async function getNetworkLatency(): Promise<string> {
     const latency = await invoke('get_network_latency');
     return `${latency}ms`;
   } catch (e) {
-    console.error(e);
+    await errorLog(e);
     return '--';
   }
 }

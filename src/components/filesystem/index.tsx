@@ -1,4 +1,5 @@
 import Banner from '@/components/banner';
+import { errorLog } from '@/lib/log';
 import {
   getShowHiddenFileStatus,
   setShowHiddenFileStatus,
@@ -35,7 +36,7 @@ function FileSystem() {
   });
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
   });
 
   return (

@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { useCurrentTheme } from '@/lib/themes';
 import { IMemoryInformation } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
@@ -14,7 +15,7 @@ function MemInfo() {
   );
 
   onCleanup(() => {
-    unListen.then(f => f()).catch(e => console.error(e));
+    unListen.then(f => f()).catch(errorLog);
   });
 
   const memoryMap = () => {
