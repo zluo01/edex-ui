@@ -31,7 +31,6 @@ use serde_json::{
 };
 use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
 use tauri::{
-    api::path::home_dir,
     AppHandle,
     async_runtime::Mutex as AsyncMutex,
     Manager,
@@ -252,14 +251,9 @@ pub async fn handle_terminal_close<R: Runtime>(id: &u8,
                 "newIndex": &new_index
             });
     trace!("Destroy terminal {}. New Active Terminal Id: {}", &id, &new_index);
-
-    // get new terminal cwd
-    let pid = terminal_sessions.get(&new_index).unwrap();
-    let cwd = get_current_pty_cwd(pid);
     update_current_terminal(*new_index, terminal_index_state).await.expect("Fail to set index to newly created terminal");
     terminal_sessions.remove(&id);
     app_handle.emit_all("destroy", payload).unwrap();
-    app_handle.emit_all("change_directory", cwd).unwrap();
 }
 
 #[tauri::command]
