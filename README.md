@@ -22,6 +22,7 @@ Currently, this project only support macOS and Linux since I do not do developme
 - More styling or functions on terminal
 - Add webGL render support for terminal
 - Add support for styles in the original packages
+- More System support, currently temperature not support in M series chip.
 
 ## Build
 
