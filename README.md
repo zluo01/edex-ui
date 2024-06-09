@@ -16,13 +16,13 @@ Currently, this project only support macOS and Linux since I do not do developme
 
 ### Followup
 
-> PR welcome on new features
+> PR welcome on new features or bug fix
 
 - add Shortcuts to control terminal tabs
 - More styling or functions on terminal
 - Add webGL render support for terminal
 - Add support for styles in the original packages
-- More System support, currently temperature not support in M series chip.
+- More hardware support, currently temperature not support in M series chip nor AMD GPUs.
 
 ## Build
 
