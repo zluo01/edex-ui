@@ -30,7 +30,14 @@ use serde_json::{
     Value,
 };
 use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
-use tauri::{AppHandle, async_runtime::Mutex as AsyncMutex, Manager, Runtime, State};
+use tauri::{
+    api::path::home_dir,
+    AppHandle,
+    async_runtime::Mutex as AsyncMutex,
+    Manager,
+    Runtime,
+    State,
+};
 use tauri_plugin_log::LogTarget;
 use tokio::time::Instant;
 
@@ -245,9 +252,14 @@ pub async fn handle_terminal_close<R: Runtime>(id: &u8,
                 "newIndex": &new_index
             });
     trace!("Destroy terminal {}. New Active Terminal Id: {}", &id, &new_index);
+
+    // get new terminal cwd
+    let pid = terminal_sessions.get(&new_index).unwrap();
+    let cwd = get_current_pty_cwd(pid);
     update_current_terminal(*new_index, terminal_index_state).await.expect("Fail to set index to newly created terminal");
     terminal_sessions.remove(&id);
     app_handle.emit_all("destroy", payload).unwrap();
+    app_handle.emit_all("change_directory", cwd).unwrap();
 }
 
 #[tauri::command]
@@ -334,13 +346,13 @@ fn main() {
                     }
                 }).unwrap();
 
+                let terminal_index_state: State<TerminalIndex> = file_watcher.state::<TerminalIndex>();
+                let terminal_state: State<TerminalSessionState> = file_watcher.state::<TerminalSessionState>();
+
                 let mut prev_cwd = PathBuf::default();
-                let mut interval = tokio::time::interval(Duration::from_millis(500));
+                let mut interval = tokio::time::interval(Duration::from_secs(1));
                 loop {
                     interval.tick().await;
-                    let terminal_index_state: State<TerminalIndex> = file_watcher.state::<TerminalIndex>();
-                    let terminal_state: State<TerminalSessionState> = file_watcher.state::<TerminalSessionState>();
-
                     let terminal_index = terminal_index_state.0.lock().await;
                     let terminal_sessions = terminal_state.0.lock().await;
 
@@ -356,7 +368,11 @@ fn main() {
                     let current_cwd = get_current_pty_cwd(pty_pid);
                     if let Err(e) = &current_cwd {
                         error!("Fail to get cwd for pty. {}", e);
-                        file_watcher.exit(1)
+                        // since this thread is running in parallel with terminal thread, and we rely on share states between threads
+                        // there is possible race condition that we get the pid in current cycle while at the meantime, the terminal is closed in other thread
+                        // in this case, the current pid in this cycle will not have cwd.
+                        // Will ignore this race condition for now until have better way to handle it.
+                        continue;
                     }
                     let cwd = current_cwd.unwrap();
 
