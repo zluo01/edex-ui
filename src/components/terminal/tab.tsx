@@ -38,7 +38,7 @@ function TerminalSelectionTab({
     <div
       class={clsx(
         theme().borderColor['75'],
-        'flex w-full flex-row flex-nowrap items-center rounded-t-sm border-b-2 p-0 font-united_sans_medium',
+        'flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0 font-united_sans_medium',
       )}
     >
       <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">

@@ -39,10 +39,10 @@ export async function writeToPty(id: number, data: string) {
   await emit('writer-' + id, data);
 }
 
-export async function newTerminalSession(id: number) {
-  await invoke('new_terminal_session', { id });
-}
-
-export async function updateTerminal(id: number) {
-  await invoke('update_current_terminal', { id });
+/**
+ * Create a new terminal and return pid
+ * @param id terminal index
+ */
+export async function newTerminalSession(id: number): Promise<number> {
+  return await invoke('new_terminal_session', { id });
 }

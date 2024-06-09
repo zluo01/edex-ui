@@ -6,7 +6,6 @@
 extern crate core;
 
 use std::{
-    collections::HashMap,
     io::{
         BufRead,
         BufReader,
@@ -20,6 +19,7 @@ use std::{
         Mutex,
     },
     time::Duration,
+    sync::atomic::AtomicI32
 };
 
 use log::{error, info, LevelFilter, trace};
@@ -38,8 +38,12 @@ use tauri::{
     State,
 };
 use tauri_plugin_log::LogTarget;
-use tokio::time::Instant;
+use tokio::{
+    net::unix::pid_t,
+    time::Instant
+};
 
+use crate::constant::main::{ACTIVE_TAB, DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
 use crate::path::main::{get_current_pty_cwd, scan_directory};
 use crate::session::main::{construct_cmd, ResizePayload};
 use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, IPInformation};
@@ -47,6 +51,7 @@ use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, ext
 mod sys;
 mod path;
 mod session;
+mod constant;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -56,9 +61,7 @@ struct Payload {
 
 struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
-struct TerminalSessionState(Arc<AsyncMutex<HashMap<u8, i32>>>);
-
-struct TerminalIndex(Arc<AsyncMutex<u8>>);
+struct CurrentProcessState(Arc<AtomicI32>);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
@@ -81,7 +84,7 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
         return Err(());
     }
 
-    let data = resp.unwrap().json::<IPInformation>()
+    let data = resp?.json::<IPInformation>()
         .await;
 
     if let Err(e) = data {
@@ -89,7 +92,7 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
         return Err(());
     }
 
-    let information = data.unwrap();
+    let information = data?;
     if information.is_fail() {
         return Err(());
     }
@@ -114,9 +117,8 @@ async fn get_network_latency(request_client_state: State<'_, RequestClientState>
 
 #[tauri::command]
 async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
-                                          terminal_index_state: State<'_, TerminalIndex>,
-                                          terminal_session_state: State<'_, TerminalSessionState>,
-                                          id: u8) -> Result<(), ()> {
+                                          current_process_state: State<'_, CurrentProcessState>,
+                                          id: u8) -> Result<pid_t, ()> {
     let pty_system = native_pty_system();
 
     let pty_pair = pty_system
@@ -144,61 +146,57 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
     let master = Arc::new(Mutex::new(pty_pair.master));
 
     let pid = &master.lock().unwrap().process_group_leader().expect("Fail to get pid.");
-    trace!("Create new terminal: {}", pid);
-    terminal_session_state.0.lock().await.insert(id, *pid);
+
+    // create listener to lister frontend terminal inputs
+    let writer_listener = app_handle.listen_global(writer_event_key(&id), move |event| {
+        let payload: String = serde_json::from_str(&event.payload().unwrap()).unwrap();
+        _ = pty_writer.lock().unwrap().write(payload.as_bytes())
+            .map_err(|e| error!("Error on write to pty. Error: {:?}", e))
+    });
+
+    // create listener to lister frontend terminal resize action
+    let resize_listener = app_handle.listen_global(resize_event_key(&id), move |event| {
+        let payload: ResizePayload = event.payload().map(|v| serde_json::from_str(v).unwrap()).unwrap();
+        _ = master.lock()
+            .unwrap()
+            .resize(PtySize {
+                rows: payload.rows(),
+                cols: payload.cols(),
+                ..Default::default()
+            })
+            .map_err(|e| error!("Error on resize pty. Error: {:?}", e))
+    });
 
     // create new thread to handle terminal read, write and resize\
     let terminal_process = app_handle.clone();
     let should_stop_reader_signal = should_stop_reader.clone();
     tauri::async_runtime::spawn(async move {
-        // create listener to lister frontend terminal inputs
-        let writer_event_key = format!("writer-{}", &id);
-        let writer_listener = &terminal_process.listen_global(writer_event_key, move |event| {
-            let payload: String = serde_json::from_str(&event.payload().unwrap()).unwrap();
-            _ = pty_writer.lock().unwrap().write(payload.as_bytes())
-                .map_err(|e| error!("Error on write to pty. Error: {:?}", e))
-        });
-
-        // create listener to lister frontend terminal resize action
-        let resize_event_key = format!("resize-{}", &id);
-        let resize_listener = &terminal_process.listen_global(resize_event_key, move |event| {
-            let payload: ResizePayload = event.payload().map(|v| serde_json::from_str(v).unwrap()).unwrap();
-            _ = master.lock()
-                .unwrap()
-                .resize(PtySize {
-                    rows: payload.rows(),
-                    cols: payload.cols(),
-                    ..Default::default()
-                })
-                .map_err(|e| error!("Error on resize pty. Error: {:?}", e))
-        });
-
         listen_terminal(&id, reader, &terminal_process, should_stop_reader_signal).await;
 
         // cleanup
         trace!("Terminal {} is closed. Proceed to cleanup listeners.", &id);
-        terminal_process.unlisten(*resize_listener);
-        terminal_process.unlisten(*writer_listener);
+        terminal_process.unlisten(resize_listener);
+        terminal_process.unlisten(writer_listener);
     });
 
     let child_process_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
-        let status = child.wait().unwrap();
+        let status = child.wait()?;
         let exit_code = status.exit_code();
         should_stop_reader.store(true, Ordering::Relaxed);
         handle_terminal_close(&id, exit_code, child_process_handle).await
     });
 
-    // set the current index to the newly created terminal
-    update_current_terminal(id, terminal_index_state).await.expect("Fail to set index to newly created terminal");
-    Ok(())
+    trace!("Create new terminal: {}", pid);
+    current_process_state.0.store(pid.clone(), Ordering::Relaxed);
+    Ok(*pid)
 }
 
 pub async fn listen_terminal<R: Runtime>(id: &u8,
                                          reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
                                          app_handle: &AppHandle<R>,
                                          should_stop: Arc<AtomicBool>) {
-    let event_key = format!("data-{}", id);
+    let event_key = reader_event_key(id);
     let reader = reader.lock().await.take();
     let mut interval = tokio::time::interval(Duration::from_millis(1));
     if let Some(mut reader) = reader {
@@ -207,10 +205,10 @@ pub async fn listen_terminal<R: Runtime>(id: &u8,
                 break;
             }
             interval.tick().await;
-            let data = reader.fill_buf().unwrap().to_vec();
+            let data = reader.fill_buf()?.to_vec();
             reader.consume(data.len());
             if data.len() > 0 {
-                app_handle.emit_all(&event_key, data).unwrap();
+                app_handle.emit_all(&event_key, data)?;
             }
         }
     }
@@ -220,48 +218,16 @@ pub async fn handle_terminal_close<R: Runtime>(id: &u8,
                                                exit_code: u32,
                                                app_handle: AppHandle<R>) {
     trace!("Exit status {}. Id: {}", &exit_code, &id);
-    let terminal_index_state: State<TerminalIndex> = app_handle.state::<TerminalIndex>();
 
-    let terminal_state: State<TerminalSessionState> = app_handle.state::<TerminalSessionState>();
-    let mut terminal_sessions = terminal_state.0.lock().await;
-
-    // exit the application if there is only one terminal left
-    // or exit on the main terminal
-    if terminal_sessions.len() == 1 || &0 == id {
+    // exit the application if exit on the main terminal
+    if &0u8 == id {
         app_handle.exit(exit_code as i32);
         return;
     }
-    // find the next terminal index
-    let mut ids = terminal_sessions.iter()
-        .map(|t| t.0)
-        .collect::<Vec<&u8>>();
-    ids.sort();
-    let current_index = ids.iter().position(|&r| r == id).unwrap();
 
-    let new_index;
-    if current_index == ids.len() - 1 {
-        new_index = ids[current_index - 1];
-    } else {
-        new_index = ids[current_index + 1];
-    }
-
-    // remove the terminal and update the index
-    let payload = json!({
-                "deleted": &id,
-                "newIndex": &new_index
-            });
-    trace!("Destroy terminal {}. New Active Terminal Id: {}", &id, &new_index);
-    update_current_terminal(*new_index, terminal_index_state).await.expect("Fail to set index to newly created terminal");
-    terminal_sessions.remove(&id);
-    app_handle.emit_all("destroy", payload).unwrap();
-}
-
-#[tauri::command]
-async fn update_current_terminal(id: u8,
-                                 terminal_index_state: State<'_, TerminalIndex>) -> Result<(), ()> {
-    let mut current_terminal_index = terminal_index_state.0.lock().await;
-    *current_terminal_index = id;
-    Ok(())
+    // remove the terminal
+    trace!("Destroy terminal {}.", &id);
+    app_handle.emit_all(DESTROY_TERMINAL, &id)?;
 }
 
 fn main() {
@@ -281,17 +247,15 @@ fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             info!("{}, {argv:?}, {cwd}", app.package_info().name);
-            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+            app.emit_all(SINGLE_INSTANCE, Payload { args: argv, cwd })?;
         }))
         .manage(RequestClientState(Arc::new(AsyncMutex::new(reqwest::Client::new()))))
-        .manage(TerminalSessionState(Arc::new(AsyncMutex::new(HashMap::new()))))
-        .manage(TerminalIndex(Arc::new(AsyncMutex::new(0))))
+        .manage(CurrentProcessState(Arc::new(AtomicI32::default())))
         .invoke_handler(tauri::generate_handler![
             kernel_version,
             get_ip_information,
             get_network_latency,
             new_terminal_session,
-            update_current_terminal,
         ])
         .setup(move |app| {
             // updating and emitting system information
@@ -323,6 +287,13 @@ fn main() {
                 }
             });
 
+            let change_tab_handle = app.handle();
+            _ = app.handle().listen_global(ACTIVE_TAB, move |event| {
+                let current_process_state: State<CurrentProcessState> = change_tab_handle.state::<CurrentProcessState>();
+                let payload: i32 = serde_json::from_str(&event.payload().unwrap()).unwrap();
+                current_process_state.0.store(payload, Ordering::Relaxed);
+            });
+
             let file_watcher = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let watcher_handle = file_watcher.clone();
@@ -332,7 +303,7 @@ fn main() {
                             if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
                                 let path = event.paths[0].parent().unwrap().to_path_buf();
                                 if let Ok(files) = scan_directory(&path) {
-                                    let _ = watcher_handle.emit_all("files", files);
+                                    watcher_handle.emit_all(UPDATE_FILES, files)?;
                                 }
                             }
                         }
@@ -340,44 +311,37 @@ fn main() {
                     }
                 }).unwrap();
 
-                let terminal_index_state: State<TerminalIndex> = file_watcher.state::<TerminalIndex>();
-                let terminal_state: State<TerminalSessionState> = file_watcher.state::<TerminalSessionState>();
-
                 let mut prev_cwd = PathBuf::default();
-                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                let mut interval = tokio::time::interval(Duration::from_millis(500));
+                let current_process_state: State<CurrentProcessState> = file_watcher.state::<CurrentProcessState>();
                 loop {
                     interval.tick().await;
-                    let terminal_index = terminal_index_state.0.lock().await;
-                    let terminal_sessions = terminal_state.0.lock().await;
+                    let pid = current_process_state.0.load(Ordering::Relaxed);
 
-                    // skip when terminal is not initialized
-                    if terminal_sessions.is_empty() {
+                    if 0 == pid {
                         continue;
                     }
 
-                    let pty_pid = terminal_sessions.get(&terminal_index)
-                        .expect("Fail to get terminal session for scanning directory.");
-
                     // Get current pty cwd
-                    let current_cwd = get_current_pty_cwd(pty_pid);
+                    let current_cwd = get_current_pty_cwd(&pid);
                     if let Err(e) = &current_cwd {
-                        error!("Fail to get cwd for pty. {}", e);
+                        error!("Fail to get cwd for pid {}. {}", &pid, e);
                         // since this thread is running in parallel with terminal thread, and we rely on share states between threads
                         // there is possible race condition that we get the pid in current cycle while at the meantime, the terminal is closed in other thread
                         // in this case, the current pid in this cycle will not have cwd.
                         // Will ignore this race condition for now until have better way to handle it.
                         continue;
                     }
-                    let cwd = current_cwd.unwrap();
+                    let cwd = current_cwd?;
 
                     if cwd != prev_cwd || prev_cwd.as_os_str().is_empty() {
                         if !prev_cwd.as_os_str().is_empty() {
-                            watcher.unwatch(&prev_cwd).expect("Fail to unwatch path.");
+                            watcher.unwatch(&prev_cwd)?;
                         }
-                        watcher.watch(&cwd, RecursiveMode::NonRecursive).expect("Fail to watch path.");
+                        watcher.watch(&cwd, RecursiveMode::NonRecursive)?;
                         prev_cwd = cwd.clone();
                         if let Ok(files) = scan_directory(&cwd) {
-                            let _ = file_watcher.emit_all("files", files);
+                            file_watcher.emit_all(UPDATE_FILES, files)?;
                         }
                     }
                 }

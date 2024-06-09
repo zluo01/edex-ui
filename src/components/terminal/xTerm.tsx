@@ -2,7 +2,7 @@ import { errorLog, traceLog } from '@/lib/log';
 import { fitTerminal, newTerminalSession, writeToPty } from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
 import { IStyle, ITerminalProps } from '@/models';
-import { Event, listen } from '@tauri-apps/api/event';
+import { emit, Event, listen } from '@tauri-apps/api/event';
 import { ITerminalDimensions } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
@@ -63,6 +63,7 @@ interface IXtermProps {
 function XTerm({ id, active, theme }: IXtermProps) {
   const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
 
+  let pid: number | undefined;
   let terminal: ITerminalProps | undefined;
 
   async function resizeTerminal(id: number) {
@@ -73,9 +74,12 @@ function XTerm({ id, active, theme }: IXtermProps) {
 
   // refocus on tab change
   createEffect(
-    on(active, active => {
+    on(active, async active => {
       if (active === id) {
         terminal?.term.focus();
+        if (pid) {
+          await emit('active_tab', pid);
+        }
       }
     }),
   );
@@ -90,7 +94,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
       await traceLog('Initialize terminal interface. Id: ' + id);
       terminal = createTerminal(ref, theme());
 
-      await newTerminalSession(id);
+      pid = await newTerminalSession(id);
 
       await resize(id, terminal.term, terminal.addons);
 

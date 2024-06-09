@@ -1,15 +1,33 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
 import { errorLog } from '@/lib/log';
-import { updateTerminal } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
 import { useCurrentTheme } from '@/lib/themes';
-import { ITerminalContainer, ITerminalDestroyPayload } from '@/models';
+import { ITerminalContainer } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
 
 import './index.css';
+
+function nextActiveTerminal(target: number, keys: number[]) {
+  // Base Case
+  if (keys[0] > target || keys[keys.length - 1] <= target) {
+    return keys[0];
+  }
+
+  let l = 0;
+  let h = keys.length;
+  while (l < h) {
+    const mid = l + Math.floor((h - l) / 2);
+    if (keys[mid] > target) {
+      h = mid;
+    } else {
+      l = mid + 1;
+    }
+  }
+  return keys[l % keys.length];
+}
 
 function TerminalSection() {
   const theme = useCurrentTheme();
@@ -33,10 +51,11 @@ function TerminalSection() {
     }),
   );
 
-  const unListen = listen('destroy', (e: Event<ITerminalDestroyPayload>) => {
-    const { deleted, newIndex } = e.payload;
-    setTerminals(prevState => prevState.filter(o => o.id !== deleted));
-    setActive(newIndex);
+  const unListen = listen('destroy', (e: Event<number>) => {
+    const id = e.payload;
+    const nextIndex = nextActiveTerminal(id, terminalIds());
+    setTerminals(prevState => prevState.filter(o => o.id !== id));
+    setActive(nextIndex);
   });
 
   onCleanup(() => {
@@ -61,7 +80,6 @@ function TerminalSection() {
   }
 
   async function switchTerminal(index: number) {
-    await updateTerminal(index);
     setActive(index);
   }
 

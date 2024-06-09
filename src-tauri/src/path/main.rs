@@ -90,7 +90,7 @@ impl PartialEq for FileInfo {
     }
 }
 
-fn convert_path_to_strong(path: &PathBuf, is_directory: bool) -> String {
+fn convert_path_to_string(path: &PathBuf, is_directory: bool) -> String {
     let path_str = path.to_string_lossy().to_string();
     if is_directory && !path_str.ends_with('/') {
         return path_str + "/";
@@ -121,7 +121,7 @@ pub fn scan_directory(path: &PathBuf) -> Result<Value, String> {
                     file_info_list.push(FileInfo {
                         name: name.to_string(),
                         t: file_type,
-                        path: convert_path_to_strong(&file_path, metadata.is_dir()),
+                        path: convert_path_to_string(&file_path, metadata.is_dir()),
                         hidden: name.starts_with("."),
                     });
                 }
