@@ -48,7 +48,7 @@ npm run build-debug
 
 ## Performance
 
-### MacOS
+### MacOS (Intel, M series)
 
 On MacOS, it consumes around 1% Total CPU and less than 500Mb memory including webkit memory usage.
 
