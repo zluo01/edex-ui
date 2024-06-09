@@ -38,12 +38,9 @@ use tauri::{
     State,
 };
 use tauri_plugin_log::LogTarget;
-use tokio::{
-    net::unix::pid_t,
-    time::Instant,
-};
+use tokio::time::Instant;
 
-use crate::constant::main::{ACTIVE_TAB, DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
+use crate::constant::main::{DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
 use crate::path::main::{get_current_pty_cwd, scan_directory};
 use crate::session::main::{construct_cmd, ResizePayload};
 use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, IPInformation};
@@ -118,7 +115,7 @@ async fn get_network_latency(request_client_state: State<'_, RequestClientState>
 #[tauri::command]
 async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
                                           current_process_state: State<'_, CurrentProcessState>,
-                                          id: u8) -> Result<pid_t, ()> {
+                                          id: u8) -> Result<i32, ()> {
     let pty_system = native_pty_system();
 
     let pty_pair = pty_system
@@ -167,7 +164,7 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
             .map_err(|e| error!("Error on resize pty. Error: {:?}", e))
     });
 
-    // create new thread to handle terminal read, write and resize\
+    // create new thread to handle terminal read, write and resize
     let terminal_process = app_handle.clone();
     let should_stop_reader_signal = should_stop_reader.clone();
     tauri::async_runtime::spawn(async move {
@@ -179,6 +176,7 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
         terminal_process.unlisten(writer_listener);
     });
 
+    // new thread to listen to terminal exit signal
     let child_process_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
         let status = child.wait().unwrap();
@@ -192,10 +190,10 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
     Ok(*pid)
 }
 
-pub async fn listen_terminal<R: Runtime>(id: &u8,
-                                         reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
-                                         app_handle: &AppHandle<R>,
-                                         should_stop: Arc<AtomicBool>) {
+async fn listen_terminal<R: Runtime>(id: &u8,
+                                     reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
+                                     app_handle: &AppHandle<R>,
+                                     should_stop: Arc<AtomicBool>) {
     let event_key = reader_event_key(id);
     let reader = reader.lock().await.take();
     let mut interval = tokio::time::interval(Duration::from_millis(1));
@@ -214,9 +212,9 @@ pub async fn listen_terminal<R: Runtime>(id: &u8,
     }
 }
 
-pub async fn handle_terminal_close<R: Runtime>(id: &u8,
-                                               exit_code: u32,
-                                               app_handle: AppHandle<R>) {
+async fn handle_terminal_close<R: Runtime>(id: &u8,
+                                           exit_code: u32,
+                                           app_handle: AppHandle<R>) {
     trace!("Exit status {}. Id: {}", &exit_code, &id);
 
     // exit the application if exit on the main terminal
@@ -228,6 +226,12 @@ pub async fn handle_terminal_close<R: Runtime>(id: &u8,
     // remove the terminal
     trace!("Destroy terminal {}.", &id);
     app_handle.emit_all(DESTROY_TERMINAL, &id).unwrap();
+}
+
+#[tauri::command]
+async fn update_current_pid(current_process_state: State<'_, CurrentProcessState>, pid: i32) -> Result<(), ()> {
+    current_process_state.0.store(pid, Ordering::Relaxed);
+    Ok(())
 }
 
 fn main() {
@@ -256,6 +260,7 @@ fn main() {
             get_ip_information,
             get_network_latency,
             new_terminal_session,
+            update_current_pid
         ])
         .setup(move |app| {
             // updating and emitting system information
@@ -285,13 +290,6 @@ fn main() {
                     let _ = system_info_handle.emit_all("process", json!(&processes));
                     let _ = system_info_handle.emit_all("process_short", json!(processes.iter().take(10).cloned().collect::<Vec<_>>()));
                 }
-            });
-
-            let change_tab_handle = app.handle();
-            _ = app.handle().listen_global(ACTIVE_TAB, move |event| {
-                let current_process_state: State<CurrentProcessState> = change_tab_handle.state::<CurrentProcessState>();
-                let payload: i32 = serde_json::from_str(&event.payload().unwrap()).unwrap();
-                current_process_state.0.store(payload, Ordering::Relaxed);
             });
 
             let file_watcher = app.handle().clone();

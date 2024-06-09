@@ -1,8 +1,13 @@
 import { errorLog, traceLog } from '@/lib/log';
-import { fitTerminal, newTerminalSession, writeToPty } from '@/lib/os';
+import {
+  fitTerminal,
+  newTerminalSession,
+  updateCurrentPid,
+  writeToPty,
+} from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
 import { IStyle, ITerminalProps } from '@/models';
-import { emit, Event, listen } from '@tauri-apps/api/event';
+import { Event, listen } from '@tauri-apps/api/event';
 import { ITerminalDimensions } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
@@ -78,7 +83,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
       if (active === id) {
         terminal?.term.focus();
         if (pid) {
-          await emit('active_tab', pid);
+          await updateCurrentPid(pid);
         }
       }
     }),
