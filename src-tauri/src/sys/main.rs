@@ -236,7 +236,7 @@ fn extract_cpu_name(input: &str) -> Option<String> {
     if input.starts_with("AMD") {
         return Some(input.split(' ').into_iter().take(4).collect::<Vec<&str>>().join(" "));
     }
-    None
+    Some(input.to_string())
 }
 
 pub fn extract_process(sys: &System) -> Vec<Process> {
