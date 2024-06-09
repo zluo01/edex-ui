@@ -13,6 +13,7 @@ use std::{
         Read,
         Write,
     },
+    path::PathBuf,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -22,6 +23,7 @@ use std::{
 };
 
 use log::{error, info, LevelFilter, trace};
+use notify::{Event as NotifyEvent, recommended_watcher, RecursiveMode, Result as NotifyResult, Watcher};
 use portable_pty::{native_pty_system, PtySize};
 use serde_json::{
     json,
@@ -315,13 +317,29 @@ fn main() {
                 }
             });
 
-            let file_handle = app.handle().clone();
+            let file_watcher = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let mut interval = tokio::time::interval(Duration::from_secs(1));
+                let watcher_handle = file_watcher.clone();
+                let mut watcher = recommended_watcher(move |res: NotifyResult<NotifyEvent>| {
+                    match res {
+                        Ok(event) => {
+                            if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
+                                let path = event.paths[0].parent().unwrap().to_path_buf();
+                                if let Ok(files) = scan_directory(&path) {
+                                    let _ = watcher_handle.emit_all("files", files);
+                                }
+                            }
+                        }
+                        Err(e) => error!("watch error: {:?}", e),
+                    }
+                }).unwrap();
+
+                let mut prev_cwd = PathBuf::default();
+                let mut interval = tokio::time::interval(Duration::from_millis(500));
                 loop {
                     interval.tick().await;
-                    let terminal_index_state: State<TerminalIndex> = file_handle.state::<TerminalIndex>();
-                    let terminal_state: State<TerminalSessionState> = file_handle.state::<TerminalSessionState>();
+                    let terminal_index_state: State<TerminalIndex> = file_watcher.state::<TerminalIndex>();
+                    let terminal_state: State<TerminalSessionState> = file_watcher.state::<TerminalSessionState>();
 
                     let terminal_index = terminal_index_state.0.lock().await;
                     let terminal_sessions = terminal_state.0.lock().await;
@@ -338,12 +356,19 @@ fn main() {
                     let current_cwd = get_current_pty_cwd(pty_pid);
                     if let Err(e) = &current_cwd {
                         error!("Fail to get cwd for pty. {}", e);
-                        file_handle.exit(1)
+                        file_watcher.exit(1)
                     }
                     let cwd = current_cwd.unwrap();
 
-                    if let Ok(files) = scan_directory(&cwd) {
-                        let _ = file_handle.emit_all("files", files);
+                    if cwd != prev_cwd || prev_cwd.as_os_str().is_empty() {
+                        if !prev_cwd.as_os_str().is_empty() {
+                            watcher.unwatch(&prev_cwd).expect("Fail to unwatch path.");
+                        }
+                        watcher.watch(&cwd, RecursiveMode::NonRecursive).expect("Fail to watch path.");
+                        prev_cwd = cwd.clone();
+                        if let Ok(files) = scan_directory(&cwd) {
+                            let _ = file_watcher.emit_all("files", files);
+                        }
                     }
                 }
             });

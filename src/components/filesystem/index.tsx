@@ -7,7 +7,6 @@ import {
 import { IFileSystem } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
-import isEqual from 'lodash/isEqual';
 import { createResource, createSignal, lazy, onCleanup } from 'solid-js';
 
 const FileSection = lazy(async () => {
@@ -29,11 +28,9 @@ function FileSystem() {
 
   const [fileSystem, setFileSystem] = createSignal<IFileSystem>();
 
-  const unListen = listen('files', (e: Event<IFileSystem>) => {
-    setFileSystem(prevState =>
-      isEqual(prevState, e.payload) ? prevState : e.payload,
-    );
-  });
+  const unListen = listen('files', (e: Event<IFileSystem>) =>
+    setFileSystem(e.payload),
+  );
 
   onCleanup(() => {
     unListen.then(f => f()).catch(errorLog);
