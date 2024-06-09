@@ -18,8 +18,8 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Mutex,
     },
+    sync::atomic::AtomicI32,
     time::Duration,
-    sync::atomic::AtomicI32
 };
 
 use log::{error, info, LevelFilter, trace};
@@ -40,7 +40,7 @@ use tauri::{
 use tauri_plugin_log::LogTarget;
 use tokio::{
     net::unix::pid_t,
-    time::Instant
+    time::Instant,
 };
 
 use crate::constant::main::{ACTIVE_TAB, DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
@@ -84,7 +84,7 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
         return Err(());
     }
 
-    let data = resp?.json::<IPInformation>()
+    let data = resp.unwrap().json::<IPInformation>()
         .await;
 
     if let Err(e) = data {
@@ -92,7 +92,7 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
         return Err(());
     }
 
-    let information = data?;
+    let information = data.unwrap();
     if information.is_fail() {
         return Err(());
     }
@@ -181,7 +181,7 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
 
     let child_process_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
-        let status = child.wait()?;
+        let status = child.wait().unwrap();
         let exit_code = status.exit_code();
         should_stop_reader.store(true, Ordering::Relaxed);
         handle_terminal_close(&id, exit_code, child_process_handle).await
@@ -205,10 +205,10 @@ pub async fn listen_terminal<R: Runtime>(id: &u8,
                 break;
             }
             interval.tick().await;
-            let data = reader.fill_buf()?.to_vec();
+            let data = reader.fill_buf().unwrap().to_vec();
             reader.consume(data.len());
             if data.len() > 0 {
-                app_handle.emit_all(&event_key, data)?;
+                app_handle.emit_all(&event_key, data).unwrap();
             }
         }
     }
@@ -227,7 +227,7 @@ pub async fn handle_terminal_close<R: Runtime>(id: &u8,
 
     // remove the terminal
     trace!("Destroy terminal {}.", &id);
-    app_handle.emit_all(DESTROY_TERMINAL, &id)?;
+    app_handle.emit_all(DESTROY_TERMINAL, &id).unwrap();
 }
 
 fn main() {
@@ -247,7 +247,7 @@ fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             info!("{}, {argv:?}, {cwd}", app.package_info().name);
-            app.emit_all(SINGLE_INSTANCE, Payload { args: argv, cwd })?;
+            app.emit_all(SINGLE_INSTANCE, Payload { args: argv, cwd }).unwrap();
         }))
         .manage(RequestClientState(Arc::new(AsyncMutex::new(reqwest::Client::new()))))
         .manage(CurrentProcessState(Arc::new(AtomicI32::default())))
@@ -303,7 +303,7 @@ fn main() {
                             if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
                                 let path = event.paths[0].parent().unwrap().to_path_buf();
                                 if let Ok(files) = scan_directory(&path) {
-                                    watcher_handle.emit_all(UPDATE_FILES, files)?;
+                                    watcher_handle.emit_all(UPDATE_FILES, files).unwrap();
                                 }
                             }
                         }
@@ -332,16 +332,16 @@ fn main() {
                         // Will ignore this race condition for now until have better way to handle it.
                         continue;
                     }
-                    let cwd = current_cwd?;
+                    let cwd = current_cwd.unwrap();
 
                     if cwd != prev_cwd || prev_cwd.as_os_str().is_empty() {
                         if !prev_cwd.as_os_str().is_empty() {
-                            watcher.unwatch(&prev_cwd)?;
+                            watcher.unwatch(&prev_cwd).unwrap();
                         }
-                        watcher.watch(&cwd, RecursiveMode::NonRecursive)?;
+                        watcher.watch(&cwd, RecursiveMode::NonRecursive).unwrap();
                         prev_cwd = cwd.clone();
                         if let Ok(files) = scan_directory(&cwd) {
-                            file_watcher.emit_all(UPDATE_FILES, files)?;
+                            file_watcher.emit_all(UPDATE_FILES, files).unwrap();
                         }
                     }
                 }
