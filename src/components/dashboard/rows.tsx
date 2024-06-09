@@ -22,12 +22,6 @@ function TableRows({ theme }: ITableRowsProps): JSX.Element {
 
   onCleanup(() => unListen.then(f => f()).catch(errorLog));
 
-  function epochTimeToActualDate(epochTime: number): string {
-    const date = new Date(0); // The 0 represents the epoch date
-    date.setUTCSeconds(epochTime);
-    return date.toDateString();
-  }
-
   const styles = clsx(
     theme().borderColor['75'],
     'truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl',
@@ -42,20 +36,18 @@ function TableRows({ theme }: ITableRowsProps): JSX.Element {
         <div
           class={clsx(
             theme().borderColor['75'],
-            'flex size-full flex-row flex-nowrap items-center border-[0.1vh] border-solid',
+            '  grid size-full grid-cols-[10%_27%_8%_10%_12%_21%_12%] items-center border-[0.1vh] border-solid',
           )}
         >
-          <span class={clsx(styles, 'w-[10%]')}>{process.pid}</span>
-          <span class={clsx(styles, 'w-1/4')} title={process.name}>
+          <span class={styles}>{process.pid}</span>
+          <span class={styles} title={process.name}>
             {process.name}
           </span>
-          <span class={clsx(styles, 'w-[11%]')}>{process.cpu_usage}%</span>
-          <span class={clsx(styles, 'w-[11%]')}>{process.memory_usage}%</span>
-          <span class={clsx(styles, 'w-[12%]')}>{process.state}</span>
-          <span class={clsx(styles, 'w-[19%]')}>
-            {epochTimeToActualDate(process.start_time)}
-          </span>
-          <span class={clsx(styles, 'w-[12%]')}>{process.run_time}</span>
+          <span class={styles}>{process.cpu_usage}%</span>
+          <span class={styles}>{process.memory_usage}%</span>
+          <span class={styles}>{process.state}</span>
+          <span class={styles}>{process.start_time}</span>
+          <span class={styles}>{process.run_time}</span>
         </div>
       )}
     </For>

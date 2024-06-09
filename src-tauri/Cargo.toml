@@ -24,6 +24,7 @@ log = "0.4.21"
 sysinfo = "0.29.11"
 portable-pty = "0.8.1"
 notify = { version = "6.1.1" }
+chrono = "0.4.38"
 
 [features]
 # by default Tauri runs in production mode

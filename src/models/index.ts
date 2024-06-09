@@ -33,7 +33,7 @@ export interface IProcessInformation {
   cpu_usage: number;
   memory_usage: number;
   state: string;
-  start_time: number;
+  start_time: string;
   run_time: number;
 }
 
@@ -146,9 +146,4 @@ export interface ITerminalProps {
 export interface ITerminalContainer {
   id: number;
   terminal: () => JSXElement;
-}
-
-export interface ITerminalDestroyPayload {
-  deleted: number;
-  newIndex: number;
 }

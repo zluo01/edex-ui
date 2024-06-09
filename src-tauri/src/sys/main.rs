@@ -1,8 +1,10 @@
 use std::{
     process::Command,
     str,
+    time::{Duration, UNIX_EPOCH},
 };
 
+use chrono::{DateTime, Local};
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -94,7 +96,7 @@ pub struct Process {
     cpu_usage: f32,
     memory_usage: f32,
     state: String,
-    start_time: u64,
+    start_time: String,
     run_time: u64,
 }
 
@@ -250,13 +252,19 @@ pub fn extract_process(sys: &System) -> Vec<Process> {
             cpu_usage: (process.cpu_usage() / core_count).round(),
             memory_usage: (process.memory() as f32 / total_memory as f32 * 100.0).round(),
             state: process.status().to_string(),
-            start_time: process.start_time(),
+            start_time: epoch_to_date(process.start_time()),
             run_time: process.run_time(),
         })
     }
 
     new_processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
     new_processes
+}
+
+fn epoch_to_date(epoch: u64) -> String {
+    let d = UNIX_EPOCH + Duration::from_secs(epoch);
+    let datetime = DateTime::<Local>::from(d);
+    return datetime.format("%Y-%m-%d %H:%M:%S").to_string();
 }
 
 pub fn extract_network(sys: &System) -> Value {

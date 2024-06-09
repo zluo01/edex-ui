@@ -26,7 +26,7 @@ export const TerminalProvider: ParentComponent = props => {
 export function useTerminal() {
   const context = useContext(ActiveTerminalContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error('useTerminal must be used within a TerminalProvider');
   }
   return context;
 }
