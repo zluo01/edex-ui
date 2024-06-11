@@ -6,6 +6,7 @@ import {
   writeToPty,
 } from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
+import generateTerminalTheme from '@/lib/themes/terminal';
 import { IStyle, ITerminalProps } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { ITerminalDimensions } from '@xterm/addon-fit';
@@ -85,6 +86,15 @@ function XTerm({ id, active, theme }: IXtermProps) {
         if (pid) {
           await updateCurrentPid(pid);
         }
+      }
+    }),
+  );
+
+  // sync terminal theme
+  createEffect(
+    on(theme, async theme => {
+      if (terminal?.term) {
+        terminal.term.options = { ...generateTerminalTheme(theme) };
       }
     }),
   );

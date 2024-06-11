@@ -1,5 +1,5 @@
 import { IStyle } from '@/models';
-import { ITerminalInitOnlyOptions, ITerminalOptions } from '@xterm/xterm';
+import { ITerminalOptions } from '@xterm/xterm';
 import Color from 'color';
 import join from 'lodash/join';
 
@@ -9,12 +9,8 @@ function colorify(color: string, theme: string) {
 
 const FALL_BACK_FONTS = ['Ubuntu Mono', 'Courier New'];
 
-export default function generateTerminalTheme(
-  style: IStyle,
-): ITerminalOptions | ITerminalInitOnlyOptions {
+export default function generateTerminalTheme(style: IStyle): ITerminalOptions {
   return {
-    cols: 80,
-    rows: 24,
     allowProposedApi: true,
     cursorBlink: true,
     cursorStyle: style.terminal.cursorStyle,

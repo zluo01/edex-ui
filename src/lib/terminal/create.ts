@@ -5,15 +5,27 @@ import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { Terminal as TerminalType, Terminal } from '@xterm/xterm';
+import {
+  ITerminalInitOnlyOptions,
+  Terminal as TerminalType,
+  Terminal,
+} from '@xterm/xterm';
 
 export type Addons = ReturnType<typeof getAddons>;
+
+const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
+  cols: 80,
+  rows: 24,
+};
 
 export function createTerminal(
   terminalContainer: HTMLDivElement,
   theme: IStyle,
 ): ITerminalProps {
-  const term = new Terminal(generateTerminalTheme(theme));
+  const term = new Terminal({
+    ...INITIAL_DEFAULT_OPTIONS,
+    ...generateTerminalTheme(theme),
+  });
 
   const typedTerm = term as TerminalType;
 
