@@ -61,7 +61,7 @@ impl IPInformation {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Temperature {
+pub struct Temperature {
     cpu: f32,
     gpu: f32,
     battery: f32,
@@ -138,7 +138,7 @@ pub fn extract_memory(sys: &System) -> Value {
 }
 
 #[cfg(target_os = "macos")]
-fn extract_temperature(sys: &System) -> Temperature {
+pub fn extract_temperature(sys: &System) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
     for component in sys.components() {
@@ -154,7 +154,7 @@ fn extract_temperature(sys: &System) -> Temperature {
 }
 
 #[cfg(target_os = "linux")]
-fn extract_temperature(sys: &System) -> Temperature {
+pub fn extract_temperature(sys: &System) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
     for component in sys.components() {
@@ -215,16 +215,12 @@ pub fn extract_cpu_data(sys: &System) -> Value {
     first_half_usage /= divide as f32;
     second_half_usage /= (core_count - divide) as f32;
 
-
-    let temp = extract_temperature(sys);
-
     let cpu_name = extract_cpu_name(sys.global_cpu_info().brand())
         .unwrap_or(String::from("UNKNOWN"));
     json!({
         "name": cpu_name,
         "cores": core_count,
         "divide": divide,
-        "temperature": temp,
         "load":vec![first_half_usage, second_half_usage],
         "usage": usage
     })

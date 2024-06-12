@@ -43,7 +43,7 @@ use tokio::time::Instant;
 use crate::constant::main::{DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
 use crate::path::main::{get_current_pty_cwd, scan_directory};
 use crate::session::main::{construct_cmd, ResizePayload};
-use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, IPInformation};
+use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, extract_temperature, IPInformation};
 
 mod sys;
 mod path;
@@ -285,6 +285,7 @@ fn main() {
                     let _ = system_info_handle.emit_all("load", extract_cpu_data(&sys));
                     let _ = system_info_handle.emit_all("network", extract_network(&sys));
                     let _ = system_info_handle.emit_all("disk", extract_disk_usage(&sys));
+                    let _ = system_info_handle.emit_all("temperature", json!(extract_temperature(&sys)));
 
                     let processes = extract_process(&sys);
                     let _ = system_info_handle.emit_all("process", json!(&processes));

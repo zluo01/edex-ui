@@ -1,14 +1,22 @@
 import { errorLog } from '@/lib/log';
-import { useCurrentTheme } from '@/lib/themes';
-import { ICPUData } from '@/models';
+import { ICPUData, IStyle } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { SmoothieChart, TimeSeries } from 'smoothie';
-import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  InitializedResource,
+  on,
+  onCleanup,
+  onMount,
+} from 'solid-js';
 
-function CpuInfo() {
-  const theme = useCurrentTheme();
+interface ICpuLoadProps {
+  theme: InitializedResource<IStyle>;
+}
 
+function CpuLoad({ theme }: ICpuLoadProps) {
   const canvas: HTMLCanvasElement[] = [
     document.createElement('canvas'),
     document.createElement('canvas'),
@@ -91,7 +99,7 @@ function CpuInfo() {
   );
 
   return (
-    <div class="flex w-full flex-col items-center justify-between space-y-1 font-united_sans_light tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">
+    <>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <span class="sm:text-xs md:text-base lg:text-2xl xl:text-4xl">
           CPU USAGE
@@ -114,7 +122,7 @@ function CpuInfo() {
           height="60"
           class={clsx(
             theme().borderColor['30'],
-            'my-[0.46vh] h-[4.167vh] w-[76%] border-y-[0.092vh] border-dashed',
+            'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
           )}
         />
       </div>
@@ -132,40 +140,12 @@ function CpuInfo() {
           height="60"
           class={clsx(
             theme().borderColor['30'],
-            'my-[0.46vh] h-[4.167vh] w-[76%] border-y-[0.092vh] border-dashed',
+            'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
           )}
         />
       </div>
-      <div
-        class={clsx(
-          theme().borderColor['30'],
-          'h-0 w-[95%] border-t-2 border-dashed',
-        )}
-      />
-      <div class="flex w-full flex-row items-center justify-around py-2">
-        <div class="flex flex-col">
-          <span class="sm:text-xs md:text-sm lg:text-xl xl:text-3xl">CPU</span>
-          <span class="overflow-hidden opacity-50 sm:text-xs md:text-sm lg:text-xl xl:text-3xl">
-            {data()?.temperature.cpu.toFixed(1) || '--'}°C
-          </span>
-        </div>
-        <div class="flex flex-col">
-          <span class="sm:text-xs md:text-sm lg:text-xl xl:text-3xl">GPU</span>
-          <span class="overflow-hidden opacity-50 sm:text-xs md:text-sm lg:text-xl xl:text-3xl">
-            {data()?.temperature.gpu.toFixed(1) || '--'}°C
-          </span>
-        </div>
-        <div class="flex flex-col">
-          <span class="sm:text-xs md:text-sm lg:text-xl xl:text-3xl">
-            BATTERY
-          </span>
-          <span class="overflow-hidden opacity-50 sm:text-xs md:text-sm lg:text-xl xl:text-3xl">
-            {data()?.temperature.battery.toFixed(1) || '--'}°C
-          </span>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 
-export default CpuInfo;
+export default CpuLoad;
