@@ -60,6 +60,31 @@ async function resize(id: number, term: Terminal, addons: Addons) {
   }
 }
 
+function terminalFontSize(): () => number {
+  const [screenWidth, setScreenWidth] = createSignal(window.innerWidth);
+
+  window.addEventListener('resize', () => {
+    setScreenWidth(window.innerWidth);
+  });
+
+  onCleanup(() => {
+    window.removeEventListener('resize', () => {
+      setScreenWidth(window.innerWidth);
+    });
+  });
+
+  return () => {
+    if (screenWidth() < 1920) {
+      return 12;
+    } else if (screenWidth() < 2560) {
+      return 14;
+    } else if (screenWidth() < 3840) {
+      return 16;
+    }
+    return 20;
+  };
+}
+
 interface IXtermProps {
   id: number;
   active: () => number;
@@ -67,6 +92,7 @@ interface IXtermProps {
 }
 
 function XTerm({ id, active, theme }: IXtermProps) {
+  const fontSize = terminalFontSize();
   const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
 
   let pid: number | undefined;
@@ -104,6 +130,15 @@ function XTerm({ id, active, theme }: IXtermProps) {
     }),
   );
 
+  // sync terminal font size
+  createEffect(
+    on(fontSize, async fontSize => {
+      if (terminal?.term) {
+        terminal.term.options.fontSize = fontSize;
+      }
+    }),
+  );
+
   createEffect(
     on(terminalRef, async ref => {
       // do not proceed if parent dom is not ready
@@ -113,7 +148,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
       }
       try {
         await traceLog('Initialize terminal interface. Id: ' + id);
-        terminal = createTerminal(ref, theme());
+        terminal = createTerminal(ref, theme(), fontSize());
 
         pid = await newTerminalSession(id);
 

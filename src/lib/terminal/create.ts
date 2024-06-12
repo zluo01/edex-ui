@@ -21,8 +21,10 @@ const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
 export function createTerminal(
   terminalContainer: HTMLDivElement,
   theme: IStyle,
+  initialFontSize: number,
 ): ITerminalProps {
   const term = new Terminal({
+    fontSize: initialFontSize,
     ...INITIAL_DEFAULT_OPTIONS,
     ...generateTerminalTheme(theme),
   });
