@@ -81,11 +81,16 @@ function XTerm({ id, active, theme }: IXtermProps) {
   // refocus on tab change
   createEffect(
     on(active, async active => {
-      if (active === id) {
-        terminal?.term.focus();
-        if (pid) {
-          await updateCurrentPid(pid);
+      try {
+        if (active === id) {
+          await resizeTerminal(id);
+          terminal?.term.focus();
+          if (pid) {
+            await updateCurrentPid(pid);
+          }
         }
+      } catch (e) {
+        await errorLog(e);
       }
     }),
   );
@@ -106,18 +111,22 @@ function XTerm({ id, active, theme }: IXtermProps) {
       if (!ref || terminal !== undefined) {
         return;
       }
-      await traceLog('Initialize terminal interface. Id: ' + id);
-      terminal = createTerminal(ref, theme());
+      try {
+        await traceLog('Initialize terminal interface. Id: ' + id);
+        terminal = createTerminal(ref, theme());
 
-      pid = await newTerminalSession(id);
+        pid = await newTerminalSession(id);
 
-      await resize(id, terminal.term, terminal.addons);
+        await resize(id, terminal.term, terminal.addons);
 
-      terminal.term.onData(v => writeToPty(id, v));
+        terminal.term.onData(v => writeToPty(id, v));
 
-      addEventListener('resize', () => resizeTerminal(id));
+        addEventListener('resize', () => resizeTerminal(id));
 
-      terminal.term.focus();
+        terminal.term.focus();
+      } catch (e) {
+        await errorLog(e);
+      }
     }),
   );
 
