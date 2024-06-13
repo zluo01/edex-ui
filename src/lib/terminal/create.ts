@@ -73,7 +73,7 @@ function overrideKeyEvent(term: Terminal) {
     if (e.type === 'keydown') {
       for (const i in OVERRIDE_KEY_MAP) {
         if (
-          OVERRIDE_KEY_MAP[i].key === e.key.toUpperCase() &&
+          OVERRIDE_KEY_MAP[i].key.toLowerCase() === e.key.toLowerCase() &&
           OVERRIDE_KEY_MAP[i].ctrlKey === e.ctrlKey
         ) {
           return false;
