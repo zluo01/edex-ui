@@ -1,9 +1,11 @@
 import TerminalSelectionTab from '@/components/terminal/tab';
 import XTerm from '@/components/terminal/xTerm';
 import { errorLog } from '@/lib/log';
+import { writeToPty } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
 import { useCurrentTheme } from '@/lib/themes';
 import { ITerminalContainer } from '@/models';
+import { createShortcut } from '@solid-primitives/keyboard';
 import { Event, listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
@@ -50,6 +52,29 @@ function TerminalSection() {
       }
     }),
   );
+
+  createShortcut(
+    ['Control', 'Tab'],
+    () => {
+      if (terminalIds().length === 1) {
+        return;
+      }
+      setActive(prevState => nextActiveTerminal(prevState, terminalIds()));
+    },
+    { preventDefault: true },
+  );
+
+  createShortcut(
+    ['Control', 'W'],
+    async () => {
+      await writeToPty(active(), 'exit\n');
+    },
+    { preventDefault: true },
+  );
+
+  createShortcut(['Control', 'T'], () => addTerminal(), {
+    preventDefault: true,
+  });
 
   const unListen = listen('destroy', (e: Event<number>) => {
     const id = e.payload;

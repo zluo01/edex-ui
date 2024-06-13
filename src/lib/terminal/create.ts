@@ -13,6 +13,12 @@ import {
 
 export type Addons = ReturnType<typeof getAddons>;
 
+const OVERRIDE_KEY_MAP = [
+  { key: 'Tab', ctrlKey: true },
+  { key: 'W', ctrlKey: true },
+  { key: 'T', ctrlKey: true },
+];
+
 const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
   cols: 80,
   rows: 24,
@@ -43,6 +49,7 @@ export function createTerminal(
 
   setTimeout(() => {
     initAddons(term, addons);
+    overrideKeyEvent(term);
   }, 0);
 
   return { term, addons };
@@ -59,4 +66,20 @@ function getAddons() {
 
 function initAddons(term: Terminal, _addons: Addons): void {
   term.unicode.activeVersion = '11';
+}
+
+function overrideKeyEvent(term: Terminal) {
+  term.attachCustomKeyEventHandler(e => {
+    if (e.type === 'keydown') {
+      for (const i in OVERRIDE_KEY_MAP) {
+        if (
+          OVERRIDE_KEY_MAP[i].key === e.key.toUpperCase() &&
+          OVERRIDE_KEY_MAP[i].ctrlKey === e.ctrlKey
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  });
 }

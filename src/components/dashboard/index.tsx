@@ -16,7 +16,7 @@ function ActiveProcess({ open, close }: ISettingProps) {
       aria-labelledby="modal-title"
       aria-modal="true"
       open={open()}
-      onClick={e => {
+      onMouseDown={e => {
         if (e.target.id === 'background') {
           close();
         }

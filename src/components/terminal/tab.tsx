@@ -47,7 +47,7 @@ function TerminalSelectionTab({
             <div
               id={`#${id}`}
               class={generateTabStyle(id)}
-              onClick={() => switchTab(id)}
+              onMouseDown={() => switchTab(id)}
             >
               <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
                 {id === 0 ? 'MAIN' : `#${id}`}
@@ -57,7 +57,7 @@ function TerminalSelectionTab({
         </For>
       </div>
       <div
-        onClick={addTerminal}
+        onMouseDown={addTerminal}
         class={clsx(
           theme().borderColor['75'],
           theme().textColor.hoverActive,

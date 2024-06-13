@@ -25,7 +25,7 @@ export default function Setting({
       aria-labelledby="modal-title"
       aria-modal="true"
       open={open()}
-      onClick={e => {
+      onMouseDown={e => {
         if (e.target.id === 'background') {
           close();
         }
@@ -59,12 +59,54 @@ export default function Setting({
             >
               Settings
             </h3>
-            <div class="mt-2 flex flex-col">
+            <div class="my-2 flex flex-col">
               <ShowHiddenFileSetting
                 showHidden={showHidden}
                 changeHidden={changeHidden}
               />
               <ChangeThemeSelection />
+            </div>
+            <h3
+              class={clsx(
+                theme().textColor.main,
+                'font-semibold uppercase sm:text-3xl md:text-5xl lg:text-7xl xl:text-9xl',
+              )}
+            >
+              Shortcuts
+            </h3>
+            <div
+              class={clsx(
+                'mb-2 flex flex-col gap-2',
+                'sm:text-base md:text-xl lg:text-3xl xl:text-5xl',
+              )}
+            >
+              <div
+                class={clsx(
+                  theme().textColor.main,
+                  'flex flex-row flex-nowrap items-center justify-between',
+                )}
+              >
+                <span>Switch Terminal</span>
+                <span class="capitalize">Crtl + tab</span>
+              </div>
+              <div
+                class={clsx(
+                  theme().textColor.main,
+                  'flex flex-row flex-nowrap justify-between',
+                )}
+              >
+                <span>Create New Terminal</span>
+                <span class="capitalize">Crtl + w</span>
+              </div>
+              <div
+                class={clsx(
+                  theme().textColor.main,
+                  'flex flex-row flex-nowrap justify-between',
+                )}
+              >
+                <span>Close current Terminal</span>
+                <span class="capitalize">Crtl + t</span>
+              </div>
             </div>
           </div>
         </div>
