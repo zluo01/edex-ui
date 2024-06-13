@@ -114,6 +114,8 @@ function XTerm({ id, active, theme }: IXtermProps) {
           if (pid) {
             await updateCurrentPid(pid);
           }
+        } else {
+          terminal?.term.blur();
         }
       } catch (e) {
         await errorLog(e);
