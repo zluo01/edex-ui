@@ -15,7 +15,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@solid-primitives/date": "2.0.21",
+    "@solid-primitives/date": "2.0.22",
     "@solid-primitives/keyboard": "1.2.8",
     "@tauri-apps/api": "1.6.0",
     "@xterm/addon-canvas": "0.7.0",
