@@ -22,7 +22,7 @@ Currently, this project only support macOS and Linux since I do not do developme
 - More styling or functions on terminal
 - Add webGL render support for terminal
 - Add support for styles in the original packages
-- More hardware support, currently temperature not support in M series chip nor AMD GPUs.
+- More hardware information support, currently temperature sensors are not supported in M series chip nor AMD GPUs.
 
 ## Build
 
