@@ -31,7 +31,7 @@
     "lodash": "4.17.21",
     "pretty-bytes": "6.1.1",
     "smoothie": "1.36.1",
-    "solid-js": "1.8.18",
+    "solid-js": "1.8.19",
     "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1",
     "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1"
   },
