@@ -21,7 +21,7 @@ tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-wo
 reqwest = { version = "0.12.4", features = ["json"] }
 tokio = { version = "1.38.0", features = ["time"] }
 log = "0.4.21"
-sysinfo = "0.29.11"
+sysinfo = "0.31.0"
 portable-pty = "0.8.1"
 notify = { version = "6.1.1" }
 chrono = "0.4.38"
