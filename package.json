@@ -36,7 +36,7 @@
     "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "1.6.0",
+    "@tauri-apps/cli": "1.6.1",
     "@trivago/prettier-plugin-sort-imports": "4.3.0",
     "@types/color": "3.0.6",
     "@types/lodash": "4.17.7",
