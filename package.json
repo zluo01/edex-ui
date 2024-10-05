@@ -39,7 +39,7 @@
     "@tauri-apps/cli": "1.6.2",
     "@trivago/prettier-plugin-sort-imports": "4.3.0",
     "@types/color": "3.0.6",
-    "@types/lodash": "4.17.9",
+    "@types/lodash": "4.17.10",
     "@types/node": "20.16.10",
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "7.18.0",
