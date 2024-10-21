@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-20.04]
+        platform: [macos-latest, ubuntu-22.04]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -20,14 +20,18 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install Rust (Stable)
-        run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
+        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install app dependencies and build it
         run: npm i && npm run build
@@ -38,7 +42,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-20.04]
+        include:
+          - platform: 'macos-latest' # for Arm based macs (M1 and above).
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest' # for Intel based macs.
+            args: '--target x86_64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -48,14 +56,11 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install Rust (Stable)
-        run: curl https://sh.rustup.rs -sSf | sh -s -- -y
-
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies
         run: npm i
@@ -65,8 +70,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__ # tauri-action replaces \_\_VERSION\_\_ with the app version
-          releaseName: 'edex-ui v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseName: "MediaDB v__VERSION__"
+          releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
-          includeDebug: true
+          includeDebug: false
+          args: ${{ matrix.args }}
