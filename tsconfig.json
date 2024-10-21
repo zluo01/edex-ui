@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     /* Bundler mode */
     "moduleResolution": "node",

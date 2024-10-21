@@ -1,5 +1,5 @@
 import BaseInformation from '@/components/system/sysinfo/base';
-import { version } from '@tauri-apps/api/os';
+import { version } from '@tauri-apps/plugin-os';
 import { createResource } from 'solid-js';
 
 function Version() {

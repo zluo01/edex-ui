@@ -171,7 +171,10 @@ pub fn extract_temperature(sys: &System) -> Temperature {
 #[cfg(target_os = "linux")]
 fn get_nvidia_gpu_temp() -> f32 {
     let response = Command::new("nvidia-smi")
-        .args(&["--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"])
+        .args(&[
+            "--query-gpu=temperature.gpu",
+            "--format=csv,noheader,nounits",
+        ])
         .output();
 
     if let Err(e) = response {
@@ -183,12 +186,15 @@ fn get_nvidia_gpu_temp() -> f32 {
     if output.status.success() {
         let result = str::from_utf8(&output.stdout);
         if let Err(e) = result {
-            error!("Fail to parse terminal output to string. Error: {:?}. Output: {:?}", e, &output.stdout)
+            error!(
+                "Fail to parse terminal output to string. Error: {:?}. Output: {:?}",
+                e, &output.stdout
+            )
         }
         return result.unwrap().trim().parse().unwrap_or(0.0);
     }
-    error!("Command failed with error: {:?}", output.status);
-    return 0.0;
+    // error!("Fail to get Nvidia GPU temperature: {:?}", output.status);
+    0.0
 }
 
 pub fn extract_cpu_data(sys: &System) -> Value {
@@ -215,8 +221,8 @@ pub fn extract_cpu_data(sys: &System) -> Value {
     first_half_usage /= divide as f32;
     second_half_usage /= (core_count - divide) as f32;
 
-    let cpu_name = extract_cpu_name(sys.global_cpu_info().brand())
-        .unwrap_or(String::from("UNKNOWN"));
+    let cpu_name =
+        extract_cpu_name(sys.global_cpu_info().brand()).unwrap_or(String::from("UNKNOWN"));
     json!({
         "name": cpu_name,
         "cores": core_count,
@@ -232,7 +238,14 @@ fn extract_cpu_name(input: &str) -> Option<String> {
     }
 
     if input.starts_with("AMD") {
-        return Some(input.split(' ').into_iter().take(4).collect::<Vec<&str>>().join(" "));
+        return Some(
+            input
+                .split(' ')
+                .into_iter()
+                .take(4)
+                .collect::<Vec<&str>>()
+                .join(" "),
+        );
     }
     Some(input.to_string())
 }
@@ -260,7 +273,7 @@ pub fn extract_process(sys: &System) -> Vec<Process> {
 fn epoch_to_date(epoch: u64) -> String {
     let d = UNIX_EPOCH + Duration::from_secs(epoch);
     let datetime = DateTime::<Local>::from(d);
-    return datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+    datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 pub fn extract_network(sys: &System) -> Value {

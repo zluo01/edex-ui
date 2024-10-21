@@ -1,11 +1,14 @@
 import THEME_LIST from '@/lib/themes/styles';
 import { IStyle } from '@/models';
-import { Store } from 'tauri-plugin-store-api';
+import { Store } from '@tauri-apps/plugin-store';
 
-const store = new Store('.settings.dat');
+const store = await Store.load('.settings.dat', {
+  // we can save automatically after each store modification
+  autoSave: true,
+});
 
 export async function getShowHiddenFileStatus(): Promise<boolean> {
-  return (await store.get('showHiddenFile')) || false;
+  return (await store.get<boolean>('showHiddenFile')) || false;
 }
 
 export async function setShowHiddenFileStatus(status: boolean) {

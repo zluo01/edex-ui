@@ -6,30 +6,24 @@ authors = ["zluo01"]
 license = ""
 repository = "https://github.com/zluo01/edex-ui"
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.80.0"
 
 [build-dependencies]
-tauri-build = { version = "1.5.2", features = [] }
+tauri-build = { version = "2.0.1", features = [] }
 
 [dependencies]
-serde_json = "1.0.117"
-serde = { version = "1.0.203", features = ["derive"] }
-tauri = { version = "1.6.8", features = [ "shell-open", "os-all"] }
-tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-reqwest = { version = "0.12.4", features = ["json"] }
-tokio = { version = "1.38.0", features = ["time"] }
-log = "0.4.21"
+serde_json = "1.0.132"
+serde = { version = "1.0.210", features = ["derive"] }
+tauri = { version = "2.0.5", features = [] }
+tauri-plugin-store = "2.1.0"
+tauri-plugin-log = { version = "2.0.1" }
+tauri-plugin-single-instance = { version = "2.0.1" }
+tokio = { version = "1.40.0", features = ["time"] }
+log = "0.4.22"
 sysinfo = "0.29.11"
 portable-pty = "0.8.1"
 notify = { version = "6.1.1" }
 chrono = "0.4.38"
-
-[features]
-# by default Tauri runs in production mode
-# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
-default = ["custom-protocol"]
-# this feature is used used for production builds where `devPath` points to the filesystem
-# DO NOT remove this
-custom-protocol = ["tauri/custom-protocol"]
+tauri-plugin-os = "2.0.1"
+tauri-plugin-shell = "2.0.2"
+tauri-plugin-http = "2.0.2"

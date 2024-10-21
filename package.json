@@ -1,6 +1,6 @@
 {
   "name": "edex",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "vite-dev": "vite",
@@ -17,7 +17,12 @@
   "dependencies": {
     "@solid-primitives/date": "2.0.23",
     "@solid-primitives/keyboard": "1.2.8",
-    "@tauri-apps/api": "1.6.0",
+    "@tauri-apps/api": "2.0.3",
+    "@tauri-apps/plugin-http": "2.0.1",
+    "@tauri-apps/plugin-os": "2.0.0",
+    "@tauri-apps/plugin-log": "2.0.0",
+    "@tauri-apps/plugin-shell": "2.0.1",
+    "@tauri-apps/plugin-store": "2.1.0",
     "@xterm/addon-canvas": "0.7.0",
     "@xterm/addon-clipboard": "0.1.0",
     "@xterm/addon-fit": "0.10.0",
@@ -31,18 +36,16 @@
     "lodash": "4.17.21",
     "pretty-bytes": "6.1.1",
     "smoothie": "1.36.1",
-    "solid-js": "1.9.2",
-    "tauri-plugin-log-api": "github:tauri-apps/tauri-plugin-log#v1",
-    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1"
+    "solid-js": "1.9.2"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "1.6.3",
+    "@tauri-apps/cli": "2.0.3",
     "@trivago/prettier-plugin-sort-imports": "4.3.0",
     "@types/color": "3.0.6",
-    "@types/lodash": "4.17.12",
-    "@types/node": "20.16.13",
-    "@typescript-eslint/eslint-plugin": "7.18.0",
-    "@typescript-eslint/parser": "7.18.0",
+    "@types/lodash": "4.17.10",
+    "@types/node": "22.7.6",
+    "@typescript-eslint/eslint-plugin": "8.10.0",
+    "@typescript-eslint/parser": "8.10.0",
     "autoprefixer": "10.4.20",
     "eslint": "8.57.1",
     "eslint-config-prettier": "9.1.0",

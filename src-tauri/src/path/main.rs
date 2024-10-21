@@ -1,10 +1,4 @@
-use std::{
-    cmp::Ordering,
-    fs,
-    path::PathBuf,
-    process::Command,
-    str,
-};
+use std::{cmp::Ordering, fs, path::PathBuf, process::Command, str};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -116,7 +110,6 @@ pub fn scan_directory(path: &PathBuf) -> Result<Value, String> {
                     } else {
                         FileType::SystemLink
                     };
-
 
                     file_info_list.push(FileInfo {
                         name: name.to_string(),

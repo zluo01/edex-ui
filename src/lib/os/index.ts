@@ -1,8 +1,8 @@
 import { errorLog } from '@/lib/log';
 import { IIPAddressInformation } from '@/models';
+import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/api/shell';
-import { invoke } from '@tauri-apps/api/tauri';
+import { open } from '@tauri-apps/plugin-shell';
 
 export async function openFile(path: string) {
   await open(path);

@@ -6,73 +6,66 @@
 extern crate core;
 
 use std::{
-    io::{
-        BufRead,
-        BufReader,
-        Read,
-        Write,
-    },
+    io::{BufRead, BufReader, Read, Write},
     path::PathBuf,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-        Mutex,
-    },
     sync::atomic::AtomicI32,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
     time::Duration,
 };
 
-use log::{error, info, LevelFilter, trace};
-use notify::{Event as NotifyEvent, recommended_watcher, RecursiveMode, Result as NotifyResult, Watcher};
-use portable_pty::{native_pty_system, PtySize};
-use serde_json::{
-    json,
-    Value,
+use log::{error, info, trace, LevelFilter};
+use notify::{
+    recommended_watcher, Event as NotifyEvent, RecursiveMode, Result as NotifyResult, Watcher,
 };
+use portable_pty::{native_pty_system, PtySize};
+use serde_json::{json, Value};
 use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
 use tauri::{
-    AppHandle,
-    async_runtime::Mutex as AsyncMutex,
-    Manager,
-    Runtime,
-    State,
+    async_runtime::Mutex as AsyncMutex, AppHandle, Emitter, Listener, Manager, Runtime, State,
 };
-use tauri_plugin_log::LogTarget;
+use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
 
-use crate::constant::main::{DESTROY_TERMINAL, reader_event_key, resize_event_key, SINGLE_INSTANCE, UPDATE_FILES, writer_event_key};
+use crate::constant::main::{
+    reader_event_key, resize_event_key, writer_event_key, DESTROY_TERMINAL, UPDATE_FILES,
+};
 use crate::path::main::{get_current_pty_cwd, scan_directory};
 use crate::session::main::{construct_cmd, ResizePayload};
-use crate::sys::main::{extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process, extract_temperature, IPInformation};
+use crate::sys::main::{
+    extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process,
+    extract_temperature, IPInformation,
+};
+use tauri_plugin_http::reqwest;
 
-mod sys;
+mod constant;
 mod path;
 mod session;
-mod constant;
-
-#[derive(Clone, serde::Serialize)]
-struct Payload {
-    args: Vec<String>,
-    cwd: String,
-}
-
-struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
+mod sys;
 
 struct CurrentProcessState(Arc<AtomicI32>);
+
+struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
     let sys = System::new_with_specifics(RefreshKind::new());
-    let kernel_version = sys.kernel_version()
+    let kernel_version = sys
+        .kernel_version()
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
         .expect("Fail to get kernel version.");
     Ok(kernel_version)
 }
 
 #[tauri::command]
-async fn get_ip_information(request_client_state: State<'_, RequestClientState>) -> Result<Value, ()> {
+async fn get_ip_information(
+    request_client_state: State<'_, RequestClientState>,
+) -> Result<Value, ()> {
     let client = request_client_state.0.lock().await;
-    let resp = client.get("http://ip-api.com/json/?fields=status,countryCode,region,city,query")
+    let resp = client
+        .get("http://ip-api.com/json/?fields=status,countryCode,region,city,query")
         .send()
         .await;
 
@@ -81,8 +74,7 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
         return Err(());
     }
 
-    let data = resp.unwrap().json::<IPInformation>()
-        .await;
+    let data = resp.unwrap().json::<IPInformation>().await;
 
     if let Err(e) = data {
         error!("Fail to get response data. Error: {:}", e);
@@ -98,11 +90,14 @@ async fn get_ip_information(request_client_state: State<'_, RequestClientState>)
 }
 
 #[tauri::command]
-async fn get_network_latency(request_client_state: State<'_, RequestClientState>) -> Result<u128, ()> {
+async fn get_network_latency(
+    request_client_state: State<'_, RequestClientState>,
+) -> Result<u128, ()> {
     let client = request_client_state.0.lock().await;
 
     let start_time = Instant::now();
-    let _ = client.get("https://1.1.1.1/dns-query?name=google.com")
+    let _ = client
+        .get("https://1.1.1.1/dns-query?name=google.com")
         .header("accept", "application/dns-json")
         .send()
         .await;
@@ -113,9 +108,11 @@ async fn get_network_latency(request_client_state: State<'_, RequestClientState>
 }
 
 #[tauri::command]
-async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
-                                          current_process_state: State<'_, CurrentProcessState>,
-                                          id: u8) -> Result<i32, ()> {
+async fn new_terminal_session<R: Runtime>(
+    app_handle: AppHandle<R>,
+    current_process_state: State<'_, CurrentProcessState>,
+    id: u8,
+) -> Result<i32, ()> {
     let pty_system = native_pty_system();
 
     let pty_pair = pty_system
@@ -142,26 +139,34 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
     let pty_writer = Arc::new(Mutex::new(pty_pair.master.take_writer().unwrap()));
     let master = Arc::new(Mutex::new(pty_pair.master));
 
-    let pid = &master.lock().unwrap().process_group_leader().expect("Fail to get pid.");
+    let pid = &master
+        .lock()
+        .unwrap()
+        .process_group_leader()
+        .expect("Fail to get pid.");
 
     // create listener to lister frontend terminal inputs
-    let writer_listener = app_handle.listen_global(writer_event_key(&id), move |event| {
-        let payload: String = serde_json::from_str(&event.payload().unwrap()).unwrap();
-        _ = pty_writer.lock().unwrap().write(payload.as_bytes())
-            .map_err(|e| error!("Error on write to pty. Error: {:?}", e))
+    let writer_listener = app_handle.listen(writer_event_key(&id), move |event| {
+        let payload: String = serde_json::from_str(&event.payload()).unwrap();
+        let _ = pty_writer
+            .lock()
+            .unwrap()
+            .write(payload.as_bytes())
+            .map_err(|e| error!("Error on write to pty. Error: {:?}", e));
     });
 
     // create listener to lister frontend terminal resize action
-    let resize_listener = app_handle.listen_global(resize_event_key(&id), move |event| {
-        let payload: ResizePayload = event.payload().map(|v| serde_json::from_str(v).unwrap()).unwrap();
-        _ = master.lock()
+    let resize_listener = app_handle.listen(resize_event_key(&id), move |event| {
+        let payload: ResizePayload = serde_json::from_str(event.payload()).unwrap();
+        let _ = master
+            .lock()
             .unwrap()
             .resize(PtySize {
                 rows: payload.rows(),
                 cols: payload.cols(),
                 ..Default::default()
             })
-            .map_err(|e| error!("Error on resize pty. Error: {:?}", e))
+            .map_err(|e| error!("Error on resize pty. Error: {:?}", e));
     });
 
     // create new thread to handle terminal read, write and resize
@@ -186,14 +191,18 @@ async fn new_terminal_session<R: Runtime>(app_handle: AppHandle<R>,
     });
 
     trace!("Create new terminal: {}", pid);
-    current_process_state.0.store(pid.clone(), Ordering::Relaxed);
+    current_process_state
+        .0
+        .store(pid.clone(), Ordering::Relaxed);
     Ok(*pid)
 }
 
-async fn listen_terminal<R: Runtime>(id: &u8,
-                                     reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
-                                     app_handle: &AppHandle<R>,
-                                     should_stop: Arc<AtomicBool>) {
+async fn listen_terminal<R: Runtime>(
+    id: &u8,
+    reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
+    app_handle: &AppHandle<R>,
+    should_stop: Arc<AtomicBool>,
+) {
     let event_key = reader_event_key(id);
     let reader = reader.lock().await.take();
     let mut interval = tokio::time::interval(Duration::from_millis(1));
@@ -206,15 +215,13 @@ async fn listen_terminal<R: Runtime>(id: &u8,
             let data = reader.fill_buf().unwrap().to_vec();
             reader.consume(data.len());
             if data.len() > 0 {
-                app_handle.emit_all(&event_key, data).unwrap();
+                app_handle.emit(&event_key, data).unwrap();
             }
         }
     }
 }
 
-async fn handle_terminal_close<R: Runtime>(id: &u8,
-                                           exit_code: u32,
-                                           app_handle: AppHandle<R>) {
+async fn handle_terminal_close<R: Runtime>(id: &u8, exit_code: u32, app_handle: AppHandle<R>) {
     trace!("Exit status {}. Id: {}", &exit_code, &id);
 
     // exit the application if exit on the main terminal
@@ -225,11 +232,14 @@ async fn handle_terminal_close<R: Runtime>(id: &u8,
 
     // remove the terminal
     trace!("Destroy terminal {}.", &id);
-    app_handle.emit_all(DESTROY_TERMINAL, &id).unwrap();
+    app_handle.emit(DESTROY_TERMINAL, &id).unwrap();
 }
 
 #[tauri::command]
-async fn update_current_pid(current_process_state: State<'_, CurrentProcessState>, pid: i32) -> Result<(), ()> {
+async fn update_current_pid(
+    current_process_state: State<'_, CurrentProcessState>,
+    pid: i32,
+) -> Result<(), ()> {
     current_process_state.0.store(pid, Ordering::Relaxed);
     Ok(())
 }
@@ -244,17 +254,30 @@ fn main() {
 
     info!("Log Level: {:?}", log_level);
     tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::default()
-            .targets([LogTarget::LogDir, LogTarget::Stdout])
-            .level(log_level)
-            .build())
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
-            info!("{}, {argv:?}, {cwd}", app.package_info().name);
-            app.emit_all(SINGLE_INSTANCE, Payload { args: argv, cwd }).unwrap();
+        .plugin(tauri_plugin_os::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                ])
+                .level(log_level)
+                .build(),
+        )
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
         }))
-        .manage(RequestClientState(Arc::new(AsyncMutex::new(reqwest::Client::new()))))
         .manage(CurrentProcessState(Arc::new(AtomicI32::default())))
+        .manage(RequestClientState(Arc::new(AsyncMutex::new(
+            reqwest::Client::new(),
+        ))))
         .invoke_handler(tauri::generate_handler![
             kernel_version,
             get_ip_information,
@@ -266,13 +289,19 @@ fn main() {
             // updating and emitting system information
             let system_info_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let mut sys = System::new_with_specifics(RefreshKind::new()
-                    .with_memory()
-                    .with_cpu(CpuRefreshKind::everything().without_frequency())
-                    .with_processes(ProcessRefreshKind::everything().without_disk_usage().without_user())
-                    .with_components_list()
-                    .with_networks_list()
-                    .with_disks_list());
+                let mut sys = System::new_with_specifics(
+                    RefreshKind::new()
+                        .with_memory()
+                        .with_cpu(CpuRefreshKind::everything().without_frequency())
+                        .with_processes(
+                            ProcessRefreshKind::everything()
+                                .without_disk_usage()
+                                .without_user(),
+                        )
+                        .with_components_list()
+                        .with_networks_list()
+                        .with_disks_list(),
+                );
 
                 let mut interval = tokio::time::interval(Duration::from_secs(1));
                 loop {
@@ -280,43 +309,50 @@ fn main() {
                     sys.refresh_all();
 
                     // Emit information
-                    let _ = system_info_handle.emit_all("uptime", &sys.uptime());
-                    let _ = system_info_handle.emit_all("memory", extract_memory(&sys));
-                    let _ = system_info_handle.emit_all("load", extract_cpu_data(&sys));
-                    let _ = system_info_handle.emit_all("network", extract_network(&sys));
-                    let _ = system_info_handle.emit_all("disk", extract_disk_usage(&sys));
-                    let _ = system_info_handle.emit_all("temperature", json!(extract_temperature(&sys)));
+                    let _ = system_info_handle.emit("uptime", &sys.uptime());
+                    let _ = system_info_handle.emit("memory", extract_memory(&sys));
+                    let _ = system_info_handle.emit("load", extract_cpu_data(&sys));
+                    let _ = system_info_handle.emit("network", extract_network(&sys));
+                    let _ = system_info_handle.emit("disk", extract_disk_usage(&sys));
+                    let _ =
+                        system_info_handle.emit("temperature", json!(extract_temperature(&sys)));
 
                     let processes = extract_process(&sys);
-                    let _ = system_info_handle.emit_all("process", json!(&processes));
-                    let _ = system_info_handle.emit_all("process_short", json!(processes.iter().take(10).cloned().collect::<Vec<_>>()));
+                    let _ = system_info_handle.emit("process", json!(&processes));
+                    let _ = system_info_handle.emit(
+                        "process_short",
+                        json!(processes.iter().take(10).cloned().collect::<Vec<_>>()),
+                    );
                 }
             });
 
             let file_watcher = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let watcher_handle = file_watcher.clone();
-                let mut watcher = recommended_watcher(move |res: NotifyResult<NotifyEvent>| {
-                    match res {
+                let mut watcher =
+                    recommended_watcher(move |res: NotifyResult<NotifyEvent>| match res {
                         Ok(event) => {
-                            if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
+                            if event.kind.is_create()
+                                || event.kind.is_modify()
+                                || event.kind.is_remove()
+                            {
                                 let path = event.paths[0].parent().unwrap().to_path_buf();
                                 if let Ok(files) = scan_directory(&path) {
-                                    watcher_handle.emit_all(UPDATE_FILES, files).unwrap();
+                                    watcher_handle.emit(UPDATE_FILES, files).unwrap();
                                 }
                             }
                         }
                         Err(e) => error!("watch error: {:?}", e),
-                    }
-                }).unwrap();
+                    })
+                    .unwrap();
 
                 let mut prev_cwd = PathBuf::default();
                 let mut interval = tokio::time::interval(Duration::from_millis(500));
-                let current_process_state: State<CurrentProcessState> = file_watcher.state::<CurrentProcessState>();
+                let current_process_state: State<CurrentProcessState> =
+                    file_watcher.state::<CurrentProcessState>();
                 loop {
                     interval.tick().await;
                     let pid = current_process_state.0.load(Ordering::Relaxed);
-
                     if 0 == pid {
                         continue;
                     }
@@ -340,7 +376,7 @@ fn main() {
                         watcher.watch(&cwd, RecursiveMode::NonRecursive).unwrap();
                         prev_cwd = cwd.clone();
                         if let Ok(files) = scan_directory(&cwd) {
-                            file_watcher.emit_all(UPDATE_FILES, files).unwrap();
+                            file_watcher.emit(UPDATE_FILES, files).unwrap();
                         }
                     }
                 }
@@ -348,5 +384,5 @@ fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while running edex");
 }
