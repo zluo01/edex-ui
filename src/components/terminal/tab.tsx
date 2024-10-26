@@ -9,18 +9,6 @@ interface ITerminalSelectionTab {
 }
 
 function TerminalSelectionTab(props: ITerminalSelectionTab) {
-  function generateTabStyle(current: number) {
-    const styles: string[] = [
-      'border-default/75 w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid',
-    ];
-    if (props.active() === current) {
-      styles.push('bg-active text-active font-medium skew-x-[35deg] scale-125');
-    } else {
-      styles.push('bg-main text-main');
-    }
-    return cn(...styles);
-  }
-
   return (
     <div class="flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 border-default/75 p-0 font-united_sans_medium">
       <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
@@ -28,7 +16,11 @@ function TerminalSelectionTab(props: ITerminalSelectionTab) {
           {id => (
             <div
               id={`#${id}`}
-              class={generateTabStyle(id)}
+              class={cn(
+                'border-default/75 w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid bg-main text-main',
+                props.active() === id &&
+                  'bg-active text-active font-medium skew-x-[35deg] scale-125',
+              )}
               onMouseDown={() => props.switchTab(id)}
             >
               <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
