@@ -14,6 +14,7 @@ import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import clsx from 'clsx';
 import {
+  Accessor,
   createEffect,
   createSignal,
   InitializedResource,
@@ -60,7 +61,7 @@ async function resize(id: number, term: Terminal, addons: Addons) {
   }
 }
 
-function terminalFontSize(): () => number {
+function useScreenWidth(): Accessor<number> {
   const [screenWidth, setScreenWidth] = createSignal(window.innerWidth);
 
   window.addEventListener('resize', () => {
@@ -73,7 +74,20 @@ function terminalFontSize(): () => number {
     });
   });
 
-  return () => {
+  return screenWidth;
+}
+
+interface IXtermProps {
+  id: number;
+  active: Accessor<number>;
+  theme: InitializedResource<IStyle>;
+}
+
+// eslint-disable-next-line solid/no-destructure
+function XTerm({ id, active, theme }: IXtermProps) {
+  // fontSize
+  const screenWidth = useScreenWidth();
+  const fontSize = () => {
     if (screenWidth() < 1920) {
       return 12;
     } else if (screenWidth() < 2560) {
@@ -83,16 +97,7 @@ function terminalFontSize(): () => number {
     }
     return 20;
   };
-}
 
-interface IXtermProps {
-  id: number;
-  active: () => number;
-  theme: InitializedResource<IStyle>;
-}
-
-function XTerm({ id, active, theme }: IXtermProps) {
-  const fontSize = terminalFontSize();
   const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
 
   let pid: number | undefined;

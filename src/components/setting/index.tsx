@@ -11,12 +11,7 @@ interface ISettingProps {
   close: VoidFunction;
 }
 
-export default function Setting({
-  open,
-  close,
-  showHidden,
-  changeHidden,
-}: ISettingProps) {
+export default function Setting(props: ISettingProps) {
   const theme = useCurrentTheme();
 
   return (
@@ -24,10 +19,10 @@ export default function Setting({
       class="relative z-10"
       aria-labelledby="modal-title"
       aria-modal="true"
-      open={open()}
+      open={props.open()}
       onMouseDown={e => {
         if (e.target.id === 'background') {
-          close();
+          props.close();
         }
       }}
     >
@@ -61,8 +56,8 @@ export default function Setting({
             </h3>
             <div class="my-2 flex flex-col">
               <ShowHiddenFileSetting
-                showHidden={showHidden}
-                changeHidden={changeHidden}
+                showHidden={props.showHidden}
+                changeHidden={props.changeHidden}
               />
               <ChangeThemeSelection />
             </div>

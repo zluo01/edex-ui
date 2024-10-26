@@ -17,7 +17,7 @@ interface IFileSectionProps {
   fileSystem: () => IFileSystem | undefined;
 }
 
-function FileSection({ open, showHidden, fileSystem }: IFileSectionProps) {
+function FileSection(props: IFileSectionProps) {
   const active = useActiveTerminal();
 
   async function fileAction(file: IFileInfo) {
@@ -30,14 +30,23 @@ function FileSection({ open, showHidden, fileSystem }: IFileSectionProps) {
 
   return (
     <>
-      <FileTile name={'Setting'} t={SETTING} hidden={false} onClick={open} />
+      <FileTile
+        name={'Setting'}
+        t={SETTING}
+        hidden={false}
+        onClick={props.open}
+      />
       <FileTile
         name={'Go back'}
         t={BACKWARD}
         hidden={false}
         onClick={() => writeToPty(active(), 'cd ../\n')}
       />
-      <For each={fileSystem()?.files.filter(o => !o.hidden || showHidden())}>
+      <For
+        each={props
+          .fileSystem()
+          ?.files.filter(o => !o.hidden || props.showHidden())}
+      >
         {file => <FileTile {...file} onClick={() => fileAction(file)} />}
       </For>
     </>

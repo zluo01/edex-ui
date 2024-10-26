@@ -7,10 +7,7 @@ interface IShowHiddenFileSettingProps {
   changeHidden: () => void;
 }
 
-function ShowHiddenFileSetting({
-  showHidden,
-  changeHidden,
-}: IShowHiddenFileSettingProps) {
+function ShowHiddenFileSetting(props: IShowHiddenFileSettingProps) {
   const theme = useCurrentTheme();
 
   return (
@@ -28,9 +25,9 @@ function ShowHiddenFileSetting({
         <input
           type="checkbox"
           class="peer sr-only"
-          disabled={showHidden() === undefined}
-          checked={showHidden()}
-          onChange={changeHidden}
+          disabled={props.showHidden() === undefined}
+          checked={props.showHidden()}
+          onChange={() => props.changeHidden()}
         />
         <div
           class={clsx(
@@ -40,7 +37,7 @@ function ShowHiddenFileSetting({
             "after:border after:border-gray-300 after:bg-white after:transition-all after:content-['']",
             'peer-checked:opacity-75 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none',
           )}
-        ></div>
+        />
       </label>
     </div>
   );

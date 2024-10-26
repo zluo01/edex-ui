@@ -5,7 +5,7 @@ import { createResource } from 'solid-js';
 function Version() {
   const [v] = createResource(version);
 
-  return <BaseInformation header={'V'} value={v} />;
+  return <BaseInformation header={'V'} value={<>{v}</>} />;
 }
 
 export default Version;

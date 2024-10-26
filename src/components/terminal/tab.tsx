@@ -10,26 +10,23 @@ interface ITerminalSelectionTab {
   theme: InitializedResource<IStyle>;
 }
 
-function TerminalSelectionTab({
-  active,
-  terminalIds,
-  switchTab,
-  addTerminal,
-  theme,
-}: ITerminalSelectionTab) {
+function TerminalSelectionTab(props: ITerminalSelectionTab) {
   function generateTabStyle(current: number) {
     const styles: string[] = [
-      theme().borderColor['75'],
+      props.theme().borderColor['75'],
       'w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid',
     ];
-    if (active() === current) {
+    if (props.active() === current) {
       styles.push(
-        theme().backgroundColor.active,
-        theme().textColor.active,
+        props.theme().backgroundColor.active,
+        props.theme().textColor.active,
         'font-medium skew-x-[35deg] scale-125',
       );
     } else {
-      styles.push(theme().backgroundColor.main, theme().textColor.main);
+      styles.push(
+        props.theme().backgroundColor.main,
+        props.theme().textColor.main,
+      );
     }
     return clsx(...styles);
   }
@@ -37,17 +34,17 @@ function TerminalSelectionTab({
   return (
     <div
       class={clsx(
-        theme().borderColor['75'],
+        props.theme().borderColor['75'],
         'flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0 font-united_sans_medium',
       )}
     >
       <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
-        <For each={terminalIds()}>
+        <For each={props.terminalIds()}>
           {id => (
             <div
               id={`#${id}`}
               class={generateTabStyle(id)}
-              onMouseDown={() => switchTab(id)}
+              onMouseDown={() => props.switchTab(id)}
             >
               <p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
                 {id === 0 ? 'MAIN' : `#${id}`}
@@ -57,11 +54,11 @@ function TerminalSelectionTab({
         </For>
       </div>
       <div
-        onMouseDown={addTerminal}
+        onMouseDown={() => props.addTerminal()}
         class={clsx(
-          theme().borderColor['75'],
-          theme().textColor.hoverActive,
-          theme().backgroundColor.hoverActive,
+          props.theme().borderColor['75'],
+          props.theme().textColor.hoverActive,
+          props.theme().backgroundColor.hoverActive,
           'flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid font-normal',
           'sm:text-xs md:text-base lg:text-xl xl:text-3xl',
         )}

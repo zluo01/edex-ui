@@ -1,20 +1,20 @@
 import { getIPInformation, getNetworkLatency } from '@/lib/os';
 import { NETWORK_STATUS, OFFLINE, ONLINE } from '@/models';
-import { Component, createResource, onCleanup, Resource } from 'solid-js';
+import { Accessor, createResource, JSX, onCleanup } from 'solid-js';
 
 interface IBaseInformationProps {
   header: string;
-  value: Resource<string> | (() => string);
+  value: Accessor<string>;
 }
 
-function BaseInformation({ header, value }: IBaseInformationProps) {
+function BaseInformation(props: IBaseInformationProps) {
   return (
     <div class="box-border flex h-full flex-col items-start justify-around [&:nth-child(2)]:pl-1.5">
       <span class="m-0 opacity-50 sm:text-xs md:text-lg lg:text-xl xl:text-3xl">
-        {header}
+        {props.header}
       </span>
       <span class="m-0 sm:text-xxxs md:text-sm lg:text-base xl:text-2xl">
-        {value()}
+        {props.value()}
       </span>
     </div>
   );
@@ -24,8 +24,8 @@ type ConnectionStatusProps = {
   connected: () => boolean;
 };
 
-const ConnectionStatus: Component<ConnectionStatusProps> = ({ connected }) => {
-  const [information] = createResource(connected, getIPInformation);
+function ConnectionStatus(props: ConnectionStatusProps): JSX.Element {
+  const [information] = createResource(() => props.connected, getIPInformation);
 
   const [latency, { refetch }] = createResource<string>(getNetworkLatency, {
     initialValue: '--',
@@ -37,7 +37,7 @@ const ConnectionStatus: Component<ConnectionStatusProps> = ({ connected }) => {
 
   onCleanup(() => clearInterval(intervalId));
 
-  const status = (): NETWORK_STATUS => (connected() ? ONLINE : OFFLINE);
+  const status = (): NETWORK_STATUS => (props.connected() ? ONLINE : OFFLINE);
 
   const location = () => information()?.location || 'UNKNOWN';
   const query = () => information()?.query || '--.--.--.--';
@@ -59,6 +59,6 @@ const ConnectionStatus: Component<ConnectionStatusProps> = ({ connected }) => {
       </div>
     </div>
   );
-};
+}
 
 export default ConnectionStatus;

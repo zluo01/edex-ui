@@ -5,14 +5,14 @@ interface IFileTileProps {
   name: string;
   t: FileType;
   hidden: boolean;
-  onClick?: VoidFunction;
+  onClick: VoidFunction;
 }
 
 function FileTile(props: IFileTileProps) {
   return (
     <div
       class="flex size-[8.5vh] cursor-pointer flex-col items-center justify-center overflow-hidden rounded text-center hover:opacity-70"
-      onMouseDown={props.onClick}
+      onMouseDown={() => props.onClick()}
       title={props.name}
     >
       <Icon {...props} />

@@ -6,7 +6,7 @@ interface IBannerProps {
   name: string;
 }
 
-function Banner({ title, name }: IBannerProps) {
+function Banner(props: IBannerProps) {
   const theme = useCurrentTheme();
 
   return (
@@ -21,11 +21,11 @@ function Banner({ title, name }: IBannerProps) {
         )}
       >
         <span class="sm:pl-0.5 sm:text-xxxs md:pl-1.5 md:text-xs lg:pl-2.5 lg:text-sm xl:pl-3.5 xl:text-xl">
-          {title}
+          {props.title}
         </span>
         <div class="flex grow" />
         <span class="sm:pr-0.5 sm:text-xxxs md:pr-1.5 md:text-xs lg:px-2.5 lg:text-sm xl:pl-3.5 xl:text-xl">
-          {name}
+          {props.name}
         </span>
       </div>
     </div>

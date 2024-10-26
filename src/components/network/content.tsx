@@ -31,6 +31,7 @@ function Network() {
     </>
   );
 }
+
 function NetworkContent() {
   return (
     <>

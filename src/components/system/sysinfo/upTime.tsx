@@ -2,7 +2,7 @@ import BaseInformation from '@/components/system/sysinfo/base';
 import { errorLog } from '@/lib/log';
 import formatTime from '@/lib/utils/format';
 import { Event, listen } from '@tauri-apps/api/event';
-import { createSignal, JSX, onCleanup } from 'solid-js';
+import { createSignal, JSX, onCleanup, Show } from 'solid-js';
 
 function UpTimeSection() {
   const [uptime, setUptime] = createSignal<number>();
@@ -13,11 +13,7 @@ function UpTimeSection() {
     unListen.then(f => f()).catch(errorLog);
   });
 
-  const UpTime = (): JSX.Element => {
-    if (!uptime()) {
-      return <>0:0:0</>;
-    }
-
+  function UpTime(): JSX.Element {
     let raw = uptime()!;
 
     const days = Math.floor(raw / 86400);
@@ -34,9 +30,18 @@ function UpTimeSection() {
         {formatTime(minutes)}
       </>
     );
-  };
+  }
 
-  return <BaseInformation header={'UPTIME'} value={UpTime} />;
+  return (
+    <BaseInformation
+      header={'UPTIME'}
+      value={
+        <Show when={uptime()} fallback={<>0:0:0</>}>
+          <UpTime />
+        </Show>
+      }
+    />
+  );
 }
 
 export default UpTimeSection;

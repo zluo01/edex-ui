@@ -35,11 +35,13 @@ function getMonthExpression(month: number): string {
 function DateSection() {
   const [date] = createDateNow(60000);
 
-  const monthDate = () =>
-    getMonthExpression(date().getMonth()) + ' ' + date().getDate();
-
   return (
-    <BaseInformation header={date().getFullYear() + ''} value={monthDate} />
+    <BaseInformation
+      header={date().getFullYear() + ''}
+      value={
+        <> {getMonthExpression(date().getMonth()) + ' ' + date().getDate()}</>
+      }
+    />
   );
 }
 

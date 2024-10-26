@@ -16,7 +16,7 @@ interface ICpuLoadProps {
   theme: InitializedResource<IStyle>;
 }
 
-function CpuLoad({ theme }: ICpuLoadProps) {
+function CpuLoad(props: ICpuLoadProps) {
   const canvas: HTMLCanvasElement[] = [
     document.createElement('canvas'),
     document.createElement('canvas'),
@@ -121,7 +121,7 @@ function CpuLoad({ theme }: ICpuLoadProps) {
           ref={el => (canvas[0] = el)}
           height="60"
           class={clsx(
-            theme().borderColor['30'],
+            props.theme().borderColor['30'],
             'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
           )}
         />
@@ -139,7 +139,7 @@ function CpuLoad({ theme }: ICpuLoadProps) {
           ref={el => (canvas[1] = el)}
           height="60"
           class={clsx(
-            theme().borderColor['30'],
+            props.theme().borderColor['30'],
             'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
           )}
         />

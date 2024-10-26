@@ -6,9 +6,9 @@ import clsx from 'clsx';
 import prettyBytes from 'pretty-bytes';
 import { SmoothieChart, TimeSeries } from 'smoothie';
 import {
-  Component,
   createEffect,
   createSignal,
+  JSX,
   on,
   onCleanup,
   onMount,
@@ -18,7 +18,7 @@ type NetworkTrafficProps = {
   connected: () => boolean;
 };
 
-const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
+function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
   const theme = useCurrentTheme();
 
   const canvas: HTMLCanvasElement[] = [
@@ -77,7 +77,7 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
 
   createEffect(
     on(traffic, traffic => {
-      if (!traffic || !connected()) {
+      if (!traffic || !props.connected()) {
         return;
       }
 
@@ -114,7 +114,7 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
           ref={el => (canvas[0] = el)}
           class={clsx(
             theme().borderColor['30'],
-            connected() ? 'opacity-100' : 'opacity-30',
+            props.connected() ? 'opacity-100' : 'opacity-30',
             'z-10 mx-0 my-[0.46vh] max-h-[10vh] min-h-[8vh] w-full',
             'border-t-[0.092vh] border-dashed',
           )}
@@ -122,7 +122,7 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
         <canvas
           ref={el => (canvas[1] = el)}
           class={clsx(
-            connected() ? 'opacity-100' : 'opacity-30',
+            props.connected() ? 'opacity-100' : 'opacity-30',
             theme().borderColor.top,
             theme().borderColor.bottom,
             'z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full',
@@ -131,7 +131,7 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
         />
         <span
           class={clsx(
-            connected() && 'hidden',
+            props.connected() && 'hidden',
             'absolute z-20 m-auto font-semibold sm:text-lg md:text-xl lg:text-2xl xl:text-3xl',
           )}
         >
@@ -140,6 +140,6 @@ const NetworkTraffic: Component<NetworkTrafficProps> = ({ connected }) => {
       </div>
     </div>
   );
-};
+}
 
 export default NetworkTraffic;

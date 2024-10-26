@@ -7,7 +7,7 @@ interface ISettingProps {
   close: VoidFunction;
 }
 
-function ActiveProcess({ open, close }: ISettingProps) {
+function ActiveProcess(props: ISettingProps) {
   const theme = useCurrentTheme();
 
   return (
@@ -15,10 +15,10 @@ function ActiveProcess({ open, close }: ISettingProps) {
       class="relative z-10"
       aria-labelledby="modal-title"
       aria-modal="true"
-      open={open()}
+      open={props.open()}
       onMouseDown={e => {
         if (e.target.id === 'background') {
-          close();
+          props.close();
         }
       }}
     >

@@ -5,7 +5,7 @@ import { createResource } from 'solid-js';
 function Kernel() {
   const [kernel] = createResource<string>(getKernelVersion);
 
-  return <BaseInformation header={'KERNEL'} value={kernel} />;
+  return <BaseInformation header={'KERNEL'} value={<>{kernel}</>} />;
 }
 
 export default Kernel;
