@@ -1,13 +1,9 @@
 import { errorLog } from '@/lib/log';
-import { useCurrentTheme } from '@/lib/themes';
 import { IMemoryInformation } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
-import clsx from 'clsx';
 import { createSignal, onCleanup } from 'solid-js';
 
 function MemInfo() {
-  const theme = useCurrentTheme();
-
   const [memory, setMemory] = createSignal<IMemoryInformation>();
 
   const unListen = listen('memory', (e: Event<IMemoryInformation>) =>
@@ -19,13 +15,11 @@ function MemInfo() {
   });
 
   const memoryMap = () => {
-    const backgroundColor = theme().backgroundColor.active;
-
     if (!memory()) {
       return (
         <>
           {Array.from({ length: 440 }, () => (
-            <div class={clsx(backgroundColor, 'size-[0.2vh]', 'opacity-25')} />
+            <div class="size-[0.2vh] bg-active opacity-25" />
           ))}
         </>
       );
@@ -38,13 +32,13 @@ function MemInfo() {
     return (
       <>
         {Array.from({ length: free }, () => (
-          <div class={clsx(backgroundColor, 'size-[0.2vh]', 'opacity-25')} />
+          <div class="size-[0.2vh] bg-active opacity-25" />
         ))}
         {Array.from({ length: available }, () => (
-          <div class={clsx(backgroundColor, 'size-[0.2vh]', 'opacity-50')} />
+          <div class="size-[0.2vh] bg-active opacity-50" />
         ))}
         {Array.from({ length: active }, () => (
-          <div class={clsx(backgroundColor, 'size-[0.2vh]', 'opacity-100')} />
+          <div class="size-[0.2vh] bg-active opacity-100" />
         ))}
       </>
     );
@@ -74,27 +68,14 @@ function MemInfo() {
         <span class="m-0 self-center sm:text-xxs md:text-sm lg:text-lg xl:text-2xl">
           SWAP
         </span>
-        <div
-          class={clsx(
-            theme().borderColor['80'],
-            'flex h-3/4 w-full flex-col items-start justify-center border-r-[0.1vh] border-solid',
-          )}
-        >
+        <div class="flex h-3/4 w-full flex-col items-start justify-center border-r-[0.1vh] border-solid border-default/80">
           <div
-            class={clsx(
-              theme().backgroundColor.active,
-              'relative h-[0.4vh] w-full opacity-60 duration-500 ease-in',
-            )}
+            class="relative h-[0.4vh] w-full bg-active opacity-60 duration-500 ease-in"
             style={{
               width: `${memory()?.ratio || 0}%`,
             }}
           />
-          <div
-            class={clsx(
-              theme().backgroundColor.active,
-              'relative h-[0.25vh] w-full self-center opacity-80',
-            )}
-          />
+          <div class="relative h-[0.25vh] w-full self-center bg-active opacity-80" />
         </div>
         <span class="m-0 self-center whitespace-nowrap text-right not-italic opacity-50 sm:text-xxs md:text-sm lg:text-lg xl:text-2xl">
           {memory()?.swap || '0.0'} GiB

@@ -1,5 +1,4 @@
-import { useCurrentTheme } from '@/lib/themes';
-import clsx from 'clsx';
+import { cn } from '@/lib/utils';
 
 interface IBannerProps {
   title: string;
@@ -7,15 +6,12 @@ interface IBannerProps {
 }
 
 function Banner(props: IBannerProps) {
-  const theme = useCurrentTheme();
-
   return (
     <div class="flex h-[2.5vh] w-full items-start">
       <div
-        class={clsx(
-          theme().borderColor['30'],
+        class={cn(
           'top-[0.74vh] flex w-full flex-row justify-between',
-          'border-b-[0.092vh] border-solid',
+          'border-default/30 border-b-[0.092vh] border-solid',
           'before:relative before:left-[-0.0925vh] before:top-[0.65vh] before:h-[0.833vh] before:border-l-[0.1vh] before:border-solid before:border-[inherit] before:content-[""]',
           'after:relative after:right-[-0.0925vh] after:top-[0.65vh] after:h-[0.833vh] after:border-r-[0.1vh] after:border-solid after:border-[inherit] after:content-[""]',
         )}

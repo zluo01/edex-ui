@@ -6,7 +6,6 @@ import {
 } from '@/lib/setting';
 import { IFileSystem } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
-import clsx from 'clsx';
 import { createResource, createSignal, lazy, onCleanup } from 'solid-js';
 
 const FileSection = lazy(async () => {
@@ -39,13 +38,11 @@ function FileSystem() {
   return (
     <>
       <div class="relative flex size-full max-h-[38vh] flex-col justify-between sm:p-1 md:p-2 lg:p-3">
-        <Banner title={'FILESYSTEM'} name={fileSystem()?.path || ''} />
-        <div
-          class={clsx(
-            'no-scrollbar relative box-border grid h-full max-h-[34vh] min-h-[25.5vh]',
-            'animate-fade appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,_minmax(8.5vh,_1fr))] gap-[1vh] overflow-auto',
-          )}
-        >
+        <Banner
+          title={/*@once*/ 'FILESYSTEM'}
+          name={fileSystem()?.path || ''}
+        />
+        <div class="no-scrollbar relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] animate-fade appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,_minmax(8.5vh,_1fr))] gap-[1vh] overflow-auto">
           <FileSection
             open={() => setOpen(true)}
             showHidden={showHidden}

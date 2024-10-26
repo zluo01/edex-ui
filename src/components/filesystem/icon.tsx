@@ -1,5 +1,5 @@
+import { cn } from '@/lib/utils';
 import { BACKWARD, DIRECTORY, FILE, FileType, SETTING } from '@/models';
-import clsx from 'clsx';
 import { JSX, Match, Switch } from 'solid-js';
 
 interface IIconProps {
@@ -13,7 +13,7 @@ function Icon(props: IIconProps): JSX.Element {
       fallback={
         <svg
           viewBox="0 0 24 24"
-          class={clsx(
+          class={cn(
             props.hidden && 'opacity-70',
             'fill-current sm:size-12 md:size-20 lg:size-28 xl:size-40',
           )}
@@ -25,7 +25,7 @@ function Icon(props: IIconProps): JSX.Element {
       <Match when={props.t === DIRECTORY}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class={clsx(
+          class={cn(
             props.hidden && 'opacity-70',
             'fill-current sm:size-12 md:size-20 lg:size-28 xl:size-40',
           )}
@@ -37,7 +37,7 @@ function Icon(props: IIconProps): JSX.Element {
       <Match when={props.t === FILE}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class={clsx(
+          class={cn(
             props.hidden && 'opacity-70',
             'fill-current sm:size-12 md:size-20 lg:size-28 xl:size-40',
           )}
@@ -49,7 +49,7 @@ function Icon(props: IIconProps): JSX.Element {
       <Match when={props.t === SETTING}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class={clsx(
+          class={cn(
             props.hidden && 'opacity-70',
             'fill-current sm:size-12 md:size-20 lg:size-28 xl:size-40',
           )}
@@ -61,7 +61,7 @@ function Icon(props: IIconProps): JSX.Element {
       <Match when={props.t === BACKWARD}>
         <svg
           viewBox="0 0 24 24"
-          class={clsx(
+          class={cn(
             props.hidden && 'opacity-70',
             'fill-current sm:size-12 md:size-20 lg:size-28 xl:size-40',
           )}

@@ -1,6 +1,5 @@
 .idea
 out
-gen
 node_modules
 .next
 package-lock.json

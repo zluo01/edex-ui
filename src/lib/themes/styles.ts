@@ -1,26 +1,6 @@
 import { IStyle } from '@/models';
 
 const TRON: IStyle = {
-  name: 'tron',
-  backgroundColor: {
-    main: 'bg-[#05080d]',
-    secondary: 'bg-[#262828]',
-    active: 'bg-[#aacfd1]',
-    hoverActive: 'hover:bg-[#aacfd1]',
-  },
-  borderColor: {
-    default: 'border-[#aacfd1]',
-    30: 'border-[#aacfd1]/30',
-    75: 'border-[#aacfd1]/75',
-    80: 'border-[#aacfd1]/80',
-    top: 'border-t-[#aacfd1]/40',
-    bottom: 'border-b-[#aacfd1]/30',
-  },
-  textColor: {
-    main: 'text-[#aacfd1]',
-    active: 'text-[#05080d]',
-    hoverActive: 'hover:text-[#05080d]',
-  },
   colors: {
     main: 'rgb(170, 207, 209)',
     black: '#000000',
@@ -37,26 +17,6 @@ const TRON: IStyle = {
 };
 
 const APOLLO: IStyle = {
-  name: 'apollo',
-  backgroundColor: {
-    main: 'bg-[#191919]',
-    secondary: 'bg-[#262827]',
-    active: 'bg-[#ebebeb]',
-    hoverActive: 'hover:bg-[#ebebeb]',
-  },
-  borderColor: {
-    default: 'border-[#EBEBEBFF]',
-    30: 'border-[#EBEBEBFF]/30',
-    75: 'border-[#EBEBEBFF]/75',
-    80: 'border-[#EBEBEBFF]/80',
-    top: 'border-t-[#EBEBEBFF]/40',
-    bottom: 'border-b-[#EBEBEBFF]/30',
-  },
-  textColor: {
-    main: 'text-[#ebebeb]',
-    active: 'text-[#191919]',
-    hoverActive: 'hover:text-[#191919]',
-  },
   colors: {
     main: 'rgb(235, 235, 235)',
     black: '#000000',
@@ -73,26 +33,6 @@ const APOLLO: IStyle = {
 };
 
 const BLADE: IStyle = {
-  name: 'blade',
-  backgroundColor: {
-    main: 'bg-[#090B0A]',
-    secondary: 'bg-[#262827]',
-    active: 'bg-[#cc5e37]',
-    hoverActive: 'hover:bg-[#cc5e37]',
-  },
-  borderColor: {
-    default: 'border-[#cc5e37]',
-    30: 'border-[#cc5e37]/30',
-    75: 'border-[#cc5e37]/75',
-    80: 'border-[#cc5e37]/80',
-    top: 'border-t-[#cc5e37]/40',
-    bottom: 'border-b-[#cc5e37]/30',
-  },
-  textColor: {
-    main: 'text-[#cc5e37]',
-    active: 'text-[#090B0A]',
-    hoverActive: 'hover:text-[#090B0A]',
-  },
   colors: {
     main: 'rgb(204, 94, 55)',
     black: '#000000',
@@ -109,26 +49,6 @@ const BLADE: IStyle = {
 };
 
 const CYBORG: IStyle = {
-  name: 'cyborg',
-  backgroundColor: {
-    main: 'bg-[#0a3333]',
-    secondary: 'bg-[#034747]',
-    active: 'bg-[#a3c2c2]',
-    hoverActive: 'hover:bg-[#a3c2c2]',
-  },
-  borderColor: {
-    default: 'border-[#a3c2c2]',
-    30: 'border-[#a3c2c2]/30',
-    75: 'border-[#a3c2c2]/75',
-    80: 'border-[#a3c2c2]/80',
-    top: 'border-t-[#a3c2c2]/40',
-    bottom: 'border-b-[#a3c2c2]/30',
-  },
-  textColor: {
-    main: 'text-[#a3c2c2]',
-    active: 'text-[#0a3333]',
-    hoverActive: 'hover:text-[#0a3333]',
-  },
   colors: {
     main: 'rgb(95, 215, 215)',
     black: '#011f1f',
@@ -160,26 +80,6 @@ const CYBORG: IStyle = {
 };
 
 const INTERSTELLAR: IStyle = {
-  name: 'interstellar',
-  backgroundColor: {
-    main: 'bg-[#dedede]',
-    secondary: 'bg-[#bfbfbf]',
-    active: 'bg-[#03A9F4]',
-    hoverActive: 'hover:bg-[#03A9F4]',
-  },
-  borderColor: {
-    default: 'border-[#03A9F4]',
-    30: 'border-[#03A9F4]/30',
-    75: 'border-[#03A9F4]/75',
-    80: 'border-[#03A9F4]/80',
-    top: 'border-t-[#03A9F4]/40',
-    bottom: 'border-b-[#03A9F4]/30',
-  },
-  textColor: {
-    main: 'text-[#03A9F4]',
-    active: 'text-[#dedede]',
-    hoverActive: 'hover:text-[#dedede]',
-  },
   colors: {
     main: 'rgb(3, 169, 244)',
     black: '#f3f3f3',
@@ -194,6 +94,26 @@ const INTERSTELLAR: IStyle = {
     cursorAccent: '#03A9F4',
   },
 };
-const THEME_LIST = [TRON, APOLLO, BLADE, CYBORG, INTERSTELLAR];
 
-export default THEME_LIST;
+export function selectStyle(theme: Theme) {
+  switch (theme) {
+    case Theme.TRON:
+      return TRON;
+    case Theme.APOLLO:
+      return APOLLO;
+    case Theme.CYBORG:
+      return CYBORG;
+    case Theme.BLADE:
+      return BLADE;
+    case Theme.INTERSTELLAR:
+      return INTERSTELLAR;
+  }
+}
+
+export enum Theme {
+  TRON = 'TRON',
+  APOLLO = 'APOLLO',
+  BLADE = 'BLADE',
+  CYBORG = 'CYBORG',
+  INTERSTELLAR = 'INTERSTELLAR',
+}

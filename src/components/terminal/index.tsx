@@ -3,11 +3,9 @@ import XTerm from '@/components/terminal/xTerm';
 import { errorLog } from '@/lib/log';
 import { writeToPty } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
-import { useCurrentTheme } from '@/lib/themes';
 import { ITerminalContainer } from '@/models';
 import { createShortcut } from '@solid-primitives/keyboard';
 import { Event, listen } from '@tauri-apps/api/event';
-import clsx from 'clsx';
 import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
 
 import './index.css';
@@ -32,13 +30,12 @@ function nextActiveTerminal(target: number, keys: number[]) {
 }
 
 function TerminalSection() {
-  const theme = useCurrentTheme();
   const { active, setActive } = useTerminal();
 
   const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
     {
       id: 0,
-      terminal: () => <XTerm id={0} active={active} theme={theme} />,
+      terminal: () => <XTerm id={/* @once */ 0} active={active} />,
     },
   ]);
 
@@ -99,7 +96,7 @@ function TerminalSection() {
       ...prevState,
       {
         id,
-        terminal: () => <XTerm id={id} active={active} theme={theme} />,
+        terminal: () => <XTerm id={/* @once */ id} active={active} />,
       },
     ]);
   }
@@ -111,10 +108,7 @@ function TerminalSection() {
   return (
     <section class="relative h-full w-[68vw] overflow-hidden pt-[2.5vh] sm:px-1 md:px-2 lg:px-3">
       <div
-        class={clsx(
-          theme().name,
-          'shell flex size-full flex-col items-start justify-start',
-        )}
+        class="shell augment-border flex size-full flex-col items-start justify-start"
         data-augmented-ui="bl-clip tr-clip border"
       >
         <TerminalSelectionTab
@@ -122,7 +116,6 @@ function TerminalSection() {
           active={active}
           terminalIds={terminalIds}
           switchTab={switchTerminal}
-          theme={theme}
         />
         <div class="m-0 size-full overflow-hidden">
           <For each={terminals()}>{({ terminal }) => terminal()}</For>

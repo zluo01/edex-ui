@@ -1,25 +1,28 @@
 import { getTheme, setTheme } from '@/lib/setting';
-import THEME_LIST from '@/lib/themes/styles';
-import { IStyle } from '@/models';
+import { Theme } from '@/lib/themes/styles';
 import {
   createContext,
-  useContext,
+  createEffect,
   createResource,
+  on,
   ParentComponent,
+  useContext,
 } from 'solid-js';
 
 function useProviderValue() {
-  const [theme, { mutate }] = createResource<IStyle>(getTheme, {
-    initialValue: THEME_LIST[0],
+  const [theme, { mutate }] = createResource<Theme>(getTheme, {
+    initialValue: Theme.TRON,
   });
 
-  const updateTheme = async (index: number) => {
-    if (index < 0 || index > THEME_LIST.length - 1) {
-      throw new Error('Invalid index: ' + index);
-    }
-    const newTheme = THEME_LIST[index];
-    await setTheme(newTheme);
-    mutate(newTheme);
+  createEffect(
+    on(theme, t =>
+      document.documentElement.setAttribute('data-theme', t.toLowerCase()),
+    ),
+  );
+
+  const updateTheme = async (t: Theme) => {
+    await setTheme(t);
+    mutate(t);
   };
 
   return { theme, updateTheme };
@@ -44,8 +47,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-}
-
-export function useCurrentTheme() {
-  return useTheme().theme;
 }

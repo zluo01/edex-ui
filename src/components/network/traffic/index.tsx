@@ -1,8 +1,8 @@
 import { errorLog } from '@/lib/log';
-import { useCurrentTheme } from '@/lib/themes';
+import { selectStyle, useTheme } from '@/lib/themes';
+import { cn } from '@/lib/utils';
 import { INetworkTraffic } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
-import clsx from 'clsx';
 import prettyBytes from 'pretty-bytes';
 import { SmoothieChart, TimeSeries } from 'smoothie';
 import {
@@ -19,7 +19,8 @@ type NetworkTrafficProps = {
 };
 
 function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
-  const theme = useCurrentTheme();
+  const { theme } = useTheme();
+  const style = () => selectStyle(theme());
 
   const canvas: HTMLCanvasElement[] = [
     document.createElement('canvas'),
@@ -43,13 +44,13 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
         grid: {
           millisPerLine: 5000,
           fillStyle: 'transparent',
-          strokeStyle: theme().colors.main,
+          strokeStyle: style().colors.main,
           verticalSections: 3,
           borderVisible: false,
         },
         labels: {
           fontSize: 10,
-          fillStyle: theme().colors.main,
+          fillStyle: style().colors.main,
           precision: 2,
         },
         minValue: i === 0 ? 0 : undefined,
@@ -59,7 +60,7 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 
   const timeSeriesOptions = {
     lineWidth: 1.7,
-    strokeStyle: `#aacfd1`,
+    strokeStyle: style().colors.main,
   };
 
   const series: TimeSeries[] = [new TimeSeries(), new TimeSeries()];
@@ -112,27 +113,22 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
       <div class="flex w-full flex-col items-center justify-center">
         <canvas
           ref={el => (canvas[0] = el)}
-          class={clsx(
-            theme().borderColor['30'],
+          class={cn(
+            'border-default/30 z-10 mx-0 my-[0.46vh] max-h-[10vh] min-h-[8vh] w-full border-t-[0.092vh] border-dashed',
             props.connected() ? 'opacity-100' : 'opacity-30',
-            'z-10 mx-0 my-[0.46vh] max-h-[10vh] min-h-[8vh] w-full',
-            'border-t-[0.092vh] border-dashed',
           )}
         />
         <canvas
           ref={el => (canvas[1] = el)}
-          class={clsx(
+          class={cn(
+            'border-t-default/40 border-b-default/30 z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full border-b-[0.092vh] border-t-[0.139vh] border-solid',
             props.connected() ? 'opacity-100' : 'opacity-30',
-            theme().borderColor.top,
-            theme().borderColor.bottom,
-            'z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full',
-            'border-b-[0.092vh] border-t-[0.139vh] border-solid',
           )}
         />
         <span
-          class={clsx(
-            props.connected() && 'hidden',
+          class={cn(
             'absolute z-20 m-auto font-semibold sm:text-lg md:text-xl lg:text-2xl xl:text-3xl',
+            props.connected() && 'hidden',
           )}
         >
           OFFLINE

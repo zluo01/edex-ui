@@ -1,6 +1,6 @@
 import BaseInformation from '@/components/system/sysinfo/base';
 import { errorLog } from '@/lib/log';
-import formatTime from '@/lib/utils/format';
+import { formatTime } from '@/lib/utils';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, JSX, onCleanup, Show } from 'solid-js';
 
@@ -34,7 +34,7 @@ function UpTimeSection() {
 
   return (
     <BaseInformation
-      header={'UPTIME'}
+      header={/*@once*/ 'UPTIME'}
       value={
         <Show when={uptime()} fallback={<>0:0:0</>}>
           <UpTime />

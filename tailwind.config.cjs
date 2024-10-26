@@ -1,6 +1,5 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     screens: {
@@ -8,6 +7,20 @@ const config: Config = {
       md: '1920px',
       lg: '2560px',
       xl: '3840px',
+    },
+    backgroundColor: {
+      main: 'rgb(var(--bg-main) / <alpha-value>)',
+      secondary: 'rgb(var(--bg-secondary) / <alpha-value>)',
+      active: 'rgb(var(--bg-active) / <alpha-value>)',
+      hover: 'rgb(var(--bg-hover) / <alpha-value>)',
+    },
+    borderColor: {
+      default: 'rgb(var(--border-default) / <alpha-value>)',
+    },
+    textColor: {
+      main: 'rgb(var(--text-main) / <alpha-value>)',
+      active: 'rgb(var(--text-active) / <alpha-value>)',
+      hover: 'rgb(var(--text-hover) / <alpha-value>)',
     },
     extend: {
       fontSize: {
@@ -31,4 +44,3 @@ const config: Config = {
   },
   plugins: [],
 };
-export default config;

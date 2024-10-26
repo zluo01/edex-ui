@@ -1,55 +1,36 @@
 import { useTheme } from '@/lib/themes';
-import THEME_LIST from '@/lib/themes/styles';
-import clsx from 'clsx';
-import findIndex from 'lodash/findIndex';
-import { Index } from 'solid-js';
+import { Theme } from '@/lib/themes/styles';
+import { For } from 'solid-js';
 
 function ChangeThemeSelection() {
   const { theme, updateTheme } = useTheme();
 
-  async function onChangeTheme(index: string) {
+  async function onChangeTheme(t: Theme) {
     if (updateTheme) {
-      await updateTheme(parseInt(index));
+      await updateTheme(t);
     }
   }
 
-  const currentSelect = () => findIndex(THEME_LIST, theme());
-
   return (
     <div class="flex flex-row flex-nowrap items-center justify-between py-1">
-      <span
-        class={clsx(
-          theme().textColor.main,
-          'sm:text-base md:text-xl lg:text-3xl xl:text-5xl',
-        )}
-      >
+      <span class="text-main sm:text-base md:text-xl lg:text-3xl xl:text-5xl">
         Change Theme
       </span>
       <select
-        class={clsx(
-          theme().textColor.main,
-          theme().borderColor.default,
-          theme().backgroundColor.secondary,
-          'relative block w-32 cursor-pointer border-2 border-solid px-2 text-center focus:outline-none',
-          'appearance-none sm:text-sm md:text-lg lg:text-2xl xl:text-3xl',
-        )}
-        value={currentSelect()}
-        onInput={e => onChangeTheme(e.currentTarget.value)}
+        class="relative block w-32 cursor-pointer appearance-none border-2 border-solid border-default bg-secondary px-2 text-center text-main focus:outline-none sm:text-sm md:text-lg lg:text-2xl xl:text-3xl"
+        value={theme()}
+        onInput={e => onChangeTheme(e.currentTarget.value as Theme)}
       >
-        <Index each={THEME_LIST}>
-          {(t, i) => (
+        <For each={Object.values(Theme)}>
+          {t => (
             <option
-              value={i}
-              class={clsx(
-                theme().textColor.main,
-                theme().backgroundColor.secondary,
-                'mt-1 max-h-60 w-full overflow-auto focus:outline-none sm:text-sm md:text-base lg:text-xl xl:text-2xl',
-              )}
+              value={t}
+              class="mt-1 max-h-60 w-full overflow-auto bg-secondary text-main focus:outline-none sm:text-sm md:text-base lg:text-xl xl:text-2xl"
             >
-              {t().name.toUpperCase()}
+              {t}
             </option>
           )}
-        </Index>
+        </For>
       </select>
     </div>
   );

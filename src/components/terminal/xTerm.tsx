@@ -6,21 +6,15 @@ import {
   writeToPty,
 } from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
+import { useTheme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
-import { IStyle, ITerminalProps } from '@/models';
+import { cn } from '@/lib/utils';
+import { ITerminalProps } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { ITerminalDimensions } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import clsx from 'clsx';
-import {
-  Accessor,
-  createEffect,
-  createSignal,
-  InitializedResource,
-  on,
-  onCleanup,
-} from 'solid-js';
+import { Accessor, createEffect, createSignal, on, onCleanup } from 'solid-js';
 
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
@@ -80,11 +74,12 @@ function useScreenWidth(): Accessor<number> {
 interface IXtermProps {
   id: number;
   active: Accessor<number>;
-  theme: InitializedResource<IStyle>;
 }
 
 // eslint-disable-next-line solid/no-destructure
-function XTerm({ id, active, theme }: IXtermProps) {
+function XTerm({ id, active }: IXtermProps) {
+  const { theme } = useTheme();
+
   // fontSize
   const screenWidth = useScreenWidth();
   const fontSize = () => {
@@ -185,7 +180,7 @@ function XTerm({ id, active, theme }: IXtermProps) {
   return (
     <div
       id={`terminal-${id}`}
-      class={clsx(active() !== id && 'hidden', 'size-full p-1.5')}
+      class={cn(active() !== id && 'hidden', 'size-full p-1.5')}
       ref={setTerminalRef}
     />
   );

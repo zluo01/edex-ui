@@ -1,43 +1,28 @@
-import { IStyle } from '@/models';
-import clsx from 'clsx';
-import { For, InitializedResource } from 'solid-js';
+import { cn } from '@/lib/utils';
+import { For } from 'solid-js';
 
 interface ITerminalSelectionTab {
   active: () => number;
   terminalIds: () => number[];
   switchTab: (id: number) => void;
   addTerminal: VoidFunction;
-  theme: InitializedResource<IStyle>;
 }
 
 function TerminalSelectionTab(props: ITerminalSelectionTab) {
   function generateTabStyle(current: number) {
     const styles: string[] = [
-      props.theme().borderColor['75'],
-      'w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid',
+      'border-default/75 w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid',
     ];
     if (props.active() === current) {
-      styles.push(
-        props.theme().backgroundColor.active,
-        props.theme().textColor.active,
-        'font-medium skew-x-[35deg] scale-125',
-      );
+      styles.push('bg-active text-active font-medium skew-x-[35deg] scale-125');
     } else {
-      styles.push(
-        props.theme().backgroundColor.main,
-        props.theme().textColor.main,
-      );
+      styles.push('bg-main text-main');
     }
-    return clsx(...styles);
+    return cn(...styles);
   }
 
   return (
-    <div
-      class={clsx(
-        props.theme().borderColor['75'],
-        'flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0 font-united_sans_medium',
-      )}
-    >
+    <div class="flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 border-default/75 p-0 font-united_sans_medium">
       <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
         <For each={props.terminalIds()}>
           {id => (
@@ -55,13 +40,7 @@ function TerminalSelectionTab(props: ITerminalSelectionTab) {
       </div>
       <div
         onMouseDown={() => props.addTerminal()}
-        class={clsx(
-          props.theme().borderColor['75'],
-          props.theme().textColor.hoverActive,
-          props.theme().backgroundColor.hoverActive,
-          'flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid font-normal',
-          'sm:text-xs md:text-base lg:text-xl xl:text-3xl',
-        )}
+        class="flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid border-default/75 bg-hover font-normal text-hover sm:text-xs md:text-base lg:text-xl xl:text-3xl"
       >
         <svg
           class="size-6 skew-x-[-45deg] fill-current"

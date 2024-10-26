@@ -1,22 +1,14 @@
 import { errorLog } from '@/lib/log';
-import { ICPUData, IStyle } from '@/models';
+import { selectStyle, useTheme } from '@/lib/themes';
+import { ICPUData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
-import clsx from 'clsx';
 import { SmoothieChart, TimeSeries } from 'smoothie';
-import {
-  createEffect,
-  createSignal,
-  InitializedResource,
-  on,
-  onCleanup,
-  onMount,
-} from 'solid-js';
+import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
 
-interface ICpuLoadProps {
-  theme: InitializedResource<IStyle>;
-}
+function CpuLoad() {
+  const { theme } = useTheme();
+  const style = () => selectStyle(theme());
 
-function CpuLoad(props: ICpuLoadProps) {
   const canvas: HTMLCanvasElement[] = [
     document.createElement('canvas'),
     document.createElement('canvas'),
@@ -61,7 +53,7 @@ function CpuLoad(props: ICpuLoadProps) {
 
   const timeSeriesOptions = {
     lineWidth: 1.7,
-    strokeStyle: `#aacfd1`,
+    strokeStyle: style().colors.main,
   };
 
   onMount(() => {
@@ -105,7 +97,7 @@ function CpuLoad(props: ICpuLoadProps) {
           CPU USAGE
         </span>
         <span class="opacity-50 sm:text-xxs md:text-sm lg:text-xl xl:text-2xl">
-          {cpuName()}
+          {/*@once*/ cpuName()}
         </span>
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
@@ -120,10 +112,7 @@ function CpuLoad(props: ICpuLoadProps) {
         <canvas
           ref={el => (canvas[0] = el)}
           height="60"
-          class={clsx(
-            props.theme().borderColor['30'],
-            'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
-          )}
+          class="my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed border-default/30"
         />
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
@@ -138,10 +127,7 @@ function CpuLoad(props: ICpuLoadProps) {
         <canvas
           ref={el => (canvas[1] = el)}
           height="60"
-          class={clsx(
-            props.theme().borderColor['30'],
-            'my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed',
-          )}
+          class="my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed border-default/30"
         />
       </div>
     </>

@@ -7,30 +7,6 @@
     height 0.5s cubic-bezier(0.85, 0.5, 0.85, 0.5);
 }
 
-/*h1#main_shell_greeting {*/
-/*    font-size: 3.9vh;*/
-/*    font-weight: normal;*/
-/*    margin: auto;*/
-/*    opacity: 0;*/
-/*    transition: opacity .5s cubic-bezier(0.4, 0, 1, 1);*/
-/*}*/
-
-/*h1#main_shell_greeting > em {*/
-/*    font-style: normal;*/
-/*    font-weight: bold;*/
-/*}*/
-
-/*section#main_shell > h3.title {*/
-/*    top: 0.74vh;*/
-/*    left: 16.5vw;*/
-/*    width: 66%;*/
-/*    transition: opacity .5s cubic-bezier(0.4, 0, 1, 1) .5s;*/
-/*}*/
-
-/*section#main_shell > h3.title > p {*/
-/*    width: 49.8%;*/
-/*}*/
-
 .terminal .xterm-viewport {
   overflow: hidden;
   cursor: default;

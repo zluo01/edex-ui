@@ -88,26 +88,6 @@ export interface IFileSystem {
 }
 
 export type IStyle = {
-  name: string;
-  backgroundColor: {
-    main: string;
-    secondary: string;
-    active: string;
-    hoverActive: string;
-  };
-  borderColor: {
-    default: string;
-    30: string;
-    75: string;
-    80: string;
-    top: string;
-    bottom: string;
-  };
-  textColor: {
-    main: string;
-    active: string;
-    hoverActive: string;
-  };
   colors: {
     main: string;
     black: string;

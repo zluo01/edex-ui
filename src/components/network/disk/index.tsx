@@ -1,5 +1,4 @@
 import { errorLog } from '@/lib/log';
-import { useCurrentTheme } from '@/lib/themes';
 import { IDiskUsage } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import isEqual from 'lodash/isEqual';
@@ -7,8 +6,6 @@ import prettyBytes from 'pretty-bytes';
 import { createSignal, For, onCleanup } from 'solid-js';
 
 function DiskUsage() {
-  const theme = useCurrentTheme();
-
   const [disks, setDisks] = createSignal<IDiskUsage[]>();
 
   const unListen = listen('disk', (e: Event<IDiskUsage[]>) =>
@@ -34,7 +31,7 @@ function DiskUsage() {
             <div
               class="flex flex-col"
               style={{
-                background: `linear-gradient(to right, ${theme().colors.grey} ${disk.usage}%, transparent 80%)`,
+                background: `linear-gradient(to right, var(--color-shade) ${disk.usage}%, transparent 80%)`,
               }}
             >
               <div class="flex flex-row items-center justify-between">

@@ -1,5 +1,6 @@
+import { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
-import { IStyle, ITerminalProps } from '@/models';
+import { ITerminalProps } from '@/models';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
@@ -26,7 +27,7 @@ const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
 
 export function createTerminal(
   terminalContainer: HTMLDivElement,
-  theme: IStyle,
+  theme: Theme,
   initialFontSize: number,
 ): ITerminalProps {
   const term = new Terminal({
