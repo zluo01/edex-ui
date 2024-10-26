@@ -23,7 +23,7 @@
     },
     {
       "groupName": "tauri",
-      "matchPackagePrefixes": ["@tauri-apps/"]
+      "matchPackagePrefixes": ["@tauri-apps/", "tauri"]
     },
     {
       "groupName": "styling",
