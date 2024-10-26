@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
@@ -28,6 +30,7 @@ module.exports = {
         xxs: ['10px', '12px'],
       },
       fontFamily: {
+        serif: ['Fira Mono', 'Fira Code', ...defaultTheme.fontFamily.serif],
         united_sans_light: ['united-sans-light'],
         united_sans_medium: ['united-sans-medium'],
       },

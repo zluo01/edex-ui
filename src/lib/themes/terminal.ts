@@ -1,13 +1,10 @@
 import { selectStyle, Theme } from '@/lib/themes/styles';
 import { ITerminalOptions } from '@xterm/xterm';
 import Color from 'color';
-import join from 'lodash/join';
 
 function colorify(color: string, theme: string) {
   return Color(color).grayscale().mix(Color(theme), 0.3).hex();
 }
-
-const FALL_BACK_FONTS = ['Ubuntu Mono', 'Courier New'];
 
 export default function generateTerminalTheme(theme: Theme): ITerminalOptions {
   const style = selectStyle(theme);
@@ -16,7 +13,7 @@ export default function generateTerminalTheme(theme: Theme): ITerminalOptions {
     cursorBlink: true,
     cursorStyle: style.terminal.cursorStyle,
     allowTransparency: false,
-    fontFamily: join([style.terminal.fontFamily, ...FALL_BACK_FONTS], ', '),
+    fontFamily: `${style.terminal.fontFamily}, serif`,
     fontWeight: 'normal',
     fontWeightBold: 'bold',
     letterSpacing: 0,
