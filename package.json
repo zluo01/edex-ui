@@ -46,7 +46,7 @@
     "@types/color": "4.2.0",
     "@types/lodash": "4.17.13",
     "@types/node": "22.9.0",
-    "@typescript-eslint/parser": "8.12.2",
+    "@typescript-eslint/parser": "8.13.0",
     "autoprefixer": "10.4.20",
     "eslint": "9.14.0",
     "eslint-config-prettier": "9.1.0",
