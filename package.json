@@ -53,7 +53,7 @@
     "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-solid": "0.14.5",
     "eslint-plugin-tailwindcss": "3.17.5",
-    "globals": "15.13.0",
+    "globals": "15.14.0",
     "husky": "9.1.7",
     "lint-staged": "15.2.11",
     "postcss": "8.4.49",
