@@ -15,7 +15,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@solid-primitives/date": "2.0.24",
+    "@solid-primitives/date": "2.1.0",
     "@solid-primitives/keyboard": "1.2.8",
     "@tauri-apps/api": "2.2.0",
     "@tauri-apps/plugin-http": "2.2.0",
