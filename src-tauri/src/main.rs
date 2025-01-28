@@ -74,14 +74,14 @@ async fn get_ip_information(
         return Err(());
     }
 
-    let data = resp.unwrap().json::<IPInformation>().await;
+    let data = resp.unwrap().text().await;
 
     if let Err(e) = data {
         error!("Fail to get response data. Error: {:}", e);
         return Err(());
     }
 
-    let information = data.unwrap();
+    let information: IPInformation = serde_json::from_str(data.unwrap().as_str()).unwrap();
     if information.is_fail() {
         return Err(());
     }
