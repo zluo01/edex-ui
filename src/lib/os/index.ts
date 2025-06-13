@@ -1,7 +1,6 @@
 import { errorLog } from '@/lib/log';
 import { IIPAddressInformation } from '@/models';
 import { invoke } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-shell';
 
 export async function openFile(path: string) {
@@ -26,8 +25,8 @@ export async function getNetworkLatency(): Promise<string> {
   }
 }
 
-export async function fitTerminal(id: number, rows: number, cols: number) {
-  await emit('resize-' + id, { rows, cols });
+export async function resizeSession(id: number, rows: number, cols: number) {
+  await invoke('resize_session', { id, rows, cols });
 }
 
 /**
@@ -35,18 +34,22 @@ export async function fitTerminal(id: number, rows: number, cols: number) {
  * @param id terminal id
  * @param data payload
  */
-export async function writeToPty(id: number, data: string) {
-  await emit('writer-' + id, data);
+export async function writeToSession(id: number, data: string) {
+  await invoke('write_to_session', { id, data });
 }
 
 /**
  * Create a new terminal and return pid
  * @param id terminal index
  */
-export async function newTerminalSession(id: number): Promise<number> {
-  return await invoke('new_terminal_session', { id });
+export async function initializeSession(id: number) {
+  await invoke('initialize_session', { id });
 }
 
-export async function updateCurrentPid(pid: number) {
-  await invoke('update_current_pid', { pid });
+export async function terminateSession(id: number) {
+  await invoke('terminate_session', { id });
+}
+
+export async function updateCurrentSession(id: number) {
+  await invoke('update_current_session', { id });
 }

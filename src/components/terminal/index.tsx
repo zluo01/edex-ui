@@ -1,7 +1,7 @@
+import Session from '@/components/terminal/session';
 import TerminalSelectionTab from '@/components/terminal/tab';
-import XTerm from '@/components/terminal/xTerm';
 import { errorLog } from '@/lib/log';
-import { writeToPty } from '@/lib/os';
+import { terminateSession } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
 import { ITerminalContainer } from '@/models';
 import { createShortcut } from '@solid-primitives/keyboard';
@@ -35,7 +35,7 @@ function TerminalSection() {
   const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
     {
       id: 0,
-      terminal: () => <XTerm id={/* @once */ 0} active={active} />,
+      terminal: () => <Session id={/* @once */ 0} active={active} />,
     },
   ]);
 
@@ -63,9 +63,7 @@ function TerminalSection() {
 
   createShortcut(
     ['Control', 'W'],
-    async () => {
-      await writeToPty(active(), 'exit\n');
-    },
+    async () => await terminateSession(active()),
     { preventDefault: true },
   );
 
@@ -73,8 +71,9 @@ function TerminalSection() {
     preventDefault: true,
   });
 
-  const unListen = listen('destroy', (e: Event<number>) => {
+  const unListen = listen('destroy', async (e: Event<number>) => {
     const id = e.payload;
+    await terminateSession(id);
     const nextIndex = nextActiveTerminal(id, terminalIds());
     setTerminals(prevState => prevState.filter(o => o.id !== id));
     setActive(nextIndex);
@@ -96,7 +95,7 @@ function TerminalSection() {
       ...prevState,
       {
         id,
-        terminal: () => <XTerm id={/* @once */ id} active={active} />,
+        terminal: () => <Session id={/* @once */ id} active={active} />,
       },
     ]);
   }

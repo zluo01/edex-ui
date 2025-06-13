@@ -1,9 +1,9 @@
 import { errorLog, traceLog } from '@/lib/log';
 import {
-  fitTerminal,
-  newTerminalSession,
-  updateCurrentPid,
-  writeToPty,
+  initializeSession,
+  resizeSession,
+  updateCurrentSession,
+  writeToSession,
 } from '@/lib/os';
 import { Addons, createTerminal } from '@/lib/terminal';
 import { useTheme } from '@/lib/themes';
@@ -51,7 +51,7 @@ async function resize(id: number, term: Terminal, addons: Addons) {
   if (term.cols !== cols || term.rows !== rows) {
     term.resize(cols, rows);
     fitAddon.fit();
-    await fitTerminal(id, term.rows, term.cols);
+    await resizeSession(id, term.rows, term.cols);
   }
 }
 
@@ -77,7 +77,7 @@ interface IXtermProps {
 }
 
 // eslint-disable-next-line solid/no-destructure
-function XTerm({ id, active }: IXtermProps) {
+function Session({ id, active }: IXtermProps) {
   const { theme } = useTheme();
 
   // fontSize
@@ -95,7 +95,6 @@ function XTerm({ id, active }: IXtermProps) {
 
   const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
 
-  let pid: number | undefined;
   let terminal: ITerminalProps | undefined;
 
   async function resizeTerminal(id: number) {
@@ -111,8 +110,8 @@ function XTerm({ id, active }: IXtermProps) {
         if (active === id) {
           await resizeTerminal(id);
           terminal?.term.focus();
-          if (pid) {
-            await updateCurrentPid(pid);
+          if (id) {
+            await updateCurrentSession(id);
           }
         } else {
           terminal?.term.blur();
@@ -152,11 +151,11 @@ function XTerm({ id, active }: IXtermProps) {
         await traceLog('Initialize terminal interface. Id: ' + id);
         terminal = createTerminal(ref, theme(), fontSize());
 
-        pid = await newTerminalSession(id);
+        await initializeSession(id);
 
         await resize(id, terminal.term, terminal.addons);
 
-        terminal.term.onData(v => writeToPty(id, v));
+        terminal.term.onData(v => writeToSession(id, v));
 
         addEventListener('resize', () => resizeTerminal(id));
 
@@ -186,4 +185,4 @@ function XTerm({ id, active }: IXtermProps) {
   );
 }
 
-export default XTerm;
+export default Session;

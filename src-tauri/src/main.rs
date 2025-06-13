@@ -5,45 +5,35 @@
 
 extern crate core;
 
-use std::{
-    io::{BufRead, BufReader, Read, Write},
-    path::PathBuf,
-    sync::atomic::AtomicI32,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
-    },
-    time::Duration,
-};
-
-use log::{error, info, trace, LevelFilter};
+use log::{error, info, LevelFilter};
 use notify::{
     recommended_watcher, Event as NotifyEvent, RecursiveMode, Result as NotifyResult, Watcher,
 };
-use portable_pty::{native_pty_system, PtySize};
+use portable_pty::PtySize;
 use serde_json::{json, Value};
+use std::sync::Arc;
+use std::{path::PathBuf, sync::atomic::AtomicI32, sync::atomic::Ordering, time::Duration};
 use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
-use tauri::{
-    async_runtime::Mutex as AsyncMutex, AppHandle, Emitter, Listener, Manager, Runtime, State,
-};
+use tauri::{async_runtime::Mutex as AsyncMutex, Emitter, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
 
-use crate::constant::main::{
-    reader_event_key, resize_event_key, writer_event_key, DESTROY_TERMINAL, UPDATE_FILES,
-};
+use crate::constant::main::UPDATE_FILES;
 use crate::path::main::{get_current_pty_cwd, scan_directory};
-use crate::session::main::{construct_cmd, ResizePayload};
+use crate::session::main::{PtyEventProcessor, PtySessionManager};
 use crate::sys::main::{
     extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process,
     extract_temperature, IPInformation,
 };
 use tauri_plugin_http::reqwest;
+use tokio::sync::Mutex;
 
 mod constant;
 mod path;
 mod session;
 mod sys;
+
+struct PtySessionManagerState(Arc<Mutex<PtySessionManager>>);
 
 struct CurrentProcessState(Arc<AtomicI32>);
 
@@ -108,139 +98,86 @@ async fn get_network_latency(
 }
 
 #[tauri::command]
-async fn new_terminal_session<R: Runtime>(
-    app_handle: AppHandle<R>,
+async fn initialize_session(
+    session_manager_state: State<'_, PtySessionManagerState>,
     current_process_state: State<'_, CurrentProcessState>,
     id: u8,
-) -> Result<i32, ()> {
-    let pty_system = native_pty_system();
-
-    let pty_pair = pty_system
-        .openpty(PtySize {
-            rows: 24,
-            cols: 80,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .unwrap();
-
-    let cmd = construct_cmd();
-    let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
-
-    // Release any handles owned by the slave: we don't need it now
-    // that we've spawned the child.
-    drop(pty_pair.slave);
-
-    // Save these somewhere you can access them back if you need to close the streams
-    let pty_reader = pty_pair.master.try_clone_reader().unwrap();
-    let reader = Arc::new(AsyncMutex::new(Some(BufReader::new(pty_reader))));
-    let should_stop_reader = Arc::new(AtomicBool::new(false));
-
-    let pty_writer = Arc::new(Mutex::new(pty_pair.master.take_writer().unwrap()));
-    let master = Arc::new(Mutex::new(pty_pair.master));
-
-    let pid = &master
-        .lock()
-        .unwrap()
-        .process_group_leader()
-        .expect("Fail to get pid.");
-
-    // create listener to lister frontend terminal inputs
-    let writer_listener = app_handle.listen(writer_event_key(&id), move |event| {
-        let payload: String = serde_json::from_str(&event.payload()).unwrap();
-        let _ = pty_writer
-            .lock()
-            .unwrap()
-            .write(payload.as_bytes())
-            .map_err(|e| error!("Error on write to pty. Error: {:?}", e));
-    });
-
-    // create listener to lister frontend terminal resize action
-    let resize_listener = app_handle.listen(resize_event_key(&id), move |event| {
-        let payload: ResizePayload = serde_json::from_str(event.payload()).unwrap();
-        let _ = master
-            .lock()
-            .unwrap()
-            .resize(PtySize {
-                rows: payload.rows(),
-                cols: payload.cols(),
-                ..Default::default()
-            })
-            .map_err(|e| error!("Error on resize pty. Error: {:?}", e));
-    });
-
-    // create new thread to handle terminal read, write and resize
-    let terminal_process = app_handle.clone();
-    let should_stop_reader_signal = should_stop_reader.clone();
-    tauri::async_runtime::spawn(async move {
-        listen_terminal(&id, reader, &terminal_process, should_stop_reader_signal).await;
-
-        // cleanup
-        trace!("Terminal {} is closed. Proceed to cleanup listeners.", &id);
-        terminal_process.unlisten(resize_listener);
-        terminal_process.unlisten(writer_listener);
-    });
-
-    // new thread to listen to terminal exit signal
-    let child_process_handle = app_handle.clone();
-    tauri::async_runtime::spawn(async move {
-        let status = child.wait().unwrap();
-        let exit_code = status.exit_code();
-        should_stop_reader.store(true, Ordering::Relaxed);
-        handle_terminal_close(&id, exit_code, child_process_handle).await
-    });
-
-    trace!("Create new terminal: {}", pid);
-    current_process_state
-        .0
-        .store(pid.clone(), Ordering::Relaxed);
-    Ok(*pid)
-}
-
-async fn listen_terminal<R: Runtime>(
-    id: &u8,
-    reader: Arc<AsyncMutex<Option<BufReader<Box<dyn Read + Send>>>>>,
-    app_handle: &AppHandle<R>,
-    should_stop: Arc<AtomicBool>,
-) {
-    let event_key = reader_event_key(id);
-    let reader = reader.lock().await.take();
-    let mut interval = tokio::time::interval(Duration::from_millis(1));
-    if let Some(mut reader) = reader {
-        loop {
-            if should_stop.load(Ordering::Relaxed) {
-                break;
-            }
-            interval.tick().await;
-            let data = reader.fill_buf().unwrap().to_vec();
-            reader.consume(data.len());
-            if data.len() > 0 {
-                app_handle.emit(&event_key, data).unwrap();
-            }
-        }
+) -> Result<(), ()> {
+    let result = session_manager_state.0.lock().await.spawn_pty(id);
+    match result {
+        Ok(pid) => current_process_state.0.store(pid, Ordering::Relaxed),
+        Err(e) => error!("Fail to spawn new pty session: {:?}", e),
     }
-}
-
-async fn handle_terminal_close<R: Runtime>(id: &u8, exit_code: u32, app_handle: AppHandle<R>) {
-    trace!("Exit status {}. Id: {}", &exit_code, &id);
-
-    // exit the application if exit on the main terminal
-    if &0u8 == id {
-        app_handle.exit(exit_code as i32);
-        return;
-    }
-
-    // remove the terminal
-    trace!("Destroy terminal {}.", &id);
-    app_handle.emit(DESTROY_TERMINAL, &id).unwrap();
+    Ok(())
 }
 
 #[tauri::command]
-async fn update_current_pid(
-    current_process_state: State<'_, CurrentProcessState>,
-    pid: i32,
+async fn resize_session(
+    session_manager_state: State<'_, PtySessionManagerState>,
+    id: u8,
+    rows: u16,
+    cols: u16,
 ) -> Result<(), ()> {
-    current_process_state.0.store(pid, Ordering::Relaxed);
+    let result = session_manager_state.0.lock().await.resize_pty(
+        id,
+        PtySize {
+            rows,
+            cols,
+            ..Default::default()
+        },
+    );
+    match result {
+        Ok(()) => {}
+        Err(e) => error!("Fail to resize pty session: {:?}", e),
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn write_to_session(
+    session_manager_state: State<'_, PtySessionManagerState>,
+    id: u8,
+    data: &str,
+) -> Result<(), ()> {
+    let result = session_manager_state
+        .0
+        .lock()
+        .await
+        .write_to_pty(id, data.as_bytes());
+    match result {
+        Ok(()) => {}
+        Err(e) => error!("Fail to write to session: {:?}", e),
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn terminate_session(
+    session_manager_state: State<'_, PtySessionManagerState>,
+    id: u8,
+) -> Result<(), ()> {
+    let result = session_manager_state.0.lock().await.kill_pty(id);
+    match result {
+        Ok(()) => {}
+        Err(e) => error!("Fail to close pty session: {:?}", e),
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn update_current_session(
+    session_manager_state: State<'_, PtySessionManagerState>,
+    current_process_state: State<'_, CurrentProcessState>,
+    id: u8,
+) -> Result<(), ()> {
+    let result = session_manager_state.0.lock().await.get_pid(id);
+    match result {
+        Ok(pid) => current_process_state.0.store(pid, Ordering::Relaxed),
+        Err(e) => error!(
+            "Fail to find pid for session with id: {}. Error: {:?}",
+            id, e
+        ),
+    }
     Ok(())
 }
 
@@ -282,10 +219,23 @@ fn main() {
             kernel_version,
             get_ip_information,
             get_network_latency,
-            new_terminal_session,
-            update_current_pid
+            initialize_session,
+            write_to_session,
+            resize_session,
+            terminate_session,
+            update_current_session
         ])
         .setup(move |app| {
+            let (pty_manager, event_rx) = PtySessionManager::new();
+            let mut event_processor = PtyEventProcessor::new(event_rx, app.handle().clone());
+
+            // Start event processor in background
+            tauri::async_runtime::spawn(async move {
+                event_processor.run().await;
+            });
+
+            app.manage(PtySessionManagerState(Arc::new(Mutex::new(pty_manager))));
+
             // updating and emitting system information
             let system_info_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
