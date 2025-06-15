@@ -47,7 +47,7 @@ export async function initializeSession(id: number) {
 }
 
 export async function terminateSession(id: number) {
-  await invoke('terminate_session', { id });
+  await writeToSession(id, 'exit\n');
 }
 
 export async function updateCurrentSession(id: number) {

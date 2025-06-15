@@ -73,7 +73,6 @@ function TerminalSection() {
 
   const unListen = listen('destroy', async (e: Event<number>) => {
     const id = e.payload;
-    await terminateSession(id);
     const nextIndex = nextActiveTerminal(id, terminalIds());
     setTerminals(prevState => prevState.filter(o => o.id !== id));
     setActive(nextIndex);

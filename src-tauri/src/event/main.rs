@@ -14,7 +14,6 @@ pub enum ProcessEvent {
     Process { process_data: Vec<ProcessInfo> },
     Forward { id: u8, data: Vec<u8> }, // Handle Pty Message forwarding
     ProcessExit { id: u8, exit_code: Option<u32> }, // Handle Pty Session Exits
-    Closed { id: u8 },                 // Handle Pty Session Exits
 }
 
 pub struct EventProcessor {
@@ -47,9 +46,6 @@ impl EventProcessor {
             }
             ProcessEvent::ProcessExit { id, exit_code } => {
                 self.handle_close(id, exit_code).await;
-            }
-            ProcessEvent::Closed { id } => {
-                self.handle_close(id, None).await;
             }
             ProcessEvent::System { system_data } => {
                 self.send_data("system", system_data).await;

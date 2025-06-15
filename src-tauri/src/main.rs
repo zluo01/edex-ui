@@ -115,7 +115,7 @@ async fn resize_session(
     rows: u16,
     cols: u16,
 ) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().await.resize_pty(
+    let result = session_manager_state.0.lock().await.resize(
         id,
         PtySize {
             rows,
@@ -140,23 +140,10 @@ async fn write_to_session(
         .0
         .lock()
         .await
-        .write_to_pty(id, data.as_bytes());
+        .write(id, data.as_bytes());
     match result {
         Ok(()) => {}
         Err(e) => error!("Fail to write to session: {:?}", e),
-    }
-    Ok(())
-}
-
-#[tauri::command]
-async fn terminate_session(
-    session_manager_state: State<'_, PtySessionManagerState>,
-    id: u8,
-) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().await.kill_pty(id);
-    match result {
-        Ok(()) => {}
-        Err(e) => error!("Fail to close pty session: {:?}", e),
     }
     Ok(())
 }
@@ -219,7 +206,6 @@ fn main() {
             initialize_session,
             write_to_session,
             resize_session,
-            terminate_session,
             update_current_session
         ])
         .setup(move |app| {
@@ -259,7 +245,7 @@ fn main() {
                         }
                         Err(e) => error!("watch error: {:?}", e),
                     })
-                    .unwrap();
+                        .unwrap();
 
                 let mut prev_cwd = PathBuf::default();
                 let mut interval = tokio::time::interval(Duration::from_millis(500));
