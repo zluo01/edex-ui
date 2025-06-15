@@ -1,13 +1,16 @@
 import BaseInformation from '@/components/system/sysinfo/base';
 import { errorLog } from '@/lib/log';
 import { formatTime } from '@/lib/utils';
+import { SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, JSX, onCleanup, Show } from 'solid-js';
 
 function UpTimeSection() {
   const [uptime, setUptime] = createSignal<number>();
 
-  const unListen = listen('uptime', (e: Event<number>) => setUptime(e.payload));
+  const unListen = listen('system', (e: Event<SystemData>) =>
+    setUptime(e.payload.uptime),
+  );
 
   onCleanup(() => {
     unListen.then(f => f()).catch(errorLog);

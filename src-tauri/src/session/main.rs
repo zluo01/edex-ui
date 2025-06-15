@@ -4,7 +4,7 @@ use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize}
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
-use sysinfo::{Pid, PidExt, System, SystemExt};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
@@ -178,7 +178,11 @@ impl PtySessionManager {
                 loop {
                     std::thread::sleep(Duration::from_secs(1));
 
-                    system.refresh_process(sysinfo_pid);
+                    system.refresh_processes_specifics(
+                        ProcessesToUpdate::Some(&[sysinfo_pid]),
+                        true,
+                        ProcessRefreshKind::nothing(),
+                    );
 
                     if system.process(sysinfo_pid).is_some() {
                         continue;

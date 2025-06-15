@@ -1,13 +1,13 @@
 import { errorLog } from '@/lib/log';
-import { ITemperatureInformation } from '@/models';
+import { ITemperatureInformation, SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, onCleanup } from 'solid-js';
 
 function Temperature() {
   const [temperature, setTemperature] = createSignal<ITemperatureInformation>();
 
-  const unListen = listen('temperature', (e: Event<ITemperatureInformation>) =>
-    setTemperature(e.payload),
+  const unListen = listen('system', (e: Event<SystemData>) =>
+    setTemperature(e.payload.temperature),
   );
 
   onCleanup(() => {

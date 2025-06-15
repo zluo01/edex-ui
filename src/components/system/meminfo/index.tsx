@@ -1,13 +1,13 @@
 import { errorLog } from '@/lib/log';
-import { IMemoryInformation } from '@/models';
+import { IMemoryInformation, SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, onCleanup } from 'solid-js';
 
 function MemInfo() {
   const [memory, setMemory] = createSignal<IMemoryInformation>();
 
-  const unListen = listen('memory', (e: Event<IMemoryInformation>) =>
-    setMemory(e.payload),
+  const unListen = listen('system', (e: Event<SystemData>) =>
+    setMemory(e.payload.memory),
   );
 
   onCleanup(() => {

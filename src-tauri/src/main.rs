@@ -10,10 +10,10 @@ use notify::{
     recommended_watcher, Event as NotifyEvent, RecursiveMode, Result as NotifyResult, Watcher,
 };
 use portable_pty::PtySize;
-use serde_json::{json, Value};
+use serde_json::{Value};
 use std::sync::Arc;
 use std::{path::PathBuf, sync::atomic::AtomicI32, sync::atomic::Ordering, time::Duration};
-use sysinfo::{CpuRefreshKind, ProcessRefreshKind, RefreshKind, System, SystemExt};
+use sysinfo::{System};
 use tauri::{async_runtime::Mutex as AsyncMutex, Emitter, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
@@ -21,10 +21,7 @@ use tokio::time::Instant;
 use crate::constant::main::UPDATE_FILES;
 use crate::path::main::{get_current_pty_cwd, scan_directory};
 use crate::session::main::{PtyEventProcessor, PtySessionManager};
-use crate::sys::main::{
-    extract_cpu_data, extract_disk_usage, extract_memory, extract_network, extract_process,
-    extract_temperature, IPInformation,
-};
+use crate::sys::main::{IPInformation, SystemMonitor};
 use tauri_plugin_http::reqwest;
 use tokio::sync::Mutex;
 
@@ -41,9 +38,7 @@ struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
-    let sys = System::new_with_specifics(RefreshKind::new());
-    let kernel_version = sys
-        .kernel_version()
+    let kernel_version = System::kernel_version()
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
         .expect("Fail to get kernel version.");
     Ok(kernel_version)
@@ -236,43 +231,11 @@ fn main() {
 
             app.manage(PtySessionManagerState(Arc::new(Mutex::new(pty_manager))));
 
-            // updating and emitting system information
-            let system_info_handle = app.handle().clone();
+            // refresh and emit system information
+            let mut monitor = SystemMonitor::new(1, app.handle().clone());
             tauri::async_runtime::spawn(async move {
-                let mut sys = System::new_with_specifics(
-                    RefreshKind::new()
-                        .with_memory()
-                        .with_cpu(CpuRefreshKind::everything().without_frequency())
-                        .with_processes(
-                            ProcessRefreshKind::everything()
-                                .without_disk_usage()
-                                .without_user(),
-                        )
-                        .with_components_list()
-                        .with_networks_list()
-                        .with_disks_list(),
-                );
-
-                let mut interval = tokio::time::interval(Duration::from_secs(1));
-                loop {
-                    interval.tick().await;
-                    sys.refresh_all();
-
-                    // Emit information
-                    let _ = system_info_handle.emit("uptime", &sys.uptime());
-                    let _ = system_info_handle.emit("memory", extract_memory(&sys));
-                    let _ = system_info_handle.emit("load", extract_cpu_data(&sys));
-                    let _ = system_info_handle.emit("network", extract_network(&sys));
-                    let _ = system_info_handle.emit("disk", extract_disk_usage(&sys));
-                    let _ =
-                        system_info_handle.emit("temperature", json!(extract_temperature(&sys)));
-
-                    let processes = extract_process(&sys);
-                    let _ = system_info_handle.emit("process", json!(&processes));
-                    let _ = system_info_handle.emit(
-                        "process_short",
-                        json!(processes.iter().take(10).cloned().collect::<Vec<_>>()),
-                    );
+                if let Err(e) = monitor.start_monitoring().await {
+                    error!("Fail to start system monitoring. Error: {}", e);
                 }
             });
 
@@ -294,7 +257,7 @@ fn main() {
                         }
                         Err(e) => error!("watch error: {:?}", e),
                     })
-                    .unwrap();
+                        .unwrap();
 
                 let mut prev_cwd = PathBuf::default();
                 let mut interval = tokio::time::interval(Duration::from_millis(500));

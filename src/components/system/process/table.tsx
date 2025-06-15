@@ -1,13 +1,13 @@
 import { errorLog } from '@/lib/log';
-import { IProcessInformation } from '@/models';
+import { IProcessInformation, SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { createSignal, For, onCleanup } from 'solid-js';
 
 function ProcessTable() {
   const [processes, setProcesses] = createSignal<IProcessInformation[]>();
 
-  const unListen = listen('process_short', (e: Event<IProcessInformation[]>) =>
-    setProcesses(e.payload),
+  const unListen = listen('system', (e: Event<SystemData>) =>
+    setProcesses(e.payload.processes),
   );
 
   onCleanup(() => {

@@ -3,6 +3,14 @@ import { Terminal as TerminalType } from '@xterm/xterm';
 import { CursorStyle } from '@xterm/xterm/src/common/Types';
 import { JSXElement } from 'solid-js';
 
+export interface SystemData {
+  uptime: number;
+  memory: IMemoryInformation;
+  cpu: ICPUData;
+  temperature: ITemperatureInformation;
+  processes: IProcessInformation[];
+}
+
 export interface ITemperatureInformation {
   cpu: number;
   gpu: number;
@@ -13,7 +21,6 @@ export interface ICPUData {
   name: string;
   cores: number;
   divide: number;
-  temperature: ITemperatureInformation;
   load: number[];
   usage: number[];
 }
@@ -21,9 +28,9 @@ export interface ICPUData {
 export interface IMemoryInformation {
   active: number;
   available: number;
-  total: string;
-  used: string;
-  swap: string;
+  total: number;
+  used: number;
+  swap: number;
   ratio: number;
 }
 

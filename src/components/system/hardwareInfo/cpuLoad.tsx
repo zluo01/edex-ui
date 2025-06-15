@@ -1,6 +1,6 @@
 import { errorLog } from '@/lib/log';
 import { selectStyle, useTheme } from '@/lib/themes';
-import { ICPUData } from '@/models';
+import { ICPUData, SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { SmoothieChart, TimeSeries } from 'smoothie';
 import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
@@ -16,7 +16,9 @@ function CpuLoad() {
 
   const [data, setData] = createSignal<ICPUData>();
 
-  const unListen = listen('load', (e: Event<ICPUData>) => setData(e.payload));
+  const unListen = listen('system', (e: Event<SystemData>) =>
+    setData(e.payload.cpu),
+  );
 
   const cpuName = () => {
     if (!data()) {
