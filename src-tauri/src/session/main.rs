@@ -1,12 +1,11 @@
-use crate::constant::main::DESTROY_TERMINAL;
-use log::{error, trace};
+use crate::event::main::ProcessEvent;
+use log::error;
 use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 use tauri::async_runtime::JoinHandle;
-use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 
 fn construct_cmd() -> CommandBuilder {
@@ -23,13 +22,6 @@ fn construct_cmd() -> CommandBuilder {
     cmd
 }
 
-#[derive(Debug, Clone)]
-pub enum PtyEvent {
-    Output { id: u8, data: Vec<u8> },
-    ProcessExit { id: u8, exit_code: Option<u32> },
-    Closed { id: u8 },
-}
-
 pub struct PtySession {
     pub id: u8,
     pub pid: i32,
@@ -40,20 +32,16 @@ pub struct PtySession {
 }
 
 pub struct PtySessionManager {
-    event_tx: mpsc::UnboundedSender<PtyEvent>,
+    event_tx: mpsc::UnboundedSender<ProcessEvent>,
     active_sessions: HashMap<u8, PtySession>,
 }
 
 impl PtySessionManager {
-    pub fn new() -> (Self, mpsc::UnboundedReceiver<PtyEvent>) {
-        let (tx, rx) = mpsc::unbounded_channel();
-
-        let manager = Self {
+    pub fn new(tx: mpsc::UnboundedSender<ProcessEvent>) -> Self {
+        Self {
             event_tx: tx,
             active_sessions: HashMap::new(),
-        };
-
-        (manager, rx)
+        }
     }
 
     // Spawn a new PTY with a command
@@ -96,7 +84,7 @@ impl PtySessionManager {
                 Ok(data) if data.len() > 0 => {
                     let data = data.to_vec();
                     reader.consume(data.len());
-                    match tx_reader.send(PtyEvent::Output {
+                    match tx_reader.send(ProcessEvent::Forward {
                         id,
                         data: data.to_vec(),
                     }) {
@@ -187,7 +175,7 @@ impl PtySessionManager {
                     if system.process(sysinfo_pid).is_some() {
                         continue;
                     } else {
-                        match tx.send(PtyEvent::ProcessExit {
+                        match tx.send(ProcessEvent::ProcessExit {
                             id,
                             exit_code: None,
                         }) {
@@ -212,7 +200,7 @@ impl PtySessionManager {
                 pty_instance.reader_handle.abort();
 
                 // Send closed event
-                match self.event_tx.send(PtyEvent::Closed { id }) {
+                match self.event_tx.send(ProcessEvent::Closed { id }) {
                     Ok(_) => {}
                     Err(e) => error!("Fail to send close event message. Error: {:?}", e),
                 };
@@ -228,61 +216,5 @@ impl PtySessionManager {
             Some(pty_instance) => Ok(pty_instance.pid),
             None => Err(format!("Session {} not found", id).into()),
         }
-    }
-}
-
-pub struct PtyEventProcessor {
-    event_rx: mpsc::UnboundedReceiver<PtyEvent>,
-    app_handle: AppHandle,
-}
-
-impl PtyEventProcessor {
-    pub fn new(rx: mpsc::UnboundedReceiver<PtyEvent>, app_handle: AppHandle) -> Self {
-        Self {
-            event_rx: rx,
-            app_handle,
-        }
-    }
-
-    pub async fn run(&mut self) {
-        while let Some(event) = self.event_rx.recv().await {
-            self.handle_event(event).await
-        }
-    }
-
-    async fn handle_event(&self, event: PtyEvent) {
-        match event {
-            PtyEvent::Output { id, data } => {
-                self.forward_output(id, &data).await;
-            }
-            PtyEvent::ProcessExit { id, exit_code } => {
-                self.handle_close(id, exit_code).await;
-            }
-            PtyEvent::Closed { id } => {
-                self.handle_close(id, None).await;
-            }
-        }
-    }
-
-    // Forward output to external systems (websockets, files, etc.)
-    async fn forward_output(&self, id: u8, data: &[u8]) {
-        if !data.is_empty() {
-            let event_key = format!("data-{}", id);
-            self.app_handle.emit(&event_key, data).unwrap();
-        }
-    }
-
-    async fn handle_close(&self, id: u8, exit_code: Option<u32>) {
-        trace!("Exit status {:?}. Id: {}", &exit_code, &id);
-
-        // exit the application if exit on the main terminal
-        if 0u8 == id {
-            self.app_handle.exit(exit_code.unwrap_or(0) as i32);
-            return;
-        }
-
-        // notify UI to remove the terminal
-        trace!("Destroy terminal {}.", id);
-        self.app_handle.emit(DESTROY_TERMINAL, id).unwrap();
     }
 }

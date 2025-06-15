@@ -1,3 +1,4 @@
+use crate::event::main::ProcessEvent;
 use chrono::{DateTime, Local};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
@@ -11,7 +12,7 @@ use sysinfo::{
     Components, CpuRefreshKind, DiskRefreshKind, Disks, MemoryRefreshKind, Networks,
     ProcessRefreshKind, RefreshKind, System,
 };
-use tauri::{AppHandle, Emitter};
+use tokio::sync::mpsc;
 
 const BYTES_TO_GB: f64 = 1_073_741_824.0;
 const MEMORY_BAR_WIDTH: f64 = 440.0;
@@ -83,7 +84,7 @@ impl Temperature {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-struct SystemData {
+pub struct SystemData {
     uptime: u64,
     memory: MemoryInfo,
     cpu: Value,
@@ -92,7 +93,7 @@ struct SystemData {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-struct ProcessInfo {
+pub struct ProcessInfo {
     pid: u32,
     name: String,
     cpu_usage: f32,
@@ -103,7 +104,7 @@ struct ProcessInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
-struct DiskUsage {
+pub struct DiskUsage {
     name: String,
     internal: bool,
     total: u64,
@@ -310,7 +311,10 @@ fn extract_process(sys: &System) -> Vec<ProcessInfo> {
     let core_count = sys.cpus().len() as f32;
 
     if core_count == 0.0 || total_memory == 0 {
-        warn!("Invalid system state: core_count={}, total_memory={}", core_count, total_memory);
+        warn!(
+            "Invalid system state: core_count={}, total_memory={}",
+            core_count, total_memory
+        );
         return Vec::new();
     }
 
@@ -400,11 +404,11 @@ pub struct SystemMonitor {
     disks: Disks,
     components: Components,
     refresh_interval: Duration,
-    app_handle: AppHandle,
+    event_tx: mpsc::UnboundedSender<ProcessEvent>,
 }
 
 impl SystemMonitor {
-    pub fn new(refresh_interval_secs: u64, app_handle: AppHandle) -> Self {
+    pub fn new(refresh_interval_secs: u64, event_tx: mpsc::UnboundedSender<ProcessEvent>) -> Self {
         let system = System::new_with_specifics(
             RefreshKind::nothing()
                 .with_memory(MemoryRefreshKind::everything())
@@ -424,7 +428,7 @@ impl SystemMonitor {
             disks,
             components,
             refresh_interval: Duration::from_secs(refresh_interval_secs),
-            app_handle,
+            event_tx,
         }
     }
 
@@ -449,39 +453,37 @@ impl SystemMonitor {
                 .refresh_specifics(true, DiskRefreshKind::everything().without_io_usage()); // refresh_list = true to detect new/removed disks
             self.components.refresh(true);
 
-            let processes = extract_process(&self.system);
+            let process_data = extract_process(&self.system);
             let system_data = SystemData {
                 uptime: System::uptime(),
                 memory: extract_memory(&self.system),
                 cpu: extract_cpu_data(&self.system),
                 temperature: extract_temperature(&self.components),
-                processes: processes.iter().take(10).cloned().collect::<Vec<_>>(),
+                processes: process_data.iter().take(10).cloned().collect::<Vec<_>>(),
             };
 
-            match self.app_handle.emit("system", system_data) {
+            match self.event_tx.send(ProcessEvent::System { system_data }) {
                 Ok(_) => {}
-                Err(e) => error!("Fail to send system data. Error: {}", e),
+                Err(e) => error!("Fail to send system data to consumer. Error: {}", e),
             }
 
-            match self
-                .app_handle
-                .emit("network", extract_network(&self.networks))
-            {
+            match self.event_tx.send(ProcessEvent::Network {
+                network_data: extract_network(&self.networks),
+            }) {
                 Ok(_) => {}
-                Err(e) => error!("Fail to send network data. Error: {}", e),
+                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
             }
 
-            match self
-                .app_handle
-                .emit("disk", extract_disk_usage(&self.disks))
-            {
+            match self.event_tx.send(ProcessEvent::Disks {
+                disks_data: extract_disk_usage(&self.disks),
+            }) {
                 Ok(_) => {}
-                Err(e) => error!("Fail to send disk data. Error: {}", e),
+                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
             }
 
-            match self.app_handle.emit("process", processes) {
+            match self.event_tx.send(ProcessEvent::Process { process_data }) {
                 Ok(_) => {}
-                Err(e) => error!("Fail to send disk data. Error: {}", e),
+                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
             }
         }
     }

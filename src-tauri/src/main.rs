@@ -10,22 +10,24 @@ use notify::{
     recommended_watcher, Event as NotifyEvent, RecursiveMode, Result as NotifyResult, Watcher,
 };
 use portable_pty::PtySize;
-use serde_json::{Value};
+use serde_json::Value;
 use std::sync::Arc;
 use std::{path::PathBuf, sync::atomic::AtomicI32, sync::atomic::Ordering, time::Duration};
-use sysinfo::{System};
+use sysinfo::System;
 use tauri::{async_runtime::Mutex as AsyncMutex, Emitter, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
 
 use crate::constant::main::UPDATE_FILES;
+use crate::event::main::EventProcessor;
 use crate::path::main::{get_current_pty_cwd, scan_directory};
-use crate::session::main::{PtyEventProcessor, PtySessionManager};
+use crate::session::main::PtySessionManager;
 use crate::sys::main::{IPInformation, SystemMonitor};
 use tauri_plugin_http::reqwest;
 use tokio::sync::Mutex;
 
 mod constant;
+mod event;
 mod path;
 mod session;
 mod sys;
@@ -221,18 +223,18 @@ fn main() {
             update_current_session
         ])
         .setup(move |app| {
-            let (pty_manager, event_rx) = PtySessionManager::new();
-            let mut event_processor = PtyEventProcessor::new(event_rx, app.handle().clone());
+            let (mut event_processor, event_tx) = EventProcessor::new(app.handle().clone());
 
             // Start event processor in background
             tauri::async_runtime::spawn(async move {
                 event_processor.run().await;
             });
 
+            let pty_manager = PtySessionManager::new(event_tx.clone());
             app.manage(PtySessionManagerState(Arc::new(Mutex::new(pty_manager))));
 
             // refresh and emit system information
-            let mut monitor = SystemMonitor::new(1, app.handle().clone());
+            let mut monitor = SystemMonitor::new(1, event_tx.clone());
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = monitor.start_monitoring().await {
                     error!("Fail to start system monitoring. Error: {}", e);
@@ -257,7 +259,7 @@ fn main() {
                         }
                         Err(e) => error!("watch error: {:?}", e),
                     })
-                        .unwrap();
+                    .unwrap();
 
                 let mut prev_cwd = PathBuf::default();
                 let mut interval = tokio::time::interval(Duration::from_millis(500));
