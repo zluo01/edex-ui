@@ -1,10 +1,10 @@
 use crate::event::main::ProcessEvent;
+use crate::file::main::{get_current_pty_cwd, DirectoryWatcherEvent, WatcherPathInfo};
 use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use tokio::sync::mpsc;
 
 fn construct_cmd() -> CommandBuilder {
@@ -30,7 +30,7 @@ pub struct PtySession {
 impl PtySession {
     pub fn new<F>(
         id: u8,
-        event_tx: mpsc::UnboundedSender<ProcessEvent>,
+        process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
         cleanup: F,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>>
     where
@@ -64,7 +64,7 @@ impl PtySession {
         let writer = master.take_writer()?;
 
         // Clone sender for the reader task
-        let pty_reader_sender = event_tx.clone();
+        let pty_reader_sender = process_event_sender.clone();
 
         // Spawn reader task to continuously read from PTY
         // We must use either spawn_blocking  or `tokio::task::yield_now().await` with async spawn,
@@ -74,17 +74,14 @@ impl PtySession {
                 Ok(data) if data.len() > 0 => {
                     let data = data.to_vec();
                     reader.consume(data.len());
-                    match pty_reader_sender.send(ProcessEvent::Forward {
+                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
                         id,
                         data: data.to_vec(),
                     }) {
-                        Ok(()) => {}
-                        Err(e) => error!("Fail to send output. {:?}", e),
+                        error!("Fail to send output. {:?}", e);
                     }
                 }
-                Ok(_) => {
-                    std::thread::sleep(Duration::from_millis(1));
-                }
+                Ok(_) => {}
                 Err(e) => {
                     error!(
                         "Error when reading from pty for session {}: Error: {}",
@@ -95,19 +92,18 @@ impl PtySession {
             }
         });
 
-        let child_watcher_sender = event_tx.clone();
+        let child_watcher_sender = process_event_sender.clone();
         // need to use block here since child.wait is a blocking process
         tauri::async_runtime::spawn_blocking(move || {
             let status = child.wait().unwrap();
             let exit_code = status.exit_code();
             reader_handle.abort();
             cleanup();
-            match child_watcher_sender.send(ProcessEvent::ProcessExit {
+            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
                 id,
                 exit_code: Some(exit_code),
             }) {
-                Ok(()) => {}
-                Err(e) => error!("Fail to send process exit event. {:?}", e),
+                error!("Fail to send process exit event. {:?}", e);
             }
         });
 
@@ -140,29 +136,54 @@ impl PtySession {
 }
 
 pub struct PtySessionManager {
-    event_tx: mpsc::UnboundedSender<ProcessEvent>,
+    process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
+    directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
     active_sessions: Arc<Mutex<HashMap<u8, PtySession>>>,
 }
 
 impl PtySessionManager {
-    pub fn new(tx: mpsc::UnboundedSender<ProcessEvent>) -> Self {
+    pub fn new(
+        process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
+        directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
+    ) -> Self {
         Self {
-            event_tx: tx,
+            process_event_sender,
+            directory_file_watcher_event_sender,
             active_sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     // Spawn a new PTY with a command
-    pub fn spawn_pty(&mut self, id: u8) -> Result<i32, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn spawn_pty(&mut self, id: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let active_sessions = self.active_sessions.clone();
-        let pty_session = PtySession::new(id, self.event_tx.clone(), move || {
+
+        let directory_file_watcher_sender = self.directory_file_watcher_event_sender.clone();
+        let pty_session = PtySession::new(id, self.process_event_sender.clone(), move || {
+            if let Err(e) =
+                directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch { initial: None })
+            {
+                error!(
+                    "Fail to send directory update event on session close. {:?}",
+                    e
+                )
+            }
             active_sessions.lock().unwrap().remove(&id);
         })?;
 
         let pid = pty_session.pid();
         self.active_sessions.lock().unwrap().insert(id, pty_session);
 
-        Ok(pid)
+        // signal the watcher to watch new pty directory
+        if let Err(e) =
+            self.directory_file_watcher_event_sender
+                .send(DirectoryWatcherEvent::Watch {
+                    initial: Self::get_path_to_watch(pid),
+                })
+        {
+            error!("Fail to send directory update event. {:?}", e);
+        }
+
+        Ok(())
     }
 
     // Write data to a specific PTY
@@ -195,10 +216,24 @@ impl PtySessionManager {
         }
     }
 
-    pub fn get_pid(&self, id: u8) -> Result<i32, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn switch_session(&self, id: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         match self.active_sessions.lock().unwrap().get(&id) {
-            Some(pty_session) => Ok(pty_session.pid()),
+            Some(pty_session) => {
+                if let Err(e) =
+                    self.directory_file_watcher_event_sender
+                        .send(DirectoryWatcherEvent::Watch {
+                            initial: Self::get_path_to_watch(pty_session.pid()),
+                        })
+                {
+                    error!("Fail to send directory update event. {:?}", e);
+                }
+                Ok(())
+            }
             None => Err(format!("Session {} not found", id).into()),
         }
+    }
+
+    fn get_path_to_watch(pid: i32) -> Option<WatcherPathInfo> {
+        get_current_pty_cwd(pid).map(|cwd| WatcherPathInfo::new(pid, cwd))
     }
 }

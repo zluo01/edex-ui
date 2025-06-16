@@ -110,9 +110,7 @@ function Session({ id, active }: IXtermProps) {
         if (active === id) {
           await resizeTerminal(id);
           terminal?.term.focus();
-          if (id) {
-            await updateCurrentSession(id);
-          }
+          await updateCurrentSession(id);
         } else {
           terminal?.term.blur();
         }

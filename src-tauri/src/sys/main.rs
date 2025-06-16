@@ -432,9 +432,7 @@ impl SystemMonitor {
         }
     }
 
-    pub async fn start_monitoring(
-        &mut self,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn run(&mut self) {
         let mut interval = tokio::time::interval(self.refresh_interval);
 
         loop {
@@ -462,28 +460,24 @@ impl SystemMonitor {
                 processes: process_data.iter().take(10).cloned().collect::<Vec<_>>(),
             };
 
-            match self.event_tx.send(ProcessEvent::System { system_data }) {
-                Ok(_) => {}
-                Err(e) => error!("Fail to send system data to consumer. Error: {}", e),
+            if let Err(e) = self.event_tx.send(ProcessEvent::System { system_data }) {
+                error!("Fail to send system data to consumer. Error: {}", e)
             }
 
-            match self.event_tx.send(ProcessEvent::Network {
+            if let Err(e) = self.event_tx.send(ProcessEvent::Network {
                 network_data: extract_network(&self.networks),
             }) {
-                Ok(_) => {}
-                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
+                error!("Fail to send network data to consumer. Error: {}", e)
             }
 
-            match self.event_tx.send(ProcessEvent::Disks {
+            if let Err(e) = self.event_tx.send(ProcessEvent::Disks {
                 disks_data: extract_disk_usage(&self.disks),
             }) {
-                Ok(_) => {}
-                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
+                error!("Fail to send network data to consumer. Error: {}", e)
             }
 
-            match self.event_tx.send(ProcessEvent::Process { process_data }) {
-                Ok(_) => {}
-                Err(e) => error!("Fail to send network data to consumer. Error: {}", e),
+            if let Err(e) = self.event_tx.send(ProcessEvent::Process { process_data }) {
+                error!("Fail to send network data to consumer. Error: {}", e)
             }
         }
     }
