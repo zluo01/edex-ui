@@ -32,7 +32,7 @@ function TerminalSelectionTab(props: ITerminalSelectionTab) {
       </div>
       <div
         onMouseDown={() => props.addTerminal()}
-        class="flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid border-default/75 bg-hover font-normal text-hover sm:text-xs md:text-base lg:text-xl xl:text-3xl"
+        class="flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid border-default/75 font-normal text-main hover:bg-hover hover:text-hover sm:text-xs md:text-base lg:text-xl xl:text-3xl"
       >
         <svg
           class="size-6 skew-x-[-45deg] fill-current"
