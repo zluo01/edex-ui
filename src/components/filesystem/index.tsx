@@ -42,7 +42,7 @@ function FileSystem() {
           title={/*@once*/ 'FILESYSTEM'}
           name={fileSystem()?.path || ''}
         />
-        <div class="no-scrollbar relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] animate-fade appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,_minmax(8.5vh,_1fr))] gap-[1vh] overflow-auto">
+        <div class="no-scrollbar animate-fade relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,minmax(8.5vh,1fr))] gap-[1vh] overflow-auto">
           <FileSection
             open={() => setOpen(true)}
             showHidden={showHidden}

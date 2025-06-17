@@ -35,7 +35,7 @@ function TerminalSection() {
   const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
     {
       id: 0,
-      terminal: () => <Session id={/* @once */ 0} active={active} />,
+      terminal: () => <Session id={/*@once*/ 0} active={active} />,
     },
   ]);
 

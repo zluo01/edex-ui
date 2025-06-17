@@ -3,7 +3,6 @@ import * as tsParser from '@typescript-eslint/parser';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import pluginPromise from 'eslint-plugin-promise';
 import solid from 'eslint-plugin-solid/configs/typescript';
-import tailwind from 'eslint-plugin-tailwindcss';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
@@ -12,7 +11,6 @@ export default [
   { languageOptions: { globals: globals.browser } },
   js.configs.recommended,
   ...ts.configs.recommended,
-  ...tailwind.configs['flat/recommended'],
   pluginPromise.configs['flat/recommended'],
   eslintConfigPrettier,
   {

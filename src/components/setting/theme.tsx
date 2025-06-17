@@ -17,7 +17,7 @@ function ChangeThemeSelection() {
         Change Theme
       </span>
       <select
-        class="relative block w-32 cursor-pointer appearance-none border-2 border-solid border-default bg-secondary px-2 text-center text-main focus:outline-none sm:text-sm md:text-lg lg:text-2xl xl:text-3xl"
+        class="border-default bg-secondary text-main relative block w-32 cursor-pointer appearance-none border-2 border-solid px-2 text-center focus:outline-hidden sm:text-sm md:text-lg lg:text-2xl xl:text-3xl"
         value={theme()}
         onInput={e => onChangeTheme(e.currentTarget.value as Theme)}
       >
@@ -25,7 +25,7 @@ function ChangeThemeSelection() {
           {t => (
             <option
               value={t}
-              class="mt-1 max-h-60 w-full overflow-auto bg-secondary text-main focus:outline-none sm:text-sm md:text-base lg:text-xl xl:text-2xl"
+              class="bg-secondary text-main mt-1 max-h-60 w-full overflow-auto focus:outline-hidden sm:text-sm md:text-base lg:text-xl xl:text-2xl"
             >
               {t}
             </option>

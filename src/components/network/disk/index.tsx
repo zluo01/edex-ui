@@ -19,7 +19,7 @@ function DiskUsage() {
   });
 
   return (
-    <div class="flex h-[28vh] w-full flex-col flex-nowrap font-united_sans_light tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">
+    <div class="font-united_sans_light flex h-[28vh] w-full flex-col flex-nowrap tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">
       <div class="flex flex-row flex-nowrap items-center justify-start">
         <span class="sm:text-xs md:text-base lg:text-xl xl:text-4xl">
           DISK USAGE
@@ -38,7 +38,7 @@ function DiskUsage() {
                 <span class="sm:text-xs md:text-base lg:text-xl xl:text-4xl">
                   {disk.name}
                 </span>
-                <span class="sm:text-xxs md:text-sm  lg:text-lg xl:text-3xl">
+                <span class="sm:text-xxs md:text-sm lg:text-lg xl:text-3xl">
                   {disk.internal ? 'Internal' : 'External'}
                 </span>
               </div>

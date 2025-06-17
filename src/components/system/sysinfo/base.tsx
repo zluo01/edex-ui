@@ -11,7 +11,7 @@ function BaseInformation(props: IBaseInformationProps) {
       <span class="m-0 opacity-50 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
         {props.header}
       </span>
-      <span class="m-0 sm:text-xs md:text-base lg:text-xl  xl:text-3xl">
+      <span class="m-0 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
         {props.value}
       </span>
     </div>

@@ -15,29 +15,29 @@ function TableRows(): JSX.Element {
     <Show when={processes()} fallback={<div />}>
       <For each={processes()}>
         {process => (
-          <div class="grid size-full grid-cols-[10%_27%_8%_10%_12%_21%_12%] items-center border-[0.1vh] border-solid border-default/75">
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+          <div class="border-default/75 grid size-full grid-cols-[10%_27%_8%_10%_12%_21%_12%] items-center border-[0.1vh] border-solid">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.pid}
             </span>
             <span
-              class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl"
+              class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl"
               title={process.name}
             >
               {process.name}
             </span>
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.cpu_usage}%
             </span>
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.memory_usage}%
             </span>
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.state}
             </span>
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.start_time}
             </span>
-            <span class="truncate border-r-[0.1vh] border-solid border-default/75 pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
+            <span class="border-default/75 truncate border-r-[0.1vh] border-solid pl-1 sm:text-xs md:text-base lg:text-xl xl:text-3xl">
               {process.run_time}
             </span>
           </div>

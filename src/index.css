@@ -1,18 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-@layer utilities {
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-sm: 1280px;
+  --breakpoint-md: 1920px;
+  --breakpoint-lg: 2560px;
+  --breakpoint-xl: 3840px;
+
+  --background-color-*: initial;
+  --background-color-main: rgb(var(--bg-main));
+  --background-color-secondary: rgb(var(--bg-secondary));
+  --background-color-active: rgb(var(--bg-active));
+  --background-color-hover: rgb(var(--bg-hover));
+
+  --border-color-*: initial;
+  --border-color-default: rgb(var(--border-default));
+
+  --text-color-*: initial;
+  --text-color-main: rgb(var(--text-main));
+  --text-color-active: rgb(var(--text-active));
+  --text-color-hover: rgb(var(--text-hover));
+
+  --text-xxxs: 8px;
+  --text-xxxs--line-height: 8px;
+  --text-xxs: 10px;
+  --text-xxs--line-height: 12px;
+
+  --font-serif:
+    Fira Mono, Fira Code, ui-serif, Georgia, Cambria, 'Times New Roman', Times,
+    serif;
+  --font-united_sans_light: united-sans-light;
+  --font-united_sans_medium: united-sans-medium;
+
+  --animate-fade: fadeOut 0.25s ease-in-out;
+
+  @keyframes fadeOut {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 100;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility no-scrollbar {
   /* Hide scrollbar for Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
+  &::-webkit-scrollbar {
     display: none;
   }
 
   /* Hide scrollbar for IE, Edge and Firefox */
-  .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.panel {
+  --aug-border-all: 0.2vh;
+  --aug-inset: 5px;
+}
+
+.augment-border {
+  --aug-border-bg: rgb(var(--border-default));
 }
 
 @font-face {
@@ -124,16 +191,5 @@
     /* colors */
     --color-stroke: rgb(3, 169, 244);
     --color-shade: #bfbfbf;
-  }
-}
-
-@layer components {
-  .panel {
-    --aug-border-all: 0.2vh;
-    --aug-inset: 5px;
-  }
-
-  .augment-border {
-    --aug-border-bg: rgb(var(--border-default));
   }
 }

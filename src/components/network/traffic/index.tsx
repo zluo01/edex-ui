@@ -89,12 +89,12 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
   );
 
   return (
-    <div class="flex w-full flex-col items-start justify-around pb-1 font-united_sans_light text-[1.111vh] tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">
+    <div class="font-united_sans_light flex w-full flex-col items-start justify-around pb-1 text-[1.111vh] tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <span class="sm:text-xxs md:text-sm lg:text-lg xl:text-3xl">
           NETWORK TRAFFIC
         </span>
-        <span class="opacity-50 sm:text-xxxs md:text-xs lg:text-base xl:text-2xl">
+        <span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-2xl">
           {`UP ${prettyBytes(traffic()?.transmitted || 0)} / DOWN ${prettyBytes(
             traffic()?.receive || 0,
           )}`}
@@ -121,7 +121,7 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
         <canvas
           ref={el => (canvas[1] = el)}
           class={cn(
-            'border-t-default/40 border-b-default/30 z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full border-b-[0.092vh] border-t-[0.139vh] border-solid',
+            'border-t-default/40 border-b-default/30 z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full border-t-[0.139vh] border-b-[0.092vh] border-solid',
             props.connected() ? 'opacity-100' : 'opacity-30',
           )}
         />

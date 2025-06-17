@@ -1,21 +1,21 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
     "noEmit": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "esModuleInterop": true,
     /* Linting */
     "strict": true,
     "allowJs": false,
@@ -25,7 +25,7 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src"],
   "exclude": ["node_modules", "src-tauri", "*.js", "dist"],
   "references": [
     {

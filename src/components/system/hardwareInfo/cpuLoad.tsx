@@ -98,38 +98,38 @@ function CpuLoad() {
         <span class="sm:text-xs md:text-base lg:text-2xl xl:text-4xl">
           CPU USAGE
         </span>
-        <span class="opacity-50 sm:text-xxs md:text-sm lg:text-xl xl:text-2xl">
+        <span class="sm:text-xxs opacity-50 md:text-sm lg:text-xl xl:text-2xl">
           {/*@once*/ cpuName()}
         </span>
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <div class="flex flex-col items-start justify-around">
-          <span class="font-united_sans_medium font-semibold not-italic sm:text-xxs md:text-sm lg:text-lg xl:text-xl">
+          <span class="font-united_sans_medium sm:text-xxs font-semibold not-italic md:text-sm lg:text-lg xl:text-xl">
             # {1} - {data()?.divide}
           </span>
-          <span class="opacity-50 sm:text-xxxs md:text-xs lg:text-base xl:text-lg">
+          <span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-lg">
             Avg. {data()?.load[0]?.toFixed(1) || '--'}%
           </span>
         </div>
         <canvas
           ref={el => (canvas[0] = el)}
           height="60"
-          class="my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed border-default/30"
+          class="border-default/30 my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed"
         />
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <div class="flex flex-col items-start justify-around">
-          <span class="font-united_sans_medium font-semibold not-italic sm:text-xxs md:text-sm lg:text-lg xl:text-xl">
+          <span class="font-united_sans_medium sm:text-xxs font-semibold not-italic md:text-sm lg:text-lg xl:text-xl">
             # {data()?.divide && data()!.divide + 1} - {data()?.cores}
           </span>
-          <span class="opacity-50 sm:text-xxxs md:text-xs lg:text-base xl:text-lg">
+          <span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-lg">
             Avg. {data()?.load[1]?.toFixed(1) || '--'}%
           </span>
         </div>
         <canvas
           ref={el => (canvas[1] = el)}
           height="60"
-          class="my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed border-default/30"
+          class="border-default/30 my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed"
         />
       </div>
     </>

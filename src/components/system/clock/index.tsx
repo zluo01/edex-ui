@@ -23,7 +23,7 @@ function Clock() {
   };
 
   return (
-    <div class="flex h-[7.41vh] w-full items-center justify-around font-united_sans_light font-extrabold sm:text-3xl md:text-5xl lg:text-7xl xl:text-9xl">
+    <div class="font-united_sans_light flex h-[7.41vh] w-full items-center justify-around font-extrabold sm:text-3xl md:text-5xl lg:text-7xl xl:text-9xl">
       {clockText()}
     </div>
   );

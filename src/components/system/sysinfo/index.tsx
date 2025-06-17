@@ -5,7 +5,7 @@ import Version from '@/components/system/sysinfo/version';
 
 function SysInfo() {
   return (
-    <div class="flex h-[5.556vh] w-full flex-row items-center justify-around font-united_sans_light tracking-[0.092vh]">
+    <div class="font-united_sans_light flex h-[5.556vh] w-full flex-row items-center justify-around tracking-[0.092vh]">
       <DateSection />
       <UpTimeSection />
       <Kernel />

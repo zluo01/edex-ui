@@ -8,7 +8,7 @@ const NetworkContent = lazy(async () => {
 
 function Network() {
   return (
-    <div class="relative box-border flex h-full w-[16vw] flex-col items-end border-default/30 sm:px-1 md:px-2 lg:px-3">
+    <div class="border-default/30 relative box-border flex h-full w-[16vw] flex-col items-end sm:px-1 md:px-2 lg:px-3">
       <Banner title={/*@once*/ 'PANEL'} name={/*@once*/ 'NETWORK'} />
       <NetworkContent />
     </div>

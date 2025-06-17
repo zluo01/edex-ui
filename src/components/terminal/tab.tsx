@@ -10,16 +10,16 @@ interface ITerminalSelectionTab {
 
 function TerminalSelectionTab(props: ITerminalSelectionTab) {
   return (
-    <div class="flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 border-default/75 p-0 font-united_sans_medium">
-      <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-y-hidden overflow-x-scroll">
+    <div class="border-default/75 font-united_sans_medium flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0">
+      <div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-x-scroll overflow-y-hidden">
         <For each={props.terminalIds()}>
           {id => (
             <div
               id={`#${id}`}
               class={cn(
-                'border-default/75 w-full skew-x-[35deg] cursor-pointer py-2 max-w-[15%] min-w-[10%] text-center overflow-hidden border-r-2 border-solid bg-main text-main',
+                'border-default/75 bg-main text-main w-full max-w-[15%] min-w-[10%] skew-x-35 cursor-pointer overflow-hidden border-r-2 border-solid py-2 text-center',
                 props.active() === id &&
-                  'bg-active text-active font-medium skew-x-[35deg] scale-125',
+                  'bg-active text-active scale-125 skew-x-35 font-medium',
               )}
               onMouseDown={() => props.switchTab(id)}
             >
@@ -32,7 +32,7 @@ function TerminalSelectionTab(props: ITerminalSelectionTab) {
       </div>
       <div
         onMouseDown={() => props.addTerminal()}
-        class="flex h-full w-[5%] skew-x-[45deg] cursor-pointer items-center justify-center border-l border-solid border-default/75 font-normal text-main hover:bg-hover hover:text-hover sm:text-xs md:text-base lg:text-xl xl:text-3xl"
+        class="border-default/75 text-main hover:bg-hover hover:text-hover flex h-full w-[5%] skew-x-45 cursor-pointer items-center justify-center border-l border-solid font-normal sm:text-xs md:text-base lg:text-xl xl:text-3xl"
       >
         <svg
           class="size-6 skew-x-[-45deg] fill-current"
