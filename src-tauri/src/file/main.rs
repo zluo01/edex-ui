@@ -1,5 +1,5 @@
 use crate::event::main::ProcessEvent;
-use log::error;
+use log::{error, trace};
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, fs, path::PathBuf, str};
@@ -251,6 +251,7 @@ impl DirectoryFileWatcher {
                                     // there is possible race condition that we get the pid in current cycle while at the meantime, the terminal is closed in other thread
                                     // in this case, the current pid in this cycle will not have cwd.
                                     // We will just break the current thread and let the workflow create a new one.
+                                    trace!("Exit cwd checking for path {}", prev_cwd);
                                     break;
                                 }
                                 Some(cwd) => {
@@ -262,6 +263,7 @@ impl DirectoryFileWatcher {
                                         {
                                             error!("Fail to send update path. {}", e)
                                         }
+                                        trace!("Exit cwd checking for path {}", prev_cwd);
                                         break;
                                     }
                                     continue;
