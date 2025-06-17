@@ -6,10 +6,11 @@ use std::{cmp::Ordering, fs, path::PathBuf, str};
 use tokio::sync::mpsc;
 
 // Borrow from https://github.com/hharnisc/hypercwd/blob/master/setCwd.js
-pub fn get_current_pty_cwd(pid: i32) -> Option<String> {
-    let response = std::process::Command::new("lsof")
+pub async fn get_current_pty_cwd(pid: i32) -> Option<String> {
+    let response = tokio::process::Command::new("lsof")
         .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
-        .output();
+        .output()
+        .await;
 
     if let Err(e) = response {
         error!("Fail to run command. Error: {}", e);
@@ -156,7 +157,7 @@ fn scan_directory(
 
 #[derive(Debug, Clone)]
 pub struct WatcherPathInfo {
-    pid: i32, // only use in mac
+    pid: i32,
     initial_path: String,
 }
 
@@ -172,7 +173,7 @@ pub enum DirectoryWatcherEvent {
 }
 
 pub struct DirectoryFileWatcher {
-    directory_file_watcher_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>, // only use in mac
+    directory_file_watcher_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
     directory_file_watcher_receiver: mpsc::UnboundedReceiver<DirectoryWatcherEvent>,
     process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
     current_path: Option<String>,
@@ -239,12 +240,13 @@ impl DirectoryFileWatcher {
                     let pid = info.pid;
                     let prev_cwd = new_path.clone();
                     let event_sender = self.directory_file_watcher_sender.clone();
-                    tauri::async_runtime::spawn_blocking(move || {
+                    tauri::async_runtime::spawn(async move {
+                        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(500));
                         loop {
-                            std::thread::sleep(std::time::Duration::from_millis(500));
+                            interval.tick().await;
 
                             // Get current pty cwd
-                            match get_current_pty_cwd(pid) {
+                            match get_current_pty_cwd(pid).await {
                                 None => {
                                     error!("Fail to get cwd for pid {}.", &pid);
                                     // since this thread is running in parallel with terminal thread, and we rely on event loop to update path to watch
