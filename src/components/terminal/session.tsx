@@ -71,13 +71,13 @@ function useScreenWidth(): Accessor<number> {
   return screenWidth;
 }
 
-interface IXtermProps {
+interface ISessionProps {
   id: number;
   active: Accessor<number>;
 }
 
 // eslint-disable-next-line solid/no-destructure
-function Session({ id, active }: IXtermProps) {
+function Session({ id, active }: ISessionProps) {
   const { theme } = useTheme();
 
   // fontSize
@@ -147,7 +147,7 @@ function Session({ id, active }: IXtermProps) {
       }
       try {
         await traceLog('Initialize terminal interface. Id: ' + id);
-        terminal = createTerminal(ref, theme(), fontSize());
+        terminal = await createTerminal(ref, theme(), fontSize());
 
         await initializeSession(id);
 

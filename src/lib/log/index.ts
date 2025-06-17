@@ -1,4 +1,4 @@
-import { error, trace } from '@tauri-apps/plugin-log';
+import { error, trace, warn } from '@tauri-apps/plugin-log';
 
 export async function errorLog(msg: unknown) {
   if (typeof msg === 'string') {
@@ -12,4 +12,8 @@ export async function errorLog(msg: unknown) {
 
 export async function traceLog(msg: string) {
   await trace(msg);
+}
+
+export async function warnLog(msg: string) {
+  await warn(msg);
 }

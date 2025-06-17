@@ -1,3 +1,4 @@
+import { warnLog } from '@/lib/log';
 import { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
 import { ITerminalProps } from '@/models';
@@ -6,6 +7,7 @@ import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
 import {
   ITerminalInitOnlyOptions,
   Terminal as TerminalType,
@@ -25,11 +27,11 @@ const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
   rows: 24,
 };
 
-export function createTerminal(
+export async function createTerminal(
   terminalContainer: HTMLDivElement,
   theme: Theme,
   initialFontSize: number,
-): ITerminalProps {
+): Promise<ITerminalProps> {
   const term = new Terminal({
     fontSize: initialFontSize,
     ...INITIAL_DEFAULT_OPTIONS,
@@ -43,7 +45,14 @@ export function createTerminal(
 
   term.open(terminalContainer);
 
-  typedTerm.loadAddon(new CanvasAddon());
+  try {
+    const webglAddon = new WebglAddon();
+    typedTerm.loadAddon(webglAddon);
+  } catch (e) {
+    await warnLog(`WebGL not supported, falling back to canvas. Error: ${e}`);
+    const canvasAddon = new CanvasAddon();
+    typedTerm.loadAddon(canvasAddon);
+  }
 
   term.focus();
   addons.fit.fit();
