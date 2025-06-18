@@ -18,15 +18,13 @@ Currently, this project only support macOS and Linux since I do not do developme
 
 > PR welcome on new features or bug fix
 
-- add Shortcuts to control terminal tabs
 - More styling or functions on terminal
-- Add webGL render support for terminal
 - Add support for styles in the original packages
 - More hardware information support, currently temperature sensors are not supported in M series chip nor AMD GPUs.
 
 ## Build
 
-Since it use Tauri framework, make sure setup environment properly following [guide](https://tauri.app/v1/guides/getting-started/prerequisites).
+Since it use Tauri framework, make sure setup environment properly following [guide](https://tauri.app/start/prerequisites/).
 
 ### Development
 
@@ -54,7 +52,8 @@ On MacOS, it consumes around 1% Total CPU and less than 500Mb memory including w
 
 ### Linux (Wayland)
 
-Due to Tauri use `webkitgtk` on linux, it consumes around 5% Total CPU which majorly caused by poor performance of the dependency.
+~~Due to Tauri use `webkitgtk` on linux, it consumes around 5% Total CPU which majorly caused by poor performance of the dependency.~~
+With latest performance improve, the total CPU is around 0.3% on my machine, while keeping the memory usage below 200mb on my machine.
 
 ## Screenshots
 
