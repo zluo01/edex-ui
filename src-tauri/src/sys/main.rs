@@ -4,7 +4,6 @@ use log::{error, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
-    process::Command,
     str,
     time::{Duration, UNIX_EPOCH},
 };
@@ -126,7 +125,7 @@ fn round_to_1_decimal(value: f64) -> f64 {
     (value * 10.0).round() / 10.0
 }
 
-fn extract_memory(sys: &System) -> MemoryInfo {
+async fn extract_memory(sys: &System) -> MemoryInfo {
     let used_memory = sys.used_memory() as f64;
     let free_memory = sys.free_memory() as f64;
     let available_memory = sys.available_memory() as f64;
@@ -171,7 +170,7 @@ fn extract_memory(sys: &System) -> MemoryInfo {
 }
 
 #[cfg(target_os = "macos")]
-fn extract_temperature(components: &Components) -> Temperature {
+async fn extract_temperature(components: &Components) -> Temperature {
     use std::collections::HashMap;
 
     let mut temperature: Temperature = Default::default();
@@ -195,7 +194,7 @@ fn extract_temperature(components: &Components) -> Temperature {
 }
 
 #[cfg(target_os = "linux")]
-fn extract_temperature(components: &Components) -> Temperature {
+async fn extract_temperature(components: &Components) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
     if let Some(component) = components
@@ -205,18 +204,19 @@ fn extract_temperature(components: &Components) -> Temperature {
         temperature.set_cpu(component.temperature().unwrap_or(0.0));
     }
 
-    temperature.set_gpu(get_nvidia_gpu_temp());
+    temperature.set_gpu(get_nvidia_gpu_temp().await);
     temperature
 }
 
 #[cfg(target_os = "linux")]
-fn get_nvidia_gpu_temp() -> f32 {
-    match Command::new("nvidia-smi")
+async fn get_nvidia_gpu_temp() -> f32 {
+    match tokio::process::Command::new("nvidia-smi")
         .args(&[
             "--query-gpu=temperature.gpu",
             "--format=csv,noheader,nounits",
         ])
         .output()
+        .await
     {
         Ok(output) if output.status.success() => match str::from_utf8(&output.stdout) {
             Ok(result) => result.trim().parse().unwrap_or_else(|e| {
@@ -236,7 +236,7 @@ fn get_nvidia_gpu_temp() -> f32 {
     }
 }
 
-fn extract_cpu_data(sys: &System) -> Value {
+async fn extract_cpu_data(sys: &System) -> Value {
     let cpus = sys.cpus();
 
     let core_count = cpus.len();
@@ -305,7 +305,7 @@ fn extract_cpu_name(input: &str) -> Option<String> {
     Some(input.to_string())
 }
 
-fn extract_process(sys: &System) -> Vec<ProcessInfo> {
+async fn extract_process(sys: &System) -> Vec<ProcessInfo> {
     let mut new_processes = Vec::new(); // Create a new vector to hold the processes
     let total_memory = sys.total_memory();
     let core_count = sys.cpus().len() as f32;
@@ -451,12 +451,12 @@ impl SystemMonitor {
                 .refresh_specifics(true, DiskRefreshKind::everything().without_io_usage()); // refresh_list = true to detect new/removed disks
             self.components.refresh(true);
 
-            let process_data = extract_process(&self.system);
+            let process_data = extract_process(&self.system).await;
             let system_data = SystemData {
                 uptime: System::uptime(),
-                memory: extract_memory(&self.system),
-                cpu: extract_cpu_data(&self.system),
-                temperature: extract_temperature(&self.components),
+                memory: extract_memory(&self.system).await,
+                cpu: extract_cpu_data(&self.system).await,
+                temperature: extract_temperature(&self.components).await,
                 processes: process_data.iter().take(10).cloned().collect::<Vec<_>>(),
             };
 
