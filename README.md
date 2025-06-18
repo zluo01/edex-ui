@@ -53,7 +53,7 @@ On MacOS, it consumes around 1% Total CPU and less than 500Mb memory including w
 ### Linux (Wayland)
 
 ~~Due to Tauri use `webkitgtk` on linux, it consumes around 5% Total CPU which majorly caused by poor performance of the dependency.~~
-With latest performance improve, the total CPU is around 0.3% on my machine, while keeping the memory usage below 200mb on my machine.
+With latest performance improve, the total CPU is around 0.3% while keeping the memory usage below 200mb on my machine.
 
 ## Screenshots
 
