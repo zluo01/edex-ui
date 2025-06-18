@@ -18,7 +18,13 @@
     },
     {
       "groupName": "eslint",
-      "matchPackagePrefixes": ["eslint", "@typescript-eslint/"],
+      "matchPackagePrefixes": [
+        "eslint",
+        "@eslint",
+        "globals",
+        "@typescript-eslint/",
+        "typescript-eslint"
+      ],
       "automerge": true
     },
     {
@@ -27,11 +33,20 @@
     },
     {
       "groupName": "styling",
-      "matchPackagePrefixes": ["tailwindcss", "autoprefixer", "postcss"]
+      "matchPackagePrefixes": [
+        "tailwindcss",
+        "@tailwindcss",
+        "augmented",
+        "postcss"
+      ]
     },
     {
       "groupName": "build-tools",
       "matchPackagePrefixes": ["vite", "@vitejs/"]
+    },
+    {
+      "groupName": "framework",
+      "matchPackagePrefixes": ["solid", "@solid"]
     },
     {
       "groupName": "utilities",
