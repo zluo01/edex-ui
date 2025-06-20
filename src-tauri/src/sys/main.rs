@@ -203,7 +203,7 @@ async fn extract_temperature(sys: &System) -> Temperature {
         .iter()
         .find(|c| c.label().to_lowercase().contains("tctl"))
     {
-        temperature.set_cpu(component.temperature().unwrap_or(0.0));
+        temperature.set_cpu(component.temperature());
     }
 
     temperature.set_gpu(get_nvidia_gpu_temp().await);
