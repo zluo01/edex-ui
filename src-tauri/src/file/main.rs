@@ -207,7 +207,7 @@ impl DirectoryFileWatcher {
                 }
                 Err(e) => error!("watch error: {:?}", e),
             })
-                .unwrap();
+            .unwrap();
 
         let file_watcher_event_sender = self.process_event_sender.clone();
         while let Some(event) = self.directory_file_watcher_receiver.recv().await {
@@ -241,7 +241,8 @@ impl DirectoryFileWatcher {
                     let prev_cwd = new_path.clone();
                     let event_sender = self.directory_file_watcher_sender.clone();
                     tauri::async_runtime::spawn(async move {
-                        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(500));
+                        let mut interval =
+                            tokio::time::interval(tokio::time::Duration::from_millis(500));
                         loop {
                             interval.tick().await;
 
