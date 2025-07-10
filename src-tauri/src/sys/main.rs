@@ -8,8 +8,8 @@ use std::{
     time::{Duration, UNIX_EPOCH},
 };
 use sysinfo::{
-    ComponentExt, CpuExt, CpuRefreshKind, DiskExt, NetworkExt, PidExt, ProcessExt,
-    ProcessRefreshKind, RefreshKind, System, SystemExt,
+    Components, CpuRefreshKind, DiskRefreshKind, Disks, MemoryRefreshKind, Networks,
+    ProcessRefreshKind, RefreshKind, System,
 };
 use tokio::sync::mpsc;
 
@@ -170,15 +170,14 @@ async fn extract_memory(sys: &System) -> MemoryInfo {
 }
 
 #[cfg(target_os = "macos")]
-async fn extract_temperature(sys: &System) -> Temperature {
+async fn extract_temperature(components: &Components) -> Temperature {
     use std::collections::HashMap;
 
     let mut temperature: Temperature = Default::default();
 
-    let component_map: HashMap<&str, f32> = sys
-        .components()
+    let component_map: HashMap<&str, f32> = components
         .iter()
-        .map(|c| (c.label(), c.temperature()))
+        .map(|c| (c.label(), c.temperature().unwrap_or(0.0)))
         .collect();
 
     if let Some(&temp) = component_map.get("PECI CPU") {
@@ -195,11 +194,10 @@ async fn extract_temperature(sys: &System) -> Temperature {
 }
 
 #[cfg(target_os = "linux")]
-async fn extract_temperature(sys: &System) -> Temperature {
+async fn extract_temperature(components: &Components) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
-    if let Some(component) = sys
-        .components()
+    if let Some(component) = components
         .iter()
         .find(|c| c.label().to_lowercase().contains("tctl"))
     {
@@ -323,7 +321,7 @@ async fn extract_process(sys: &System) -> Vec<ProcessInfo> {
     for (pid, process) in sys.processes() {
         new_processes.push(ProcessInfo {
             pid: pid.as_u32(),
-            name: process.name().to_string(),
+            name: process.name().to_string_lossy().to_string(),
             cpu_usage: (process.cpu_usage() / core_count).round(),
             memory_usage: (process.memory() as f32 / total_memory as f32 * 100.0).round(),
             state: process.status().to_string(),
@@ -346,12 +344,12 @@ fn epoch_to_date(epoch: u64) -> String {
     datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn extract_network(sys: &System) -> Value {
+fn extract_network(networks: &Networks) -> Value {
     let mut network_receive: f64 = 0f64;
     let mut network_transmitted: f64 = 0f64;
     let mut network_total_receive: u64 = 0;
     let mut network_total_transmitted: u64 = 0;
-    for (_interface_name, data) in sys.networks() {
+    for (_interface_name, data) in networks {
         network_receive += data.received() as f64;
         network_transmitted += data.transmitted() as f64;
 
@@ -367,9 +365,8 @@ fn extract_network(sys: &System) -> Value {
     })
 }
 
-fn extract_disk_usage(sys: &System) -> Vec<DiskUsage> {
-    let mut disk_usages: Vec<DiskUsage> = sys
-        .disks()
+fn extract_disk_usage(disks: &Disks) -> Vec<DiskUsage> {
+    let mut disk_usages: Vec<DiskUsage> = disks
         .iter()
         .map(|disk| {
             let total_space = disk.total_space();
@@ -403,6 +400,9 @@ fn extract_disk_usage(sys: &System) -> Vec<DiskUsage> {
 
 pub struct SystemMonitor {
     system: System,
+    networks: Networks,
+    disks: Disks,
+    components: Components,
     refresh_interval: Duration,
     event_tx: mpsc::UnboundedSender<ProcessEvent>,
 }
@@ -410,21 +410,23 @@ pub struct SystemMonitor {
 impl SystemMonitor {
     pub fn new(refresh_interval_secs: u64, event_tx: mpsc::UnboundedSender<ProcessEvent>) -> Self {
         let system = System::new_with_specifics(
-            RefreshKind::new()
-                .with_memory()
-                .with_cpu(CpuRefreshKind::everything().without_frequency())
-                .with_processes(
-                    ProcessRefreshKind::everything()
-                        .without_disk_usage()
-                        .without_user(),
-                )
-                .with_components_list()
-                .with_networks_list()
-                .with_disks_list(),
+            RefreshKind::nothing()
+                .with_memory(MemoryRefreshKind::everything())
+                .with_cpu(CpuRefreshKind::everything())
+                .with_processes(ProcessRefreshKind::nothing().with_cpu().with_memory()),
         );
+
+        let networks = Networks::new_with_refreshed_list();
+        let disks = Disks::new_with_refreshed_list_specifics(
+            DiskRefreshKind::everything().without_io_usage(),
+        );
+        let components = Components::new_with_refreshed_list();
 
         Self {
             system,
+            networks,
+            disks,
+            components,
             refresh_interval: Duration::from_secs(refresh_interval_secs),
             event_tx,
         }
@@ -436,14 +438,25 @@ impl SystemMonitor {
         loop {
             interval.tick().await;
 
-            self.system.refresh_all();
+            self.system.refresh_specifics(
+                RefreshKind::nothing()
+                    .with_memory(MemoryRefreshKind::everything())
+                    .with_cpu(CpuRefreshKind::everything())
+                    .with_processes(ProcessRefreshKind::nothing().with_cpu().with_memory()),
+            );
+
+            // Refresh separate modules
+            self.networks.refresh(true);
+            self.disks
+                .refresh_specifics(true, DiskRefreshKind::everything().without_io_usage()); // refresh_list = true to detect new/removed disks
+            self.components.refresh(true);
 
             let process_data = extract_process(&self.system).await;
             let system_data = SystemData {
-                uptime: self.system.uptime(),
+                uptime: System::uptime(),
                 memory: extract_memory(&self.system).await,
                 cpu: extract_cpu_data(&self.system).await,
-                temperature: extract_temperature(&self.system).await,
+                temperature: extract_temperature(&self.components).await,
                 processes: process_data.iter().take(10).cloned().collect::<Vec<_>>(),
             };
 
@@ -452,13 +465,13 @@ impl SystemMonitor {
             }
 
             if let Err(e) = self.event_tx.send(ProcessEvent::Network {
-                network_data: extract_network(&self.system),
+                network_data: extract_network(&self.networks),
             }) {
                 error!("Fail to send network data to consumer. Error: {}", e)
             }
 
             if let Err(e) = self.event_tx.send(ProcessEvent::Disks {
-                disks_data: extract_disk_usage(&self.system),
+                disks_data: extract_disk_usage(&self.disks),
             }) {
                 error!("Fail to send network data to consumer. Error: {}", e)
             }

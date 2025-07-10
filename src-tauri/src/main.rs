@@ -9,7 +9,7 @@ use log::{error, info, LevelFilter};
 use portable_pty::PtySize;
 use serde_json::Value;
 use std::sync::Arc;
-use sysinfo::{RefreshKind, System, SystemExt};
+use sysinfo::System;
 use tauri::{async_runtime::Mutex as AsyncMutex, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
@@ -32,9 +32,7 @@ struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
-    let sys = System::new_with_specifics(RefreshKind::new());
-    let kernel_version = sys
-        .kernel_version()
+    let kernel_version = System::kernel_version()
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
         .expect("Fail to get kernel version.");
     Ok(kernel_version)
