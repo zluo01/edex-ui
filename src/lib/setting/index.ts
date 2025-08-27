@@ -1,8 +1,8 @@
 import { Theme } from '@/lib/themes/styles';
-import { Store } from '@tauri-apps/plugin-store';
+import { load } from '@tauri-apps/plugin-store';
 
-const store = await Store.load('.settings.dat', {
-  // we can save automatically after each store modification
+const store = await load('.settings.dat', {
+  defaults: { showHiddenFile: false, theme: Theme.TRON },
   autoSave: true,
 });
 
