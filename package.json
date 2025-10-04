@@ -62,9 +62,9 @@
     "tailwindcss": "4.1.13",
     "typescript": "5.9.2",
     "typescript-eslint": "8.44.1",
-    "vite": "7.1.7",
+    "vite": "7.1.9",
     "vite-plugin-eslint": "1.8.1",
-    "vite-plugin-solid": "2.11.8",
+    "vite-plugin-solid": "2.11.9",
     "vite-tsconfig-paths": "5.1.4"
   },
   "lint-staged": {
