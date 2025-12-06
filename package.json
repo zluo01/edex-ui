@@ -70,8 +70,8 @@
   "lint-staged": {
     "*.{ts,tsx,js}": [
       "eslint --cache --fix",
-      "npm run lint",
-      "npm run format"
+      "pnpm run lint",
+      "pnpm run format"
     ],
     "*.{js,css,md}": "prettier --write"
   }

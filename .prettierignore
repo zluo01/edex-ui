@@ -1,9 +1,8 @@
 .idea
-out
 node_modules
 .next
 package-lock.json
 .vscode
 src-tauri
-dist
 public/styles/augmented-ui.min.css
+pnpm-lock.yaml
