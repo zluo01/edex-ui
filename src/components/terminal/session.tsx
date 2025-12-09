@@ -58,15 +58,19 @@ async function resize(id: number, term: Terminal, addons: Addons) {
 function useScreenWidth(): Accessor<number> {
   const [screenWidth, setScreenWidth] = createSignal(window.innerWidth);
 
-  window.addEventListener('resize', () => {
-    setScreenWidth(window.innerWidth);
-  });
+  const controller = new AbortController();
 
-  onCleanup(() => {
-    window.removeEventListener('resize', () => {
+  window.addEventListener(
+    'resize',
+    () => {
       setScreenWidth(window.innerWidth);
-    });
-  });
+    },
+    {
+      signal: controller.signal,
+    },
+  );
+
+  onCleanup(() => controller.abort());
 
   return screenWidth;
 }
@@ -79,6 +83,8 @@ interface ISessionProps {
 // eslint-disable-next-line solid/no-destructure
 function Session({ id, active }: ISessionProps) {
   const { theme } = useTheme();
+
+  const controller = new AbortController();
 
   // fontSize
   const screenWidth = useScreenWidth();
@@ -155,7 +161,9 @@ function Session({ id, active }: ISessionProps) {
 
         terminal.term.onData(v => writeToSession(id, v));
 
-        addEventListener('resize', () => resizeTerminal(id));
+        addEventListener('resize', () => resizeTerminal(id), {
+          signal: controller.signal,
+        });
 
         terminal.term.focus();
       } catch (e) {
@@ -171,7 +179,7 @@ function Session({ id, active }: ISessionProps) {
   onCleanup(() => {
     terminal?.term.dispose();
     unListen.then(f => f()).catch(errorLog);
-    removeEventListener('resize', () => resizeTerminal(id));
+    controller.abort();
   });
 
   return (

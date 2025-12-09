@@ -7,21 +7,16 @@ import { createSignal, onCleanup } from 'solid-js';
 function Network() {
   const [connected, isConnected] = createSignal<boolean>(navigator.onLine);
 
-  async function onOnline() {
-    isConnected(true);
-  }
+  const controller = new AbortController();
 
-  function onOffline() {
-    isConnected(false);
-  }
-
-  addEventListener('online', onOnline);
-  addEventListener('offline', onOffline);
-
-  onCleanup(() => {
-    removeEventListener('online', onOnline);
-    removeEventListener('offline', onOffline);
+  addEventListener('online', () => isConnected(true), {
+    signal: controller.signal,
   });
+  addEventListener('offline', () => isConnected(false), {
+    signal: controller.signal,
+  });
+
+  onCleanup(() => controller.abort());
 
   return (
     <>
