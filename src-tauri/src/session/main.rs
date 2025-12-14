@@ -197,7 +197,7 @@ impl PtySessionManager {
                 pty_instance.write_to_pty(data)?;
                 Ok(())
             }
-            None => Err(format!("Session {} not found", id).into()),
+            None => Err(format!("Session {} not found on writing", id).into()),
         }
     }
 
@@ -212,7 +212,7 @@ impl PtySessionManager {
                 pty_instance.resize_pty(size)?;
                 Ok(())
             }
-            None => Err(format!("Session {} not found", id).into()),
+            None => Err(format!("Session {} not found on resizing", id).into()),
         }
     }
 
@@ -229,7 +229,7 @@ impl PtySessionManager {
                 }
                 Ok(())
             }
-            None => Err(format!("Session {} not found", id).into()),
+            None => Err(format!("Session {} not found on switching", id).into()),
         }
     }
 }
