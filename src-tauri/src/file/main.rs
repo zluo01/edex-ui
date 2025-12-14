@@ -218,9 +218,13 @@ impl PtyCwdWatcher {
                         // cwd has changed
                         if cwd != prev {
                             // unwatch the old path first
-                            match watcher.unwatch(&PathBuf::from(&prev)) {
-                                Ok(_) => {}
-                                Err(e) => error!("Fail to unwatch path: {}. Error: {}", prev, e),
+                            if !prev.is_empty() {
+                                match watcher.unwatch(&PathBuf::from(&prev)) {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        error!("Fail to unwatch path: {}. Error: {}", prev, e)
+                                    }
+                                }
                             }
 
                             let proc_path = PathBuf::from(&cwd);
