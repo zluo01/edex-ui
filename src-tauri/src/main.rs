@@ -8,7 +8,7 @@ extern crate core;
 use log::{error, info, LevelFilter};
 use portable_pty::PtySize;
 use serde_json::Value;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use sysinfo::System;
 use tauri::{async_runtime::Mutex as AsyncMutex, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
@@ -19,7 +19,6 @@ use crate::file::main::DirectoryFileWatcher;
 use crate::session::main::PtySessionManager;
 use crate::sys::main::{IPInformation, SystemMonitor};
 use tauri_plugin_http::reqwest;
-use tokio::sync::Mutex;
 
 mod event;
 mod file;
@@ -91,7 +90,7 @@ async fn initialize_session(
     session_manager_state: State<'_, PtySessionManagerState>,
     id: u8,
 ) -> Result<(), ()> {
-    if let Err(e) = session_manager_state.0.lock().await.spawn_pty(id) {
+    if let Err(e) = session_manager_state.0.lock().unwrap().spawn_pty(id) {
         error!("Fail to spawn new pty session: {:?}", e);
     }
     Ok(())
@@ -104,7 +103,7 @@ async fn resize_session(
     rows: u16,
     cols: u16,
 ) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().await.resize(
+    let result = session_manager_state.0.lock().unwrap().resize(
         id,
         PtySize {
             rows,
@@ -127,7 +126,7 @@ async fn write_to_session(
     let result = session_manager_state
         .0
         .lock()
-        .await
+        .unwrap()
         .write(id, data.as_bytes());
     if let Err(e) = result {
         error!("Fail to write to session: {:?}", e);
@@ -140,7 +139,7 @@ async fn update_current_session(
     session_manager_state: State<'_, PtySessionManagerState>,
     id: u8,
 ) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().await.switch_session(id);
+    let result = session_manager_state.0.lock().unwrap().switch_session(id);
     if let Err(e) = result {
         error!(
             "Fail to find pid for session with id: {}. Error: {:?}",
