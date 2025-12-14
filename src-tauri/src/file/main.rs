@@ -1,30 +1,29 @@
 use crate::event::main::ProcessEvent;
 use log::{error, trace};
-use notify::{recommended_watcher, RecursiveMode, Watcher};
+use notify::{recommended_watcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::{cmp::Ordering, fs, path::PathBuf, str};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex, RwLock};
 
 // Borrow from https://github.com/hharnisc/hypercwd/blob/master/setCwd.js
-pub async fn get_current_pty_cwd(pid: i32) -> Option<String> {
+pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
     let response = tokio::process::Command::new("lsof")
         .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
         .output()
         .await;
 
     if let Err(e) = response {
-        error!("Fail to run command. Error: {}", e);
-        return None;
+        return Err(format!("Fail to run command. Error: {}", e));
     }
 
     let output = response.unwrap();
     if output.status.success() {
         let lines = str::from_utf8(&output.stdout).expect("Invalid UTF-8");
         let cwd = lines.lines().last().unwrap().get(1..).unwrap();
-        Some(cwd.to_string())
+        Ok(cwd.to_string())
     } else {
-        error!("Command failed with error: {:?}", output.status);
-        None
+        Err(format!("Command failed with error: {:?}", output.status))
     }
 }
 
@@ -156,27 +155,109 @@ fn scan_directory(
 }
 
 #[derive(Debug, Clone)]
-pub struct WatcherPathInfo {
+pub struct WatcherPayload {
     pid: i32,
-    initial_path: String,
 }
 
-impl WatcherPathInfo {
-    pub fn new(pid: i32, initial_path: String) -> Self {
-        Self { pid, initial_path }
+impl WatcherPayload {
+    pub fn new(pid: i32) -> Self {
+        Self { pid }
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum DirectoryWatcherEvent {
-    Watch { initial: Option<WatcherPathInfo> },
+    Watch { initial: Option<WatcherPayload> },
+}
+
+struct PtyCwdWatcher {
+    file_path_watcher: Arc<Mutex<RecommendedWatcher>>,
+    pid: Arc<RwLock<Option<i32>>>,
+    prev_cwd: Arc<RwLock<Option<String>>>,
+}
+
+impl PtyCwdWatcher {
+    fn new(file_path_watcher: RecommendedWatcher) -> Self {
+        Self {
+            file_path_watcher: Arc::new(Mutex::new(file_path_watcher)),
+            pid: Arc::new(RwLock::new(None)),
+            prev_cwd: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    async fn start<F>(&mut self, update_directory: F)
+    where
+        F: Fn(PathBuf) + Send + 'static,
+    {
+        let pid = Arc::clone(&self.pid);
+        let prev_cwd = Arc::clone(&self.prev_cwd);
+        let file_watcher = Arc::clone(&self.file_path_watcher);
+
+        tauri::async_runtime::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+
+                let current_pid = {
+                    let pid_guard = pid.read().await;
+                    match *pid_guard {
+                        Some(p) => p,
+                        None => continue,
+                    }
+                };
+
+                let prev = {
+                    let prev_cwd_guard = prev_cwd.read().await;
+                    prev_cwd_guard.clone().unwrap_or_default()
+                };
+
+                match get_current_pty_cwd(current_pid).await {
+                    Ok(cwd) => {
+                        let mut watcher = file_watcher.lock().await;
+
+                        // cwd has changed
+                        if cwd != prev {
+                            // unwatch the old path first
+                            match watcher.unwatch(&PathBuf::from(&prev)) {
+                                Ok(_) => {}
+                                Err(e) => error!("Fail to unwatch path: {}. Error: {}", prev, e),
+                            }
+
+                            let proc_path = PathBuf::from(&cwd);
+                            match watcher.watch(&proc_path, RecursiveMode::NonRecursive) {
+                                Ok(_) => {
+                                    *prev_cwd.write().await = Some(cwd);
+                                    update_directory(proc_path); // need to proactively update the directory once to refresh the current data.
+                                }
+                                Err(e) => error!("Fail to watch path: {}. Error: {}", cwd, e),
+                            }
+                        }
+                        continue;
+                    }
+                    Err(e) => {
+                        error!(
+                            "Fail to get cwd for pid {} with error: {}.",
+                            &current_pid, e
+                        );
+                        continue;
+                    }
+                }
+            }
+        });
+    }
+
+    async fn watch_pid(&self, pid: i32) {
+        *self.pid.write().await = Some(pid);
+    }
+
+    async fn reset_pid(&self) {
+        *self.pid.write().await = None;
+    }
 }
 
 pub struct DirectoryFileWatcher {
-    directory_file_watcher_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
     directory_file_watcher_receiver: mpsc::UnboundedReceiver<DirectoryWatcherEvent>,
     process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
-    current_path: Option<String>,
 }
 
 impl DirectoryFileWatcher {
@@ -186,10 +267,8 @@ impl DirectoryFileWatcher {
         let (tx, rx) = mpsc::unbounded_channel();
 
         let watcher = Self {
-            directory_file_watcher_sender: tx.clone(),
             directory_file_watcher_receiver: rx,
             process_event_sender: event_tx,
-            current_path: None,
         };
 
         (watcher, tx)
@@ -197,7 +276,7 @@ impl DirectoryFileWatcher {
 
     pub async fn run(&mut self) {
         let file_watcher_event_sender = self.process_event_sender.clone();
-        let mut file_path_watcher =
+        let file_path_watcher =
             recommended_watcher(move |res: notify::Result<notify::Event>| match res {
                 Ok(event) => {
                     if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
@@ -207,82 +286,30 @@ impl DirectoryFileWatcher {
                 }
                 Err(e) => error!("watch error: {:?}", e),
             })
-                .unwrap();
+            .unwrap();
 
-        let file_watcher_event_sender = self.process_event_sender.clone();
+        // start pty cwd watcher
+        let mut pty_cwd_watcher = PtyCwdWatcher::new(file_path_watcher);
+        let event_sender = self.process_event_sender.clone();
+        pty_cwd_watcher
+            .start(move |path: PathBuf| {
+                Self::update_directory(&path, &event_sender);
+            })
+            .await;
+
         while let Some(event) = self.directory_file_watcher_receiver.recv().await {
             match event {
                 DirectoryWatcherEvent::Watch { initial } => {
-                    // make sure we only watch one path at a time
-                    // we also need to reset the current_path such that if something happens
-                    // we do not double unwatch for the new life cycle
-                    if let Some(ref path) = self.current_path {
-                        match file_path_watcher.unwatch(&PathBuf::from(path)) {
-                            Ok(_) => self.current_path = None,
-                            Err(e) => error!("Fail to unwatch path: {}. Error: {}", path, e),
-                        }
-                    }
-
                     // if no info, meaning current pty is closed. We will reset and wait for the next open pty to watch
                     if initial.is_none() {
-                        match &file_watcher_event_sender.send(ProcessEvent::Directory {
-                            directory_info: DirectoryInfo::default(),
-                        }) {
-                            Ok(()) => {}
-                            Err(e) => error!("Fail to update files. {:?}", e),
-                        };
+                        pty_cwd_watcher.reset_pid().await;
                         continue;
                     }
 
                     let info = initial.unwrap();
-                    let new_path = info.initial_path;
-
                     let pid = info.pid;
-                    let prev_cwd = new_path.clone();
-                    let event_sender = self.directory_file_watcher_sender.clone();
-                    tauri::async_runtime::spawn(async move {
-                        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(500));
-                        loop {
-                            interval.tick().await;
 
-                            // Get current pty cwd
-                            match get_current_pty_cwd(pid).await {
-                                None => {
-                                    error!("Fail to get cwd for pid {}.", &pid);
-                                    // since this thread is running in parallel with terminal thread, and we rely on event loop to update path to watch
-                                    // there is possible race condition that we get the pid in current cycle while at the meantime, the terminal is closed in other thread
-                                    // in this case, the current pid in this cycle will not have cwd.
-                                    // We will just break the current thread and let the workflow create a new one.
-                                    trace!("Exit cwd checking for path {}", prev_cwd);
-                                    break;
-                                }
-                                Some(cwd) => {
-                                    if cwd != prev_cwd {
-                                        if let Err(e) =
-                                            event_sender.send(DirectoryWatcherEvent::Watch {
-                                                initial: Some(WatcherPathInfo::new(pid, cwd)),
-                                            })
-                                        {
-                                            error!("Fail to send update path. {}", e)
-                                        }
-                                        trace!("Exit cwd checking for path {}", prev_cwd);
-                                        break;
-                                    }
-                                    continue;
-                                }
-                            }
-                        }
-                    });
-
-                    let proc_path = PathBuf::from(&new_path);
-
-                    match file_path_watcher.watch(&proc_path, RecursiveMode::NonRecursive) {
-                        Ok(_) => {
-                            self.current_path = Some(new_path);
-                            Self::update_directory(&proc_path, &file_watcher_event_sender);
-                        }
-                        Err(e) => error!("Fail to watch path: {}. Error: {}", new_path, e),
-                    }
+                    pty_cwd_watcher.watch_pid(pid).await;
                 }
             }
         }

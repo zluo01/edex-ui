@@ -1,5 +1,5 @@
 use crate::event::main::ProcessEvent;
-use crate::file::main::{DirectoryWatcherEvent, WatcherPathInfo};
+use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
@@ -177,7 +177,7 @@ impl PtySessionManager {
         if let Err(e) =
             self.directory_file_watcher_event_sender
                 .send(DirectoryWatcherEvent::Watch {
-                    initial: Self::get_path_to_watch(pid),
+                    initial: Some(WatcherPayload::new(pid)),
                 })
         {
             error!("Fail to send directory update event. {:?}", e);
@@ -222,7 +222,7 @@ impl PtySessionManager {
                 if let Err(e) =
                     self.directory_file_watcher_event_sender
                         .send(DirectoryWatcherEvent::Watch {
-                            initial: Self::get_path_to_watch(pty_session.pid()),
+                            initial: Some(WatcherPayload::new(pty_session.pid())),
                         })
                 {
                     error!("Fail to send directory update event. {:?}", e);
@@ -230,32 +230,6 @@ impl PtySessionManager {
                 Ok(())
             }
             None => Err(format!("Session {} not found", id).into()),
-        }
-    }
-
-    fn get_path_to_watch(pid: i32) -> Option<WatcherPathInfo> {
-        Self::get_current_pty_cwd(pid).map(|cwd| WatcherPathInfo::new(pid, cwd))
-    }
-
-    // blocking version due to pty cannot be non-blocking
-    fn get_current_pty_cwd(pid: i32) -> Option<String> {
-        let response = std::process::Command::new("lsof")
-            .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
-            .output();
-
-        if let Err(e) = response {
-            error!("Fail to run command. Error: {}", e);
-            return None;
-        }
-
-        let output = response.unwrap();
-        if output.status.success() {
-            let lines = str::from_utf8(&output.stdout).expect("Invalid UTF-8");
-            let cwd = lines.lines().last().unwrap().get(1..).unwrap();
-            Some(cwd.to_string())
-        } else {
-            error!("Command failed with error: {:?}", output.status);
-            None
         }
     }
 }
