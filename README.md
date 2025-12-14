@@ -29,19 +29,19 @@ Since it use Tauri framework, make sure setup environment properly following [gu
 ### Development
 
 ```
-npm run dev
+pnpm run dev
 ```
 
 ### Production Build
 
 ```
-npm run build
+pnpm run build
 ```
 
 #### Debug Build
 
 ```
-npm run build-debug
+pnpm run build-debug
 ```
 
 ## Performance
