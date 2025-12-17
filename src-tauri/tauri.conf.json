@@ -5,8 +5,8 @@
   "version": "0.0.1",
   "identifier": "edex",
   "build": {
-    "beforeDevCommand": "npm run vite-dev",
-    "beforeBuildCommand": "npm run vite-build",
+    "beforeDevCommand": "pnpm run vite-dev",
+    "beforeBuildCommand": "pnpm run vite-build",
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1874"
   },
