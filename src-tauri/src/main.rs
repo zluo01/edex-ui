@@ -7,7 +7,7 @@ extern crate core;
 
 use log::{error, info, LevelFilter};
 use serde_json::Value;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use sysinfo::System;
 use tauri::{async_runtime::Mutex as AsyncMutex, Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
@@ -23,8 +23,6 @@ mod event;
 mod file;
 mod session;
 mod sys;
-
-struct PtySessionManagerState(Arc<Mutex<PtySessionManager>>);
 
 struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
 
@@ -84,32 +82,6 @@ async fn get_network_latency(
     Ok(elapsed_time.as_millis())
 }
 
-#[tauri::command]
-async fn initialize_session(
-    session_manager_state: State<'_, PtySessionManagerState>,
-    id: u8,
-) -> Result<(), ()> {
-    if let Err(e) = session_manager_state.0.lock().unwrap().spawn_pty(id) {
-        error!("Fail to spawn new pty session: {:?}", e);
-    }
-    Ok(())
-}
-
-#[tauri::command]
-async fn update_current_session(
-    session_manager_state: State<'_, PtySessionManagerState>,
-    id: u8,
-) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().unwrap().switch_session(id);
-    if let Err(e) = result {
-        error!(
-            "Fail to find pid for session with id: {}. Error: {:?}",
-            id, e
-        );
-    }
-    Ok(())
-}
-
 fn main() {
     let log_level;
     if cfg!(debug_assertions) {
@@ -146,9 +118,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             kernel_version,
             get_ip_information,
-            get_network_latency,
-            initialize_session,
-            update_current_session
+            get_network_latency
         ])
         .setup(move |app| {
             let (mut event_processor, process_event_sender) =
@@ -167,12 +137,11 @@ fn main() {
                 directory_file_watcher.run().await;
             });
 
-            let pty_manager = PtySessionManager::new(
-                app.handle().clone(),
+            let mut pty_manager = PtySessionManager::new(
                 process_event_sender.clone(),
                 directory_file_watcher_event_sender.clone(),
             );
-            app.manage(PtySessionManagerState(Arc::new(Mutex::new(pty_manager))));
+            pty_manager.start(app.handle().clone());
 
             // refresh and emit system information
             let mut monitor = SystemMonitor::new(1, process_event_sender.clone());

@@ -55,7 +55,12 @@ export async function writeToSession(id: number, data: string) {
  * @param id terminal index
  */
 export async function initializeSession(id: number) {
-  await invoke('initialize_session', { id });
+  await emit('manager', {
+    type: 'Initialize',
+    payload: {
+      id,
+    },
+  });
 }
 
 export async function terminateSession(id: number) {
@@ -63,5 +68,10 @@ export async function terminateSession(id: number) {
 }
 
 export async function updateCurrentSession(id: number) {
-  await invoke('update_current_session', { id });
+  await emit('manager', {
+    type: 'Switch',
+    payload: {
+      id,
+    },
+  });
 }

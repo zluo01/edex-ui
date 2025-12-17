@@ -154,8 +154,14 @@ impl PtySession {
     }
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type", content = "payload")]
+enum PtySessionManagerCommand {
+    Initialize { id: u8 },
+    Switch { id: u8 },
+}
+
 pub struct PtySessionManager {
-    app_handle: AppHandle,
     process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
     directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
     active_sessions: Arc<Mutex<HashMap<u8, PtySession>>>,
@@ -163,70 +169,103 @@ pub struct PtySessionManager {
 
 impl PtySessionManager {
     pub fn new(
-        app_handle: AppHandle,
         process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
         directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
     ) -> Self {
         Self {
-            app_handle,
             process_event_sender,
             directory_file_watcher_event_sender,
             active_sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
-    // Spawn a new PTY with a command
-    pub fn spawn_pty(&mut self, id: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub fn start(&mut self, app_handle: AppHandle) {
         let active_sessions = self.active_sessions.clone();
-
+        let process_event_sender = self.process_event_sender.clone();
         let directory_file_watcher_sender = self.directory_file_watcher_event_sender.clone();
-        let pty_session = PtySession::new(
+        let app_handle_clone = app_handle.clone();
+
+        app_handle.listen("manager", move |event| {
+            match serde_json::from_str::<PtySessionManagerCommand>(event.payload()) {
+                Ok(PtySessionManagerCommand::Initialize { id }) => {
+                    Self::spawn_pty(
+                        id,
+                        &active_sessions,
+                        &process_event_sender,
+                        &directory_file_watcher_sender,
+                        &app_handle_clone,
+                    );
+                }
+                Ok(PtySessionManagerCommand::Switch { id }) => {
+                    Self::switch_session(id, &active_sessions, &directory_file_watcher_sender);
+                }
+                Err(e) => {
+                    error!("Failed to parse command for session manager: {:?}", e);
+                }
+            }
+        });
+    }
+
+    fn spawn_pty(
+        id: u8,
+        active_sessions: &Arc<Mutex<HashMap<u8, PtySession>>>,
+        process_event_sender: &mpsc::UnboundedSender<ProcessEvent>,
+        directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
+        app_handle: &AppHandle,
+    ) {
+        let active_sessions_inner = active_sessions.clone();
+        let directory_watcher_inner = directory_file_watcher_sender.clone();
+
+        let pty_session_result = PtySession::new(
             id,
-            self.process_event_sender.clone(),
-            self.app_handle.clone(),
+            process_event_sender.clone(),
+            app_handle.clone(),
             move || {
-                if let Err(e) = directory_file_watcher_sender
-                    .send(DirectoryWatcherEvent::Watch { initial: None })
+                if let Err(e) =
+                    directory_watcher_inner.send(DirectoryWatcherEvent::Watch { initial: None })
                 {
                     error!(
                         "Fail to send directory update event on session close. {:?}",
                         e
                     )
                 }
-                active_sessions.lock().unwrap().remove(&id);
+                active_sessions_inner.lock().unwrap().remove(&id);
             },
-        )?;
+        );
 
-        let pid = pty_session.pid();
-        self.active_sessions.lock().unwrap().insert(id, pty_session);
+        match pty_session_result {
+            Ok(pty_session) => {
+                let pid = pty_session.pid();
+                active_sessions.lock().unwrap().insert(id, pty_session);
 
-        // signal the watcher to watch new pty directory
-        if let Err(e) =
-            self.directory_file_watcher_event_sender
-                .send(DirectoryWatcherEvent::Watch {
+                if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pid)),
-                })
-        {
-            error!("Fail to send directory update event. {:?}", e);
-        }
-
-        Ok(())
-    }
-
-    pub fn switch_session(&self, id: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        match self.active_sessions.lock().unwrap().get(&id) {
-            Some(pty_session) => {
-                if let Err(e) =
-                    self.directory_file_watcher_event_sender
-                        .send(DirectoryWatcherEvent::Watch {
-                            initial: Some(WatcherPayload::new(pty_session.pid())),
-                        })
-                {
+                }) {
                     error!("Fail to send directory update event. {:?}", e);
                 }
-                Ok(())
             }
-            None => Err(format!("Session {} not found on switching", id).into()),
+            Err(e) => {
+                error!("Failed to initialize new session: {:?}", e);
+            }
+        }
+    }
+
+    fn switch_session(
+        id: u8,
+        active_sessions: &Arc<Mutex<HashMap<u8, PtySession>>>,
+        directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
+    ) {
+        match active_sessions.lock().unwrap().get(&id) {
+            Some(pty_session) => {
+                if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
+                    initial: Some(WatcherPayload::new(pty_session.pid())),
+                }) {
+                    error!("Fail to send directory update event. {:?}", e);
+                }
+            }
+            None => {
+                error!("Session {} not found on switching", id);
+            }
         }
     }
 }
