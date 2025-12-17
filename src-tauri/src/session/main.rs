@@ -1,6 +1,6 @@
 use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
-use log::{error, info};
+use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -25,12 +25,12 @@ fn construct_cmd() -> CommandBuilder {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "payload")]
-pub enum PtySessionCommand {
+enum PtySessionCommand {
     Write { data: String },
     Resize { cols: u16, rows: u16 },
 }
 
-pub struct PtySession {
+struct PtySession {
     pid: i32,
 }
 
@@ -82,14 +82,14 @@ impl PtySession {
                 Ok(data) if data.len() > 0 => {
                     let data = data.to_vec();
                     reader.consume(data.len());
-                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
-                        id,
-                        data: data.to_vec(),
-                    }) {
+                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward { id, data }) {
                         error!("Fail to send output. {:?}", e);
                     }
                 }
-                Ok(_) => {}
+                Ok(_) => {
+                    // ✅ EOF reached - exit loop
+                    break;
+                }
                 Err(e) => {
                     error!(
                         "Error when reading from pty for session {}: Error: {}",
@@ -103,14 +103,16 @@ impl PtySession {
         let child_watcher_sender = process_event_sender.clone();
         // need to use block here since child.wait is a blocking process
         tauri::async_runtime::spawn_blocking(move || {
-            let status = child.wait().unwrap();
-            let exit_code = status.exit_code();
+            let exit_code = match child.wait() {
+                Ok(status) => Some(status.exit_code()),
+                Err(e) => {
+                    error!("Failed to wait for child process: {:?}", e);
+                    None
+                }
+            };
             reader_handle.abort();
             cleanup();
-            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
-                id,
-                exit_code: Some(exit_code),
-            }) {
+            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit { id, exit_code }) {
                 error!("Fail to send process exit event. {:?}", e);
             }
         });

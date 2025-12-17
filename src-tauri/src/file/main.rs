@@ -1,5 +1,5 @@
 use crate::event::main::ProcessEvent;
-use log::{error, trace};
+use log::error;
 use notify::{recommended_watcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
