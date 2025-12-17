@@ -1,6 +1,7 @@
 import { errorLog } from '@/lib/log';
 import { IIPAddressInformation } from '@/models';
 import { invoke } from '@tauri-apps/api/core';
+import { emit } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-shell';
 
 export async function openFile(path: string) {
@@ -26,7 +27,13 @@ export async function getNetworkLatency(): Promise<string> {
 }
 
 export async function resizeSession(id: number, rows: number, cols: number) {
-  await invoke('resize_session', { id, rows, cols });
+  await emit('terminal-' + id, {
+    type: 'Resize',
+    payload: {
+      cols,
+      rows,
+    },
+  });
 }
 
 /**
@@ -35,7 +42,12 @@ export async function resizeSession(id: number, rows: number, cols: number) {
  * @param data payload
  */
 export async function writeToSession(id: number, data: string) {
-  await invoke('write_to_session', { id, data });
+  await emit('terminal-' + id, {
+    type: 'Write',
+    payload: {
+      data,
+    },
+  });
 }
 
 /**

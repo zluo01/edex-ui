@@ -6,7 +6,6 @@
 extern crate core;
 
 use log::{error, info, LevelFilter};
-use portable_pty::PtySize;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use sysinfo::System;
@@ -97,44 +96,6 @@ async fn initialize_session(
 }
 
 #[tauri::command]
-async fn resize_session(
-    session_manager_state: State<'_, PtySessionManagerState>,
-    id: u8,
-    rows: u16,
-    cols: u16,
-) -> Result<(), ()> {
-    let result = session_manager_state.0.lock().unwrap().resize(
-        id,
-        PtySize {
-            rows,
-            cols,
-            ..Default::default()
-        },
-    );
-    if let Err(e) = result {
-        error!("Fail to resize pty session: {:?}", e);
-    }
-    Ok(())
-}
-
-#[tauri::command]
-async fn write_to_session(
-    session_manager_state: State<'_, PtySessionManagerState>,
-    id: u8,
-    data: &str,
-) -> Result<(), ()> {
-    let result = session_manager_state
-        .0
-        .lock()
-        .unwrap()
-        .write(id, data.as_bytes());
-    if let Err(e) = result {
-        error!("Fail to write to session: {:?}", e);
-    }
-    Ok(())
-}
-
-#[tauri::command]
 async fn update_current_session(
     session_manager_state: State<'_, PtySessionManagerState>,
     id: u8,
@@ -152,7 +113,7 @@ async fn update_current_session(
 fn main() {
     let log_level;
     if cfg!(debug_assertions) {
-        log_level = LevelFilter::Trace;
+        log_level = LevelFilter::Info;
     } else {
         log_level = LevelFilter::Error;
     }
@@ -187,8 +148,6 @@ fn main() {
             get_ip_information,
             get_network_latency,
             initialize_session,
-            write_to_session,
-            resize_session,
             update_current_session
         ])
         .setup(move |app| {
@@ -209,6 +168,7 @@ fn main() {
             });
 
             let pty_manager = PtySessionManager::new(
+                app.handle().clone(),
                 process_event_sender.clone(),
                 directory_file_watcher_event_sender.clone(),
             );
