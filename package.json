@@ -65,7 +65,7 @@
     "vite": "7.3.0",
     "vite-plugin-eslint": "1.8.1",
     "vite-plugin-solid": "2.11.10",
-    "vite-tsconfig-paths": "5.1.4"
+    "vite-tsconfig-paths": "6.0.3"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": [
