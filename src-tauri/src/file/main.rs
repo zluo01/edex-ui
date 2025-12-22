@@ -12,19 +12,20 @@ pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
     let response = tokio::process::Command::new("lsof")
         .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
         .output()
-        .await;
+        .await
+        .map_err(|e| format!("Fail to run command. Error: {}", e))?;
 
-    if let Err(e) = response {
-        return Err(format!("Fail to run command. Error: {}", e));
-    }
-
-    let output = response.unwrap();
-    if output.status.success() {
-        let lines = str::from_utf8(&output.stdout).expect("Invalid UTF-8");
-        let cwd = lines.lines().last().unwrap().get(1..).unwrap();
+    if response.status.success() {
+        let lines =
+            str::from_utf8(&response.stdout).map_err(|e| format!("Invalid UTF-8: {}", e))?;
+        let cwd = lines
+            .lines()
+            .last()
+            .and_then(|line| line.get(1..))
+            .ok_or_else(|| "No cwd found in output".to_string())?;
         Ok(cwd.to_string())
     } else {
-        Err(format!("Command failed with error: {:?}", output.status))
+        Err(format!("Command failed with error: {:?}", response.status))
     }
 }
 
@@ -48,24 +49,20 @@ impl Ord for FileInfo {
         match (&self.t, &other.t) {
             (FileType::Directory, FileType::Directory) => {
                 // Sort hidden directories first by comparing the hidden flag
-                if self.hidden && !other.hidden {
-                    Ordering::Less
-                } else if !self.hidden && other.hidden {
-                    Ordering::Greater
-                } else {
-                    self.name.cmp(&other.name)
+                match (self.hidden, other.hidden) {
+                    (true, false) => Ordering::Less,
+                    (false, true) => Ordering::Greater,
+                    _ => self.name.cmp(&other.name),
                 }
             }
             (FileType::Directory, FileType::File) => Ordering::Less,
             (FileType::File, FileType::Directory) => Ordering::Greater,
             (FileType::File, FileType::File) | (FileType::SystemLink, FileType::SystemLink) => {
                 // Sort hidden files/links first by comparing the hidden flag
-                if self.hidden && !other.hidden {
-                    Ordering::Less
-                } else if !self.hidden && other.hidden {
-                    Ordering::Greater
-                } else {
-                    self.name.cmp(&other.name)
+                match (self.hidden, other.hidden) {
+                    (true, false) => Ordering::Less,
+                    (false, true) => Ordering::Greater,
+                    _ => self.name.cmp(&other.name),
                 }
             }
             (FileType::SystemLink, _) => Ordering::Less,
@@ -123,28 +120,25 @@ fn scan_directory(
     let entries = fs::read_dir(path)?;
     let mut file_info_list: Vec<FileInfo> = Vec::new();
 
-    for entry in entries {
-        if let Ok(entry) = entry {
-            let file_name = entry.file_name();
-            let file_path = entry.path();
-            let metadata = entry.metadata();
+    for entry in entries.flatten() {
+        let file_name = entry.file_name();
+        let file_path = entry.path();
 
-            if let (Some(name), Ok(metadata)) = (file_name.to_str(), metadata) {
-                let file_type = if metadata.is_dir() {
-                    FileType::Directory
-                } else if metadata.is_file() {
-                    FileType::File
-                } else {
-                    FileType::SystemLink
-                };
+        if let (Some(name), Ok(metadata)) = (file_name.to_str(), entry.metadata()) {
+            let file_type = if metadata.is_dir() {
+                FileType::Directory
+            } else if metadata.is_file() {
+                FileType::File
+            } else {
+                FileType::SystemLink
+            };
 
-                file_info_list.push(FileInfo {
-                    name: name.to_string(),
-                    t: file_type,
-                    path: convert_path_to_string(&file_path, metadata.is_dir()),
-                    hidden: name.starts_with("."),
-                });
-            }
+            file_info_list.push(FileInfo {
+                name: name.to_string(),
+                t: file_type,
+                path: convert_path_to_string(&file_path, metadata.is_dir()),
+                hidden: name.starts_with('.'),
+            });
         }
     }
     file_info_list.sort();
@@ -282,8 +276,12 @@ impl DirectoryFileWatcher {
             recommended_watcher(move |res: notify::Result<notify::Event>| match res {
                 Ok(event) => {
                     if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
-                        let path = event.paths[0].parent().unwrap().to_path_buf();
-                        Self::update_directory(&path, &file_watcher_event_sender);
+                        if let Some(parent) = event.paths[0].parent() {
+                            Self::update_directory(
+                                &parent.to_path_buf(),
+                                &file_watcher_event_sender,
+                            );
+                        }
                     }
                 }
                 Err(e) => error!("watch error: {:?}", e),
@@ -300,16 +298,11 @@ impl DirectoryFileWatcher {
         while let Some(event) = self.directory_file_watcher_receiver.recv().await {
             match event {
                 DirectoryWatcherEvent::Watch { initial } => {
-                    // if no info, meaning current pty is closed. We will reset and wait for the next open pty to watch
-                    if initial.is_none() {
-                        pty_cwd_watcher.reset_pid();
-                        continue;
+                    match initial {
+                        Some(info) => pty_cwd_watcher.watch_pid(info.pid),
+                        // if no info, meaning current pty is closed. We will reset and wait for the next open pty to watch
+                        None => pty_cwd_watcher.reset_pid(),
                     }
-
-                    let info = initial.unwrap();
-                    let pid = info.pid;
-
-                    pty_cwd_watcher.watch_pid(pid);
                 }
             }
         }
@@ -318,10 +311,9 @@ impl DirectoryFileWatcher {
     fn update_directory(path: &PathBuf, event_tx: &mpsc::UnboundedSender<ProcessEvent>) {
         match scan_directory(path) {
             Ok(directory_info) => {
-                match event_tx.send(ProcessEvent::Directory { directory_info }) {
-                    Ok(()) => {}
-                    Err(e) => error!("Fail to update files. {:?}", e),
-                };
+                if let Err(e) = event_tx.send(ProcessEvent::Directory { directory_info }) {
+                    error!("Fail to update files. {:?}", e);
+                }
             }
             Err(e) => error!("Fail to scan directory. Error: {}", e),
         }
