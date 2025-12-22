@@ -1,8 +1,12 @@
 use crate::event::main::ProcessEvent;
 use chrono::{DateTime, Local};
 use log::{error, warn};
+#[cfg(target_os = "linux")]
+use nvml_wrapper::Nvml;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+#[cfg(target_os = "linux")]
+use std::sync::OnceLock;
 use std::{
     str,
     time::{Duration, UNIX_EPOCH},
@@ -194,7 +198,7 @@ async fn extract_temperature(components: &Components) -> Temperature {
 }
 
 #[cfg(target_os = "linux")]
-async fn extract_temperature(components: &Components) -> Temperature {
+fn extract_temperature(components: &Components) -> Temperature {
     let mut temperature: Temperature = Default::default();
 
     if let Some(component) = components
@@ -204,35 +208,53 @@ async fn extract_temperature(components: &Components) -> Temperature {
         temperature.set_cpu(component.temperature().unwrap_or(0.0));
     }
 
-    temperature.set_gpu(get_nvidia_gpu_temp().await);
+    temperature.set_gpu(get_nvidia_gpu_temp());
     temperature
 }
 
 #[cfg(target_os = "linux")]
-async fn get_nvidia_gpu_temp() -> f32 {
-    match tokio::process::Command::new("nvidia-smi")
-        .args(&[
-            "--query-gpu=temperature.gpu",
-            "--format=csv,noheader,nounits",
-        ])
-        .output()
-        .await
-    {
-        Ok(output) if output.status.success() => match str::from_utf8(&output.stdout) {
-            Ok(result) => result.trim().parse().unwrap_or_else(|e| {
-                warn!("Failed to parse GPU temperature: {}", e);
-                0.0
-            }),
-            Err(e) => {
-                error!("Failed to parse nvidia-smi output to string: {}", e);
-                0.0
-            }
-        },
-        Ok(output) => {
-            warn!("nvidia-smi command failed with status: {:?}", output.status);
-            0.0
+static NVML: OnceLock<Option<Nvml>> = OnceLock::new();
+
+#[cfg(target_os = "linux")]
+fn init_nvml() -> Option<Nvml> {
+    match Nvml::init() {
+        Ok(nvml) => Some(nvml),
+        Err(e) => {
+            warn!(
+                "Failed to initialize NVML: {}. GPU temperature will not be available.",
+                e
+            );
+            None
         }
-        Err(_e) => 0.0,
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn get_nvidia_gpu_temp() -> f32 {
+    let nvml = NVML.get_or_init(init_nvml);
+
+    match nvml {
+        Some(nvml) => {
+            // Get first GPU (index 0)
+            match nvml.device_by_index(0) {
+                Ok(device) => {
+                    match device
+                        .temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)
+                    {
+                        Ok(temp) => temp as f32,
+                        Err(e) => {
+                            warn!("Failed to read GPU temperature: {}", e);
+                            0.0
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to get GPU device: {}", e);
+                    0.0
+                }
+            }
+        }
+        None => 0.0,
     }
 }
 
@@ -455,7 +477,7 @@ impl SystemMonitor {
             let process_data = extract_process(&self.system);
             let memory = extract_memory(&self.system);
             let cpu = extract_cpu_data(&self.system);
-            let temperature = extract_temperature(&self.components).await;
+            let temperature = extract_temperature(&self.components);
             let network_data = extract_network(&self.networks);
             let disks_data = extract_disk_usage(&self.disks);
 
