@@ -7,9 +7,8 @@ extern crate core;
 
 use log::{error, info, LevelFilter};
 use serde_json::Value;
-use std::sync::Arc;
 use sysinfo::System;
-use tauri::{async_runtime::Mutex as AsyncMutex, Manager, State};
+use tauri::{Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
 use tokio::time::Instant;
 
@@ -24,7 +23,7 @@ mod file;
 mod session;
 mod sys;
 
-struct RequestClientState(Arc<AsyncMutex<reqwest::Client>>);
+struct RequestClientState(reqwest::Client);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
@@ -38,8 +37,8 @@ async fn kernel_version() -> Result<String, ()> {
 async fn get_ip_information(
     request_client_state: State<'_, RequestClientState>,
 ) -> Result<Value, ()> {
-    let client = request_client_state.0.lock().await;
-    let resp = client
+    let resp = request_client_state
+        .0
         .get("http://ip-api.com/json/?fields=status,countryCode,region,city,query")
         .send()
         .await;
@@ -68,10 +67,9 @@ async fn get_ip_information(
 async fn get_network_latency(
     request_client_state: State<'_, RequestClientState>,
 ) -> Result<u128, ()> {
-    let client = request_client_state.0.lock().await;
-
     let start_time = Instant::now();
-    let _ = client
+    let _ = request_client_state
+        .0
         .get("https://1.1.1.1/dns-query?name=google.com")
         .header("accept", "application/dns-json")
         .send()
@@ -112,9 +110,7 @@ fn main() {
                 .expect("no main window")
                 .set_focus();
         }))
-        .manage(RequestClientState(Arc::new(AsyncMutex::new(
-            reqwest::Client::new(),
-        ))))
+        .manage(RequestClientState(reqwest::Client::new()))
         .invoke_handler(tauri::generate_handler![
             kernel_version,
             get_ip_information,
