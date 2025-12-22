@@ -1,9 +1,9 @@
 use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
+use dashmap::DashMap;
 use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Listener};
@@ -164,7 +164,7 @@ enum PtySessionManagerCommand {
 pub struct PtySessionManager {
     process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
     directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
-    active_sessions: Arc<Mutex<HashMap<u8, PtySession>>>,
+    active_sessions: Arc<DashMap<u8, PtySession>>,
 }
 
 impl PtySessionManager {
@@ -175,7 +175,7 @@ impl PtySessionManager {
         Self {
             process_event_sender,
             directory_file_watcher_event_sender,
-            active_sessions: Arc::new(Mutex::new(HashMap::new())),
+            active_sessions: Arc::new(DashMap::new()),
         }
     }
 
@@ -208,7 +208,7 @@ impl PtySessionManager {
 
     fn spawn_pty(
         id: u8,
-        active_sessions: &Arc<Mutex<HashMap<u8, PtySession>>>,
+        active_sessions: &Arc<DashMap<u8, PtySession>>,
         process_event_sender: &mpsc::UnboundedSender<ProcessEvent>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
         app_handle: &AppHandle,
@@ -229,14 +229,14 @@ impl PtySessionManager {
                         e
                     )
                 }
-                active_sessions_inner.lock().unwrap().remove(&id);
+                active_sessions_inner.remove(&id);
             },
         );
 
         match pty_session_result {
             Ok(pty_session) => {
                 let pid = pty_session.pid();
-                active_sessions.lock().unwrap().insert(id, pty_session);
+                active_sessions.insert(id, pty_session);
 
                 if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pid)),
@@ -252,10 +252,10 @@ impl PtySessionManager {
 
     fn switch_session(
         id: u8,
-        active_sessions: &Arc<Mutex<HashMap<u8, PtySession>>>,
+        active_sessions: &Arc<DashMap<u8, PtySession>>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
     ) {
-        match active_sessions.lock().unwrap().get(&id) {
+        match active_sessions.get(&id) {
             Some(pty_session) => {
                 if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pty_session.pid())),
