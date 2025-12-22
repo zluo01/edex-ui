@@ -2,9 +2,10 @@ use crate::event::main::ProcessEvent;
 use log::error;
 use notify::{recommended_watcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::atomic::AtomicI32;
+use std::sync::{atomic, Arc, Mutex, RwLock};
 use std::{cmp::Ordering, fs, path::PathBuf, str};
-use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::sync::mpsc;
 
 // Borrow from https://github.com/hharnisc/hypercwd/blob/master/setCwd.js
 pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
@@ -172,7 +173,7 @@ pub enum DirectoryWatcherEvent {
 
 struct PtyCwdWatcher {
     file_path_watcher: Arc<Mutex<RecommendedWatcher>>,
-    pid: Arc<RwLock<Option<i32>>>,
+    pid: Arc<AtomicI32>,
     prev_cwd: Arc<RwLock<Option<String>>>,
 }
 
@@ -180,12 +181,12 @@ impl PtyCwdWatcher {
     fn new(file_path_watcher: RecommendedWatcher) -> Self {
         Self {
             file_path_watcher: Arc::new(Mutex::new(file_path_watcher)),
-            pid: Arc::new(RwLock::new(None)),
+            pid: Arc::new(AtomicI32::new(-1)),
             prev_cwd: Arc::new(RwLock::new(None)),
         }
     }
 
-    async fn start<F>(&mut self, update_directory: F)
+    fn start<F>(&self, update_directory: F)
     where
         F: Fn(PathBuf) + Send + 'static,
     {
@@ -198,22 +199,19 @@ impl PtyCwdWatcher {
             loop {
                 interval.tick().await;
 
-                let current_pid = {
-                    let pid_guard = pid.read().await;
-                    match *pid_guard {
-                        Some(p) => p,
-                        None => continue,
-                    }
-                };
+                let current_pid = pid.load(atomic::Ordering::Relaxed);
+                if current_pid == -1 {
+                    continue;
+                }
 
                 let prev = {
-                    let prev_cwd_guard = prev_cwd.read().await;
+                    let prev_cwd_guard = prev_cwd.read().unwrap();
                     prev_cwd_guard.clone().unwrap_or_default()
                 };
 
                 match get_current_pty_cwd(current_pid).await {
                     Ok(cwd) => {
-                        let mut watcher = file_watcher.lock().await;
+                        let mut watcher = file_watcher.lock().unwrap();
 
                         // cwd has changed
                         if cwd != prev {
@@ -230,7 +228,7 @@ impl PtyCwdWatcher {
                             let proc_path = PathBuf::from(&cwd);
                             match watcher.watch(&proc_path, RecursiveMode::NonRecursive) {
                                 Ok(_) => {
-                                    *prev_cwd.write().await = Some(cwd);
+                                    *prev_cwd.write().unwrap() = Some(cwd);
                                     update_directory(proc_path); // need to proactively update the directory once to refresh the current data.
                                 }
                                 Err(e) => error!("Fail to watch path: {}. Error: {}", cwd, e),
@@ -250,12 +248,12 @@ impl PtyCwdWatcher {
         });
     }
 
-    async fn watch_pid(&self, pid: i32) {
-        *self.pid.write().await = Some(pid);
+    fn watch_pid(&self, pid: i32) {
+        self.pid.store(pid, atomic::Ordering::Relaxed);
     }
 
-    async fn reset_pid(&self) {
-        *self.pid.write().await = None;
+    fn reset_pid(&self) {
+        self.pid.store(-1, atomic::Ordering::Relaxed);
     }
 }
 
@@ -293,27 +291,25 @@ impl DirectoryFileWatcher {
             .unwrap();
 
         // start pty cwd watcher
-        let mut pty_cwd_watcher = PtyCwdWatcher::new(file_path_watcher);
+        let pty_cwd_watcher = PtyCwdWatcher::new(file_path_watcher);
         let event_sender = self.process_event_sender.clone();
-        pty_cwd_watcher
-            .start(move |path: PathBuf| {
-                Self::update_directory(&path, &event_sender);
-            })
-            .await;
+        pty_cwd_watcher.start(move |path: PathBuf| {
+            Self::update_directory(&path, &event_sender);
+        });
 
         while let Some(event) = self.directory_file_watcher_receiver.recv().await {
             match event {
                 DirectoryWatcherEvent::Watch { initial } => {
                     // if no info, meaning current pty is closed. We will reset and wait for the next open pty to watch
                     if initial.is_none() {
-                        pty_cwd_watcher.reset_pid().await;
+                        pty_cwd_watcher.reset_pid();
                         continue;
                     }
 
                     let info = initial.unwrap();
                     let pid = info.pid;
 
-                    pty_cwd_watcher.watch_pid(pid).await;
+                    pty_cwd_watcher.watch_pid(pid);
                 }
             }
         }
