@@ -13,7 +13,7 @@ export default function generateTerminalTheme(theme: Theme): ITerminalOptions {
     cursorBlink: true,
     cursorStyle: style.terminal.cursorStyle,
     allowTransparency: false,
-    fontFamily: `${style.terminal.fontFamily}, serif`,
+    fontFamily: `"${style.terminal.fontFamily}", monospace`,
     fontWeight: 'normal',
     fontWeightBold: 'bold',
     letterSpacing: 0,
