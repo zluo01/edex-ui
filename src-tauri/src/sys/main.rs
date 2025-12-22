@@ -174,7 +174,7 @@ fn extract_memory(sys: &System) -> MemoryInfo {
 }
 
 #[cfg(target_os = "macos")]
-async fn extract_temperature(components: &Components) -> Temperature {
+fn extract_temperature(components: &Components) -> Temperature {
     use std::collections::HashMap;
 
     let mut temperature: Temperature = Default::default();
