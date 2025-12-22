@@ -125,7 +125,7 @@ fn round_to_1_decimal(value: f64) -> f64 {
     (value * 10.0).round() / 10.0
 }
 
-async fn extract_memory(sys: &System) -> MemoryInfo {
+fn extract_memory(sys: &System) -> MemoryInfo {
     let used_memory = sys.used_memory() as f64;
     let free_memory = sys.free_memory() as f64;
     let available_memory = sys.available_memory() as f64;
@@ -236,7 +236,7 @@ async fn get_nvidia_gpu_temp() -> f32 {
     }
 }
 
-async fn extract_cpu_data(sys: &System) -> Value {
+fn extract_cpu_data(sys: &System) -> Value {
     let cpus = sys.cpus();
 
     let core_count = cpus.len();
@@ -289,24 +289,21 @@ fn extract_cpu_name(input: &str) -> Option<String> {
     let input = input.trim();
 
     if input.starts_with("Intel") {
-        return input.split("CPU").next().map(|v| v.to_string());
-    }
-
-    if input.starts_with("AMD") {
-        return Some(
+        input.split("CPU").next().map(str::to_string)
+    } else if input.starts_with("AMD") {
+        Some(
             input
-                .split(' ')
-                .into_iter()
+                .split_whitespace()
                 .take(4)
-                .collect::<Vec<&str>>()
+                .collect::<Vec<_>>()
                 .join(" "),
-        );
+        )
+    } else {
+        Some(input.to_string())
     }
-    Some(input.to_string())
 }
 
-async fn extract_process(sys: &System) -> Vec<ProcessInfo> {
-    let mut new_processes = Vec::new(); // Create a new vector to hold the processes
+fn extract_process(sys: &System) -> Vec<ProcessInfo> {
     let total_memory = sys.total_memory();
     let core_count = sys.cpus().len() as f32;
 
@@ -318,8 +315,10 @@ async fn extract_process(sys: &System) -> Vec<ProcessInfo> {
         return Vec::new();
     }
 
-    for (pid, process) in sys.processes() {
-        new_processes.push(ProcessInfo {
+    let mut processes: Vec<ProcessInfo> = sys
+        .processes()
+        .iter()
+        .map(|(pid, process)| ProcessInfo {
             pid: pid.as_u32(),
             name: process.name().to_string_lossy().to_string(),
             cpu_usage: (process.cpu_usage() / core_count).round(),
@@ -328,14 +327,15 @@ async fn extract_process(sys: &System) -> Vec<ProcessInfo> {
             start_time: epoch_to_date(process.start_time()),
             run_time: process.run_time(),
         })
-    }
+        .collect();
 
-    new_processes.sort_by(|a, b| {
+    processes.sort_by(|a, b| {
         b.cpu_usage
             .partial_cmp(&a.cpu_usage)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-    new_processes
+
+    processes
 }
 
 fn epoch_to_date(epoch: u64) -> String {
@@ -438,6 +438,7 @@ impl SystemMonitor {
         loop {
             interval.tick().await;
 
+            // Todo: refresh is the bottleneck here which avg takes 84ms
             self.system.refresh_specifics(
                 RefreshKind::nothing()
                     .with_memory(MemoryRefreshKind::everything())
@@ -451,34 +452,31 @@ impl SystemMonitor {
                 .refresh_specifics(true, DiskRefreshKind::everything().without_io_usage()); // refresh_list = true to detect new/removed disks
             self.components.refresh(true);
 
-            let process_data = extract_process(&self.system).await;
+            let process_data = extract_process(&self.system);
+            let memory = extract_memory(&self.system);
+            let cpu = extract_cpu_data(&self.system);
+            let temperature = extract_temperature(&self.components).await;
+            let network_data = extract_network(&self.networks);
+            let disks_data = extract_disk_usage(&self.disks);
+
             let system_data = SystemData {
                 uptime: System::uptime(),
-                memory: extract_memory(&self.system).await,
-                cpu: extract_cpu_data(&self.system).await,
-                temperature: extract_temperature(&self.components).await,
-                processes: process_data.iter().take(10).cloned().collect::<Vec<_>>(),
+                memory,
+                cpu,
+                temperature,
+                processes: process_data.iter().take(10).cloned().collect(),
             };
 
-            if let Err(e) = self.event_tx.send(ProcessEvent::System { system_data }) {
-                error!("Fail to send system data to consumer. Error: {}", e)
-            }
+            self.send_event(ProcessEvent::System { system_data }, "system");
+            self.send_event(ProcessEvent::Network { network_data }, "network");
+            self.send_event(ProcessEvent::Disks { disks_data }, "disks");
+            self.send_event(ProcessEvent::Process { process_data }, "process");
+        }
+    }
 
-            if let Err(e) = self.event_tx.send(ProcessEvent::Network {
-                network_data: extract_network(&self.networks),
-            }) {
-                error!("Fail to send network data to consumer. Error: {}", e)
-            }
-
-            if let Err(e) = self.event_tx.send(ProcessEvent::Disks {
-                disks_data: extract_disk_usage(&self.disks),
-            }) {
-                error!("Fail to send network data to consumer. Error: {}", e)
-            }
-
-            if let Err(e) = self.event_tx.send(ProcessEvent::Process { process_data }) {
-                error!("Fail to send network data to consumer. Error: {}", e)
-            }
+    fn send_event(&self, event: ProcessEvent, event_type: &str) {
+        if let Err(e) = self.event_tx.send(event) {
+            error!("Failed to send {} data: {}", event_type, e);
         }
     }
 }
