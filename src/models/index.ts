@@ -1,6 +1,5 @@
 import { Addons } from '@/lib/terminal';
 import { Terminal as TerminalType } from '@xterm/xterm';
-import { CursorStyle } from '@xterm/xterm/src/common/Types';
 import { JSXElement } from 'solid-js';
 
 export interface SystemData {
@@ -117,7 +116,7 @@ export type IStyle = {
   };
   terminal: {
     fontFamily: string;
-    cursorStyle: CursorStyle;
+    cursorStyle: 'block' | 'underline' | 'bar';
     foreground: string;
     background: string;
     cursor: string;

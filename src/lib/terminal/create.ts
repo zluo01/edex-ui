@@ -2,7 +2,6 @@ import { warnLog } from '@/lib/log';
 import { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
 import { ITerminalProps } from '@/models';
-import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -50,8 +49,6 @@ export async function createTerminal(
     typedTerm.loadAddon(webglAddon);
   } catch (e) {
     await warnLog(`WebGL not supported, falling back to canvas. Error: ${e}`);
-    const canvasAddon = new CanvasAddon();
-    typedTerm.loadAddon(canvasAddon);
   }
 
   term.focus();
