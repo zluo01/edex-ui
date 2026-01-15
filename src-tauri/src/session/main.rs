@@ -15,11 +15,18 @@ fn construct_cmd() -> CommandBuilder {
     #[cfg(target_os = "linux")]
     let mut cmd = CommandBuilder::new("bash");
 
+    cmd.args(&["-l"]);
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("TERM_PROGRAM", "eDEX-UI");
     cmd.env("TERM_PROGRAM_VERSION", "1.0.0");
 
+    for var in ["HOME", "USER", "SHELL", "PATH", "LANG"] {
+        if let Ok(val) = std::env::var(var) {
+            cmd.env(var, val);
+        }
+    }
+    
     cmd
 }
 
