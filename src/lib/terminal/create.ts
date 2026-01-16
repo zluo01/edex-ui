@@ -78,6 +78,25 @@ function initAddons(term: Terminal, _addons: Addons): void {
 function overrideKeyEvent(term: Terminal) {
   term.attachCustomKeyEventHandler(e => {
     if (e.type === 'keydown') {
+      const isMac = e.metaKey && !e.ctrlKey && !e.shiftKey;
+      const isLinux = e.ctrlKey && e.shiftKey;
+
+      // copy
+      if ((isMac || isLinux) && e.code === 'KeyC') {
+        e.preventDefault();
+        const selection = term.getSelection();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+        }
+        return false;
+      }
+
+      // paste
+      // https://github.com/xtermjs/xterm.js/issues/2478#issuecomment-2325204572
+      if ((isMac || isLinux) && e.code === 'KeyV') {
+        return false;
+      }
+
       for (const i in OVERRIDE_KEY_MAP) {
         if (
           OVERRIDE_KEY_MAP[i].key.toLowerCase() === e.key.toLowerCase() &&
