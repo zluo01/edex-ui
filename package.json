@@ -46,7 +46,7 @@
     "@trivago/prettier-plugin-sort-imports": "6.0.2",
     "@types/color": "4.2.0",
     "@types/lodash": "4.17.23",
-    "@types/node": "24.10.7",
+    "@types/node": "24.10.9",
     "@typescript-eslint/parser": "8.52.0",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
