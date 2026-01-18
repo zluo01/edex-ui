@@ -26,7 +26,7 @@ fn construct_cmd() -> CommandBuilder {
             cmd.env(var, val);
         }
     }
-    
+
     cmd
 }
 

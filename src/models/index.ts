@@ -6,22 +6,25 @@ export interface SystemData {
   uptime: number;
   memory: IMemoryInformation;
   cpu: ICPUData;
-  temperature: ITemperatureInformation;
+  gpu: IGPUData;
   processes: IProcessInformation[];
-}
-
-export interface ITemperatureInformation {
-  cpu: number;
-  gpu: number;
-  battery: number;
 }
 
 export interface ICPUData {
   name: string;
-  cores: number;
-  divide: number;
-  load: number[];
+  core: number;
+  load: number;
   usage: number[];
+  temperature: number;
+}
+
+export interface IGPUData {
+  name: string;
+  load: number;
+  usedMemory: number;
+  totalMemory: number;
+  memoryUsage: number;
+  temperature: number;
 }
 
 export interface IMemoryInformation {

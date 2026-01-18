@@ -1,11 +1,16 @@
 import { errorLog } from '@/lib/log';
 import { selectStyle, useTheme } from '@/lib/themes';
-import { ICPUData, SystemData } from '@/models';
+import { ICPUData, IGPUData, SystemData } from '@/models';
 import { Event, listen } from '@tauri-apps/api/event';
 import { SmoothieChart, TimeSeries } from 'smoothie';
 import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
 
-function CpuLoad() {
+interface ILoadData {
+  cpu: ICPUData;
+  gpu: IGPUData;
+}
+
+function Load() {
   const { theme } = useTheme();
   const style = () => selectStyle(theme());
 
@@ -14,22 +19,14 @@ function CpuLoad() {
     document.createElement('canvas'),
   ];
 
-  const [data, setData] = createSignal<ICPUData>();
+  const [data, setData] = createSignal<ILoadData>();
 
   const unListen = listen('system', (e: Event<SystemData>) =>
-    setData(e.payload.cpu),
+    setData({
+      cpu: e.payload.cpu,
+      gpu: e.payload.gpu,
+    }),
   );
-
-  const cpuName = () => {
-    if (!data()) {
-      return '';
-    }
-    const cpuName = data()!.name.split('CPU')[0];
-    return cpuName
-      .replace(/\(R\)/g, '®')
-      .replace(/\(TM\)/g, '™')
-      .trim();
-  };
 
   const charts: SmoothieChart[] = Array.from(
     { length: 2 },
@@ -51,10 +48,10 @@ function CpuLoad() {
       }),
   );
 
-  const series: TimeSeries[] = [];
+  const cpuSeries: TimeSeries[] = [];
+  const gpuSeries: TimeSeries = new TimeSeries();
 
   const timeSeriesOptions = {
-    lineWidth: 1.7,
     strokeStyle: style().colors.main,
   };
 
@@ -72,23 +69,22 @@ function CpuLoad() {
       if (!data) {
         return;
       }
-      if (!series.length) {
-        series.push(
-          ...Array.from({ length: data.cores }, (_, i) => {
+      if (!cpuSeries.length) {
+        cpuSeries.push(
+          ...Array.from({ length: data.cpu.core }, () => {
             const timeSeries = new TimeSeries();
-
-            if (i < data.divide) {
-              charts[0].addTimeSeries(timeSeries, timeSeriesOptions);
-            } else {
-              charts[1].addTimeSeries(timeSeries, timeSeriesOptions);
-            }
-
+            charts[0].addTimeSeries(timeSeries, timeSeriesOptions);
             return timeSeries;
           }),
         );
+
+        // gpu timeSeries
+        charts[1].addTimeSeries(gpuSeries, timeSeriesOptions);
       }
+
       const timestamp = new Date().getTime();
-      data.usage.forEach((v, i) => series[i].append(timestamp, v));
+      data.cpu.usage.forEach((v, i) => cpuSeries[i].append(timestamp, v));
+      gpuSeries.append(timestamp, data.gpu.load);
     }),
   );
 
@@ -96,19 +92,20 @@ function CpuLoad() {
     <>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <span class="sm:text-xs md:text-base lg:text-2xl xl:text-4xl">
-          CPU USAGE
+          USAGE
         </span>
-        <span class="sm:text-xxs opacity-50 md:text-sm lg:text-xl xl:text-2xl">
-          {/*@once*/ cpuName()}
-        </span>
+        <div class="flex flex-col items-end justify-end">
+          <span class="text-xxs opacity-50">{data()?.cpu.name}</span>
+          <span class="text-xxs opacity-50">{data()?.gpu.name}</span>
+        </div>
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <div class="flex flex-col items-start justify-around">
-          <span class="font-united_sans_medium sm:text-xxs font-semibold not-italic md:text-sm lg:text-lg xl:text-xl">
-            # {1} - {data()?.divide}
+          <span class="font-united_sans_medium sm:text-xxxs md:text-xxs font-semibold not-italic lg:text-sm xl:text-lg">
+            CPU - {data()?.cpu.temperature.toFixed(1) || '--'}°C
           </span>
           <span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-lg">
-            Avg. {data()?.load[0]?.toFixed(1) || '--'}%
+            Avg. {data()?.cpu.load.toFixed(1) || '--'}%
           </span>
         </div>
         <canvas
@@ -119,11 +116,11 @@ function CpuLoad() {
       </div>
       <div class="flex w-full flex-row flex-nowrap items-center justify-between">
         <div class="flex flex-col items-start justify-around">
-          <span class="font-united_sans_medium sm:text-xxs font-semibold not-italic md:text-sm lg:text-lg xl:text-xl">
-            # {data()?.divide && data()!.divide + 1} - {data()?.cores}
+          <span class="font-united_sans_medium sm:text-xxxs md:text-xxs font-semibold not-italic lg:text-sm xl:text-lg">
+            GPU - {data()?.gpu.temperature.toFixed(1) || '--'}°C
           </span>
           <span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-lg">
-            Avg. {data()?.load[1]?.toFixed(1) || '--'}%
+            Avg. {data()?.gpu.load.toFixed(1) || '--'}%
           </span>
         </div>
         <canvas
@@ -136,4 +133,4 @@ function CpuLoad() {
   );
 }
 
-export default CpuLoad;
+export default Load;

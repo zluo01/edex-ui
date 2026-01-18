@@ -17,7 +17,6 @@ use sysinfo::{
 };
 use tokio::sync::mpsc;
 
-const BYTES_TO_GB: f64 = 1_073_741_824.0;
 const MEMORY_BAR_WIDTH: f64 = 440.0;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -57,45 +56,63 @@ impl IPInformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct Temperature {
-    cpu: f32,
-    gpu: f32,
-    battery: f32,
+#[derive(Serialize, Clone, Debug, PartialEq)]
+struct CpuUsage {
+    name: String,
+    core: usize,
+    load: f32,
+    usage: Vec<f32>,
+    temperature: f32,
 }
 
-impl Default for Temperature {
+impl Default for CpuUsage {
     fn default() -> Self {
         Self {
-            cpu: 0f32,
-            gpu: 0f32,
-            battery: 0f32,
+            name: "UNKNOWN".to_string(),
+            core: 0,
+            load: 0.0,
+            usage: vec![],
+            temperature: 0.0,
         }
     }
 }
 
-impl Temperature {
-    pub fn set_cpu(&mut self, cpu: f32) {
-        self.cpu = cpu;
-    }
-    pub fn set_gpu(&mut self, gpu: f32) {
-        self.gpu = gpu;
-    }
-    pub fn set_battery(&mut self, battery: f32) {
-        self.battery = battery;
+#[derive(Serialize, Clone, Debug, PartialEq)]
+struct GpuUsage {
+    name: String,
+    load: f32,
+    #[serde(rename = "usedMemory")]
+    used_memory: f32,
+    #[serde(rename = "totalMemory")]
+    total_memory: f32,
+    #[serde(rename = "memoryUsage")]
+    memory_usage: f32,
+    temperature: f32,
+}
+
+impl Default for GpuUsage {
+    fn default() -> Self {
+        Self {
+            name: "Unknown".to_string(),
+            load: 0.0,
+            used_memory: 0.0,
+            total_memory: 0.0,
+            memory_usage: 0.0,
+            temperature: 0.0,
+        }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct SystemData {
     uptime: u64,
     memory: MemoryInfo,
-    cpu: Value,
-    temperature: Temperature,
+    cpu: CpuUsage,
+    gpu: GpuUsage,
     processes: Vec<ProcessInfo>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct ProcessInfo {
     pid: u32,
     name: String,
@@ -106,7 +123,7 @@ pub struct ProcessInfo {
     run_time: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
 pub struct DiskUsage {
     name: String,
     internal: bool,
@@ -115,7 +132,7 @@ pub struct DiskUsage {
     usage: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 struct MemoryInfo {
     pub active: f64,
     pub available: f64,
@@ -123,10 +140,6 @@ struct MemoryInfo {
     pub used: f64,
     pub swap: f64,
     pub ratio: f64,
-}
-
-fn round_to_1_decimal(value: f64) -> f64 {
-    (value * 10.0).round() / 10.0
 }
 
 fn extract_memory(sys: &System) -> MemoryInfo {
@@ -150,9 +163,6 @@ fn extract_memory(sys: &System) -> MemoryInfo {
     let active = MEMORY_BAR_WIDTH * used_memory / total_memory;
     let available = MEMORY_BAR_WIDTH * (available_memory - free_memory) / total_memory;
 
-    let total_gb = round_to_1_decimal(total_memory / BYTES_TO_GB);
-    let used_gb = round_to_1_decimal(used_memory / BYTES_TO_GB);
-
     let used_swap = sys.used_swap() as f64;
     let total_swap = sys.total_swap() as f64;
 
@@ -161,55 +171,33 @@ fn extract_memory(sys: &System) -> MemoryInfo {
     } else {
         0.0
     };
-    let used_swap_gb = round_to_1_decimal(used_swap / BYTES_TO_GB);
 
     MemoryInfo {
         active: active.round(),
         available: available.round(),
-        total: total_gb,
-        used: used_gb,
-        swap: used_swap_gb,
+        total: total_memory,
+        used: used_memory,
+        swap: used_swap,
         ratio: swap_percent.round(),
     }
 }
 
 #[cfg(target_os = "macos")]
-fn extract_temperature(components: &Components) -> Temperature {
-    use std::collections::HashMap;
-
-    let mut temperature: Temperature = Default::default();
-
-    let component_map: HashMap<&str, f32> = components
+fn extract_cpu_temperature(components: &Components) -> f32 {
+    components
         .iter()
-        .map(|c| (c.label(), c.temperature().unwrap_or(0.0)))
-        .collect();
-
-    if let Some(&temp) = component_map.get("PECI CPU") {
-        temperature.set_cpu(temp);
-    }
-    if let Some(&temp) = component_map.get("GPU") {
-        temperature.set_gpu(temp);
-    }
-    if let Some(&temp) = component_map.get("Battery") {
-        temperature.set_battery(temp);
-    }
-
-    temperature
+        .find(|c| c.label() == "PECI CPU")
+        .and_then(|c| c.temperature())
+        .unwrap_or(0.0)
 }
 
 #[cfg(target_os = "linux")]
-fn extract_temperature(components: &Components) -> Temperature {
-    let mut temperature: Temperature = Default::default();
-
-    if let Some(component) = components
+fn extract_cpu_temperature(components: &Components) -> f32 {
+    components
         .iter()
         .find(|c| c.label().to_lowercase().contains("tctl"))
-    {
-        temperature.set_cpu(component.temperature().unwrap_or(0.0));
-    }
-
-    temperature.set_gpu(get_nvidia_gpu_temp());
-    temperature
+        .and_then(|c| c.temperature())
+        .unwrap_or(0.0)
 }
 
 #[cfg(target_os = "linux")]
@@ -230,7 +218,7 @@ fn init_nvml() -> Option<Nvml> {
 }
 
 #[cfg(target_os = "linux")]
-fn get_nvidia_gpu_temp() -> f32 {
+fn get_nvidia_gpu_data() -> GpuUsage {
     let nvml = NVML.get_or_init(init_nvml);
 
     match nvml {
@@ -238,80 +226,103 @@ fn get_nvidia_gpu_temp() -> f32 {
             // Get first GPU (index 0)
             match nvml.device_by_index(0) {
                 Ok(device) => {
-                    match device
+                    let name = device.name().unwrap_or_else(|_| "UNKNOWN".to_string());
+
+                    let temperature = device
                         .temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)
-                    {
-                        Ok(temp) => temp as f32,
-                        Err(e) => {
-                            warn!("Failed to read GPU temperature: {}", e);
-                            0.0
-                        }
+                        .unwrap_or(0) as f32;
+
+                    let memory_info = device.memory_info().ok();
+                    let (used_memory, total_memory) = match memory_info {
+                        Some(info) => (info.used as f32, info.total as f32),
+                        None => (0.0, 0.0),
+                    };
+                    let (load, memory_usage) = device
+                        .utilization_rates()
+                        .map(|rates| (rates.gpu as f32, rates.memory as f32))
+                        .unwrap_or((0.0, 0.0));
+
+                    GpuUsage {
+                        name,
+                        load,
+                        used_memory,
+                        total_memory,
+                        memory_usage,
+                        temperature,
                     }
                 }
                 Err(e) => {
-                    warn!("Failed to get GPU device: {}", e);
-                    0.0
+                    error!("Failed to get GPU data: {}", e);
+                    GpuUsage::default()
                 }
             }
         }
-        None => 0.0,
+        None => GpuUsage::default(),
     }
 }
 
-fn extract_cpu_data(sys: &System) -> Value {
+fn extract_gpu_data() -> GpuUsage {
+    #[cfg(target_os = "linux")]
+    {
+        let nvml = NVML.get_or_init(init_nvml);
+
+        match nvml {
+            Some(_) => get_nvidia_gpu_data(),
+            None => GpuUsage::default(),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        GpuUsage::default()
+    }
+}
+
+fn extract_cpu_data(sys: &System, components: &Components) -> CpuUsage {
     let cpus = sys.cpus();
 
     let core_count = cpus.len();
 
     if core_count == 0 {
         warn!("Something wrong happens. No CPU cores detected");
-        return json!({
-            "name": "UNKNOWN",
-            "cores": 0,
-            "divide": 0,
-            "load": [0.0, 0.0],
-            "usage": []
-        });
+        return CpuUsage::default();
     }
 
-    let divide = core_count / 2;
-
-    let mut first_half_usage: f32 = 0.0;
-    let mut second_half_usage: f32 = 0.0;
+    let mut total_cpu_usage: f32 = 0.0;
     let mut usage: Vec<f32> = Vec::with_capacity(core_count);
 
-    for (index, value) in cpus.iter().enumerate() {
+    for value in cpus {
         let cpu_usage = value.cpu_usage();
-        if index < divide {
-            first_half_usage += cpu_usage;
-        } else {
-            second_half_usage += cpu_usage;
-        }
+        total_cpu_usage += cpu_usage;
         usage.push(cpu_usage);
     }
 
-    first_half_usage /= divide as f32;
-    second_half_usage /= (core_count - divide) as f32;
+    let avg_cpu_usage = total_cpu_usage / core_count as f32;
 
     let cpu_name = cpus
         .first()
         .and_then(|cpu| extract_cpu_name(cpu.brand()))
         .unwrap_or_else(|| "UNKNOWN".to_string());
 
-    json!({
-        "name": cpu_name,
-        "cores": core_count,
-        "divide": divide,
-        "load":vec![first_half_usage, second_half_usage],
-        "usage": usage
-    })
+    CpuUsage {
+        name: cpu_name,
+        core: core_count,
+        load: avg_cpu_usage,
+        usage,
+        temperature: extract_cpu_temperature(components),
+    }
 }
 
 fn extract_cpu_name(input: &str) -> Option<String> {
     let input = input.trim();
 
     if input.starts_with("Intel") {
-        input.split("CPU").next().map(str::to_string)
+        input.split("CPU").next().map(|s| {
+            s.replace("(R)", "®")
+                .replace("(TM)", "™")
+                .trim()
+                .to_string()
+        })
     } else if input.starts_with("AMD") {
         Some(
             input
@@ -476,8 +487,8 @@ impl SystemMonitor {
 
             let process_data = extract_process(&self.system);
             let memory = extract_memory(&self.system);
-            let cpu = extract_cpu_data(&self.system);
-            let temperature = extract_temperature(&self.components);
+            let cpu = extract_cpu_data(&self.system, &self.components);
+            let gpu = extract_gpu_data();
             let network_data = extract_network(&self.networks);
             let disks_data = extract_disk_usage(&self.disks);
 
@@ -485,7 +496,7 @@ impl SystemMonitor {
                 uptime: System::uptime(),
                 memory,
                 cpu,
-                temperature,
+                gpu,
                 processes: process_data.iter().take(10).cloned().collect(),
             };
 
