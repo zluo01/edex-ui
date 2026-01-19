@@ -1,9 +1,14 @@
+import { errorLog } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/plugin-shell';
+import { openPath } from '@tauri-apps/plugin-opener';
 
 export async function openFile(path: string) {
-  await open(path);
+  try {
+    await openPath(path);
+  } catch (e) {
+    await errorLog(`${e}. Path: ${path}`);
+  }
 }
 
 export async function getKernelVersion(): Promise<string> {
