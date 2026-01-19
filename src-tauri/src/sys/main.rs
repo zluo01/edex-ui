@@ -17,7 +17,7 @@ use sysinfo::{
 };
 use tokio::sync::mpsc;
 
-const MEMORY_BAR_WIDTH: f64 = 440.0;
+const MEMORY_BAR_WIDTH: f32 = 440.0;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IPInformation {
@@ -92,8 +92,14 @@ struct GpuUsage {
 
 impl Default for GpuUsage {
     fn default() -> Self {
+        #[cfg(target_os = "linux")]
+        let name = "Unknown".to_string();
+
+        #[cfg(target_os = "macos")]
+        let name = String::new();
+
         Self {
-            name: "Unknown".to_string(),
+            name,
             load: 0.0,
             used_memory: 0.0,
             total_memory: 0.0,
@@ -134,19 +140,19 @@ pub struct DiskUsage {
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 struct MemoryInfo {
-    pub active: f64,
-    pub available: f64,
-    pub total: f64,
-    pub used: f64,
-    pub swap: f64,
-    pub ratio: f64,
+    pub active: f32,
+    pub available: f32,
+    pub total: f32,
+    pub used: f32,
+    pub swap: f32,
+    pub ratio: f32,
 }
 
 fn extract_memory(sys: &System) -> MemoryInfo {
-    let used_memory = sys.used_memory() as f64;
-    let free_memory = sys.free_memory() as f64;
-    let available_memory = sys.available_memory() as f64;
-    let total_memory = sys.total_memory() as f64;
+    let used_memory = sys.used_memory() as f32;
+    let free_memory = sys.free_memory() as f32;
+    let available_memory = sys.available_memory() as f32;
+    let total_memory = sys.total_memory() as f32;
 
     if total_memory == 0.0 {
         warn!("Something wrong happens. Total memory is 0, returning default values");
@@ -163,8 +169,8 @@ fn extract_memory(sys: &System) -> MemoryInfo {
     let active = MEMORY_BAR_WIDTH * used_memory / total_memory;
     let available = MEMORY_BAR_WIDTH * (available_memory - free_memory) / total_memory;
 
-    let used_swap = sys.used_swap() as f64;
-    let total_swap = sys.total_swap() as f64;
+    let used_swap = sys.used_swap() as f32;
+    let total_swap = sys.total_swap() as f32;
 
     let swap_percent = if total_swap > 0.0 {
         (used_swap / total_swap) * 100.0
@@ -182,13 +188,34 @@ fn extract_memory(sys: &System) -> MemoryInfo {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
 fn extract_cpu_temperature(components: &Components) -> f32 {
     components
         .iter()
         .find(|c| c.label() == "PECI CPU")
         .and_then(|c| c.temperature())
         .unwrap_or(0.0)
+}
+
+// Chip SMC: https://github.com/exelban/stats/blob/9671269b399ce1a077d03897a8079fd41a00b691/Modules/CPU/readers.swift#L247
+// https://github.com/macmade/Hot/issues/77
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn extract_cpu_temperature(components: &Components) -> f32 {
+    let temps: Vec<f32> = components
+        .iter()
+        .filter(|c| {
+            c.label().starts_with("PMU")
+                && !c.label().starts_with("PMU2")
+                && c.label().contains("tdie")
+        })
+        .filter_map(|c| c.temperature())
+        .collect();
+
+    if !temps.is_empty() {
+        temps.iter().sum::<f32>() / temps.len() as f32
+    } else {
+        0.0
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -261,20 +288,53 @@ fn get_nvidia_gpu_data() -> GpuUsage {
     }
 }
 
-fn extract_gpu_data() -> GpuUsage {
-    #[cfg(target_os = "linux")]
-    {
-        let nvml = NVML.get_or_init(init_nvml);
+#[cfg(target_os = "linux")]
+fn extract_gpu_data(_sys: &System, _components: &Components) -> GpuUsage {
+    let nvml = NVML.get_or_init(init_nvml);
 
-        match nvml {
-            Some(_) => get_nvidia_gpu_data(),
-            None => GpuUsage::default(),
-        }
+    match nvml {
+        Some(_) => get_nvidia_gpu_data(),
+        None => GpuUsage::default(),
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+fn extract_gpu_data(_sys: &System, components: &Components) -> GpuUsage {
+    let temperature = components
+        .iter()
+        .find(|c| c.label() == "GPU")
+        .and_then(|c| c.temperature())
+        .unwrap_or(0.0);
+
+    GpuUsage {
+        name: String::new(),
+        load: 0.0,
+        used_memory: 0.0,
+        total_memory: 0.0,
+        memory_usage: 0.0,
+        temperature,
+    }
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn extract_gpu_data(sys: &System, _components: &Components) -> GpuUsage {
+    let used_memory = sys.used_memory() as f32;
+    let total_memory = sys.total_memory() as f32;
+
+    if total_memory == 0.0 {
+        warn!("Something wrong happens. Total memory is 0, returning default values");
+        return GpuUsage::default();
     }
 
-    #[cfg(not(target_os = "linux"))]
-    {
-        GpuUsage::default()
+    let memory_usage = used_memory / total_memory * 100.0;
+
+    GpuUsage {
+        name: String::new(),
+        load: 0.0,
+        used_memory,
+        total_memory,
+        memory_usage,
+        temperature: 0.0, // should be same as CPU when monitor through IOHID
     }
 }
 
@@ -288,16 +348,7 @@ fn extract_cpu_data(sys: &System, components: &Components) -> CpuUsage {
         return CpuUsage::default();
     }
 
-    let mut total_cpu_usage: f32 = 0.0;
-    let mut usage: Vec<f32> = Vec::with_capacity(core_count);
-
-    for value in cpus {
-        let cpu_usage = value.cpu_usage();
-        total_cpu_usage += cpu_usage;
-        usage.push(cpu_usage);
-    }
-
-    let avg_cpu_usage = total_cpu_usage / core_count as f32;
+    let usage: Vec<f32> = sys.cpus().iter().map(|cpu| cpu.cpu_usage()).collect();
 
     let cpu_name = cpus
         .first()
@@ -307,7 +358,7 @@ fn extract_cpu_data(sys: &System, components: &Components) -> CpuUsage {
     CpuUsage {
         name: cpu_name,
         core: core_count,
-        load: avg_cpu_usage,
+        load: sys.global_cpu_usage(),
         usage,
         temperature: extract_cpu_temperature(components),
     }
@@ -488,7 +539,7 @@ impl SystemMonitor {
             let process_data = extract_process(&self.system);
             let memory = extract_memory(&self.system);
             let cpu = extract_cpu_data(&self.system, &self.components);
-            let gpu = extract_gpu_data();
+            let gpu = extract_gpu_data(&self.system, &self.components);
             let network_data = extract_network(&self.networks);
             let disks_data = extract_disk_usage(&self.disks);
 

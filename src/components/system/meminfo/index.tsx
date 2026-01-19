@@ -109,7 +109,7 @@ function MemInfo() {
           <div
             class="bg-active relative h-[0.4vh] w-full opacity-60 duration-500 ease-in"
             style={{
-              width: `${memory()?.gpu?.memoryUsage || 0}%`,
+              width: `${memory()?.gpu.memoryUsage || 0}%`,
             }}
           />
           <div class="bg-active relative h-[0.25vh] w-full self-center opacity-80" />
