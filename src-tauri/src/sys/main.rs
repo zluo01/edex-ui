@@ -150,7 +150,6 @@ struct MemoryInfo {
 
 fn extract_memory(sys: &System) -> MemoryInfo {
     let used_memory = sys.used_memory() as f32;
-    let free_memory = sys.free_memory() as f32;
     let available_memory = sys.available_memory() as f32;
     let total_memory = sys.total_memory() as f32;
 
@@ -167,7 +166,7 @@ fn extract_memory(sys: &System) -> MemoryInfo {
     }
 
     let active = MEMORY_BAR_WIDTH * used_memory / total_memory;
-    let available = MEMORY_BAR_WIDTH * (available_memory - free_memory) / total_memory;
+    let available = MEMORY_BAR_WIDTH * available_memory / total_memory;
 
     let used_swap = sys.used_swap() as f32;
     let total_swap = sys.total_swap() as f32;
