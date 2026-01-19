@@ -1,3 +1,4 @@
+import { errorLog } from '@/lib/log';
 import { IIPAddressInformation, IPInformation } from '@/models';
 import { QueryClient, queryOptions } from '@tanstack/solid-query';
 
@@ -10,6 +11,7 @@ export const ipInformationQueryOptions = (enabled: boolean) =>
     refetchInterval: 5000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
+    retry: false,
     enabled,
   });
 
@@ -22,13 +24,17 @@ async function getIPInformation(): Promise<IIPAddressInformation> {
   );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch IP information');
+    const msg = `Failed to fetch IP information.Status ${response.status}. Error: ${response.statusText}`;
+    await errorLog(msg);
+    throw new Error(msg);
   }
 
   const data: IPInformation = await response.json();
 
   if (data.status === 'fail') {
-    throw new Error('IP API returned fail status');
+    const msg = 'IP API returned fail status';
+    await errorLog(msg);
+    throw new Error(msg);
   }
 
   return {
@@ -47,4 +53,38 @@ function getGeoLocation(data: IPInformation): string {
   );
 
   return parts.join('/');
+}
+
+export const latencyQueryOptions = (enabled: boolean) =>
+  queryOptions({
+    queryKey: ['latency'],
+    queryFn: getNetworkLatency,
+    refetchInterval: 1000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    enabled,
+    retry: false,
+  });
+
+async function getNetworkLatency(): Promise<string> {
+  const start = performance.now();
+
+  try {
+    await fetch('https://1.1.1.1/dns-query?name=google.com', {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(800),
+    });
+
+    const latency = performance.now() - start;
+    return `${Math.round(latency)}ms`;
+  } catch (error) {
+    await errorLog(error);
+
+    // Timeout or network error
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return '>800ms';
+    }
+    return '--';
+  }
 }

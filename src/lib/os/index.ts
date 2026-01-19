@@ -1,4 +1,3 @@
-import { errorLog } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-shell';
@@ -9,16 +8,6 @@ export async function openFile(path: string) {
 
 export async function getKernelVersion(): Promise<string> {
   return (await invoke('kernel_version')) || 'UNKNOWN';
-}
-
-export async function getNetworkLatency(): Promise<string> {
-  try {
-    const latency = await invoke('get_network_latency');
-    return `${latency}ms`;
-  } catch (e) {
-    await errorLog(e);
-    return '--';
-  }
 }
 
 export async function resizeSession(id: number, rows: number, cols: number) {

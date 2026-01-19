@@ -7,22 +7,18 @@ extern crate core;
 
 use log::{info, LevelFilter};
 use sysinfo::System;
-use tauri::{Manager, State};
+use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
-use tokio::time::Instant;
 
 use crate::event::main::EventProcessor;
 use crate::file::main::DirectoryFileWatcher;
 use crate::session::main::PtySessionManager;
 use crate::sys::main::SystemMonitor;
-use tauri_plugin_http::reqwest;
 
 mod event;
 mod file;
 mod session;
 mod sys;
-
-struct RequestClientState(reqwest::Client);
 
 #[tauri::command]
 async fn kernel_version() -> Result<String, ()> {
@@ -30,23 +26,6 @@ async fn kernel_version() -> Result<String, ()> {
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
         .expect("Fail to get kernel version.");
     Ok(kernel_version)
-}
-
-#[tauri::command]
-async fn get_network_latency(
-    request_client_state: State<'_, RequestClientState>,
-) -> Result<u128, ()> {
-    let start_time = Instant::now();
-    let _ = request_client_state
-        .0
-        .get("https://1.1.1.1/dns-query?name=google.com")
-        .header("accept", "application/dns-json")
-        .send()
-        .await;
-
-    let elapsed_time = Instant::now().duration_since(start_time);
-
-    Ok(elapsed_time.as_millis())
 }
 
 fn main() {
@@ -59,7 +38,6 @@ fn main() {
 
     info!("Log Level: {:?}", log_level);
     tauri::Builder::default()
-        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_os::init())
@@ -79,11 +57,7 @@ fn main() {
                 .expect("no main window")
                 .set_focus();
         }))
-        .manage(RequestClientState(reqwest::Client::new()))
-        .invoke_handler(tauri::generate_handler![
-            kernel_version,
-            get_network_latency
-        ])
+        .invoke_handler(tauri::generate_handler![kernel_version])
         .setup(move |app| {
             let (mut event_processor, process_event_sender) =
                 EventProcessor::new(app.handle().clone());

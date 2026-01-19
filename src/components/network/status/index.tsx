@@ -1,8 +1,7 @@
-import { getNetworkLatency } from '@/lib/os';
-import { ipInformationQueryOptions } from '@/lib/queries';
+import { ipInformationQueryOptions, latencyQueryOptions } from '@/lib/queries';
 import { NETWORK_STATUS, OFFLINE, ONLINE } from '@/models';
 import { useQuery } from '@tanstack/solid-query';
-import { Accessor, createResource, JSX, onCleanup } from 'solid-js';
+import { Accessor, JSX } from 'solid-js';
 
 interface IBaseInformationProps {
   header: string;
@@ -31,26 +30,29 @@ function ConnectionStatus(props: ConnectionStatusProps): JSX.Element {
     ipInformationQueryOptions(props.connected()),
   );
 
-  const [latency, { refetch }] = createResource<string>(getNetworkLatency, {
-    initialValue: '--',
-  });
-
-  const intervalId = setInterval(() => {
-    refetch();
-  }, 1000);
-
-  onCleanup(() => clearInterval(intervalId));
+  const latencyQuery = useQuery(() => latencyQueryOptions(props.connected()));
 
   const status = (): NETWORK_STATUS => (props.connected() ? ONLINE : OFFLINE);
 
   const location = () => {
-    if (!props.connected()) return 'DISCONNECTED';
+    if (!props.connected()) {
+      return 'DISCONNECTED';
+    }
     return ipInformationQuery.data?.location || 'UNKNOWN';
   };
 
   const query = () => {
-    if (!props.connected()) return '--.--.--.--';
+    if (!props.connected()) {
+      return '--.--.--.--';
+    }
     return ipInformationQuery.data?.query || '--.--.--.--';
+  };
+
+  const latency = () => {
+    if (!props.connected()) {
+      return '--';
+    }
+    return latencyQuery.data || '--';
   };
 
   return (

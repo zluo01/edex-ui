@@ -10,17 +10,6 @@
     "os:default",
     "store:default",
     "shell:default",
-    "log:default",
-    {
-      "identifier": "http:default",
-      "allow": [
-        {
-          "url": "http://ip-api.com/json/*"
-        },
-        {
-          "url": "https://1.1.1.1/*"
-        }
-      ]
-    }
+    "log:default"
   ]
 }
