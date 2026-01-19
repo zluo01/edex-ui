@@ -1,5 +1,7 @@
-import { getIPInformation, getNetworkLatency } from '@/lib/os';
+import { getNetworkLatency } from '@/lib/os';
+import { ipInformationQueryOptions } from '@/lib/queries';
 import { NETWORK_STATUS, OFFLINE, ONLINE } from '@/models';
+import { useQuery } from '@tanstack/solid-query';
 import { Accessor, createResource, JSX, onCleanup } from 'solid-js';
 
 interface IBaseInformationProps {
@@ -21,11 +23,13 @@ function BaseInformation(props: IBaseInformationProps) {
 }
 
 type ConnectionStatusProps = {
-  connected: () => boolean;
+  connected: Accessor<boolean>;
 };
 
 function ConnectionStatus(props: ConnectionStatusProps): JSX.Element {
-  const [information] = createResource(() => props.connected, getIPInformation);
+  const ipInformationQuery = useQuery(() =>
+    ipInformationQueryOptions(props.connected()),
+  );
 
   const [latency, { refetch }] = createResource<string>(getNetworkLatency, {
     initialValue: '--',
@@ -39,8 +43,15 @@ function ConnectionStatus(props: ConnectionStatusProps): JSX.Element {
 
   const status = (): NETWORK_STATUS => (props.connected() ? ONLINE : OFFLINE);
 
-  const location = () => information()?.location || 'UNKNOWN';
-  const query = () => information()?.query || '--.--.--.--';
+  const location = () => {
+    if (!props.connected()) return 'DISCONNECTED';
+    return ipInformationQuery.data?.location || 'UNKNOWN';
+  };
+
+  const query = () => {
+    if (!props.connected()) return '--.--.--.--';
+    return ipInformationQuery.data?.query || '--.--.--.--';
+  };
 
   return (
     <div class="font-united_sans_light flex h-[7.41vh] w-full flex-col items-start justify-around text-[1.111vh] tracking-[0.092vh] sm:px-0.5 md:px-1.5 lg:px-2.5 xl:px-3.5">

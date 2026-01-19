@@ -5,8 +5,7 @@
 
 extern crate core;
 
-use log::{error, info, LevelFilter};
-use serde_json::Value;
+use log::{info, LevelFilter};
 use sysinfo::System;
 use tauri::{Manager, State};
 use tauri_plugin_log::{Target, TargetKind};
@@ -15,7 +14,7 @@ use tokio::time::Instant;
 use crate::event::main::EventProcessor;
 use crate::file::main::DirectoryFileWatcher;
 use crate::session::main::PtySessionManager;
-use crate::sys::main::{IPInformation, SystemMonitor};
+use crate::sys::main::SystemMonitor;
 use tauri_plugin_http::reqwest;
 
 mod event;
@@ -31,36 +30,6 @@ async fn kernel_version() -> Result<String, ()> {
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
         .expect("Fail to get kernel version.");
     Ok(kernel_version)
-}
-
-#[tauri::command]
-async fn get_ip_information(
-    request_client_state: State<'_, RequestClientState>,
-) -> Result<Value, ()> {
-    let resp = request_client_state
-        .0
-        .get("http://ip-api.com/json/?fields=status,countryCode,region,city,query")
-        .send()
-        .await;
-
-    if let Err(e) = resp {
-        error!("Fail to make request. Error: {:}", &e);
-        return Err(());
-    }
-
-    let data = resp.unwrap().text().await;
-
-    if let Err(e) = data {
-        error!("Fail to get response data. Error: {:}", e);
-        return Err(());
-    }
-
-    let information: IPInformation = serde_json::from_str(data.unwrap().as_str()).unwrap();
-    if information.is_fail() {
-        return Err(());
-    }
-
-    Ok(information.to_json())
 }
 
 #[tauri::command]
@@ -113,7 +82,6 @@ fn main() {
         .manage(RequestClientState(reqwest::Client::new()))
         .invoke_handler(tauri::generate_handler![
             kernel_version,
-            get_ip_information,
             get_network_latency
         ])
         .setup(move |app| {

@@ -46,6 +46,14 @@ export interface IProcessInformation {
   run_time: number;
 }
 
+export interface IPInformation {
+  query: string;
+  status: string;
+  countryCode: string;
+  region: string;
+  city: string;
+}
+
 export interface IIPAddressInformation {
   query: string;
   location: string;

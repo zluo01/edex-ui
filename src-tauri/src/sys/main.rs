@@ -3,7 +3,7 @@ use chrono::{DateTime, Local};
 use log::{error, warn};
 #[cfg(target_os = "linux")]
 use nvml_wrapper::Nvml;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{json, Value};
 #[cfg(target_os = "linux")]
 use std::sync::OnceLock;
@@ -18,43 +18,6 @@ use sysinfo::{
 use tokio::sync::mpsc;
 
 const MEMORY_BAR_WIDTH: f32 = 440.0;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct IPInformation {
-    query: String,
-    status: String,
-    #[serde(rename = "countryCode")]
-    country_code: String,
-    region: String,
-    city: String,
-}
-
-impl IPInformation {
-    pub fn is_fail(&self) -> bool {
-        self.status == "fail"
-    }
-
-    pub fn to_json(self) -> Value {
-        json!({
-            "query": self.query,
-            "location": self.get_geo_location()
-        })
-    }
-
-    fn get_geo_location(&self) -> String {
-        if self.is_fail() {
-            return "UNKNOWN".to_string();
-        }
-
-        let parts: Vec<&str> = [&self.country_code, &self.region, &self.city]
-            .iter()
-            .filter(|s| !s.is_empty())
-            .map(|s| s.as_str())
-            .collect();
-
-        parts.join("/")
-    }
-}
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 struct CpuUsage {
