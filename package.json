@@ -42,7 +42,7 @@
   "devDependencies": {
     "@eslint/js": "9.39.2",
     "@tailwindcss/postcss": "4.1.18",
-    "@tanstack/solid-query-devtools": "5.91.2",
+    "@tanstack/solid-query-devtools": "5.91.3",
     "@tauri-apps/cli": "2.9.6",
     "@trivago/prettier-plugin-sort-imports": "6.0.2",
     "@types/color": "4.2.0",
