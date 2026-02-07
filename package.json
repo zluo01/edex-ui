@@ -40,7 +40,7 @@
     "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.2",
+    "@eslint/js": "10.0.1",
     "@tailwindcss/postcss": "4.1.18",
     "@tanstack/solid-query-devtools": "5.91.3",
     "@tauri-apps/cli": "2.10.0",
@@ -49,7 +49,7 @@
     "@types/lodash": "4.17.23",
     "@types/node": "24.10.11",
     "@typescript-eslint/parser": "8.54.0",
-    "eslint": "9.39.2",
+    "eslint": "10.0.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-solid": "0.14.5",
