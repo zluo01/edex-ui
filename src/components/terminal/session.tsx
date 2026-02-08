@@ -185,7 +185,7 @@ function Session({ id, active }: ISessionProps) {
   return (
     <div
       id={`terminal-${id}`}
-      class={cn(active() !== id && 'hidden', 'size-full p-1.5')}
+      class={cn(active() !== id && 'hidden', 'size-full px-2 pt-2 pb-3')}
       ref={setTerminalRef}
     />
   );
