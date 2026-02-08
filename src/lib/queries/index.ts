@@ -67,14 +67,16 @@ export const latencyQueryOptions = (enabled: boolean) =>
   });
 
 async function getNetworkLatency(): Promise<string> {
-  const start = performance.now();
-
   try {
-    await fetch('https://1.1.1.1/dns-query?name=google.com', {
-      method: 'HEAD',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(800),
-    });
+    const start = performance.now();
+    await fetch(
+      'https://cloudflare-dns.com/dns-query?name=example.com&type=A',
+      {
+        headers: { Accept: 'application/dns-json' },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(800),
+      },
+    );
 
     const latency = performance.now() - start;
     return `${Math.round(latency)}ms`;
