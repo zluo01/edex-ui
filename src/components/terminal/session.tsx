@@ -20,6 +20,7 @@ import {
 	createSignal,
 	on,
 	onCleanup,
+	onMount,
 } from 'solid-js';
 
 function gcd(a: number, b: number): number {
@@ -104,8 +105,7 @@ function Session({ id, active }: SessionProps) {
 		return 20;
 	};
 
-	const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
-
+	let terminalEl: HTMLDivElement | undefined;
 	let terminal: TerminalProps | undefined;
 
 	async function resizeTerminal(id: string) {
@@ -113,6 +113,27 @@ function Session({ id, active }: SessionProps) {
 			await resize(id, terminal.term, terminal.addons);
 		}
 	}
+
+	onMount(async () => {
+		try {
+			await traceLog(`Initialize terminal interface. Id: ${id}`);
+			terminal = await createTerminal(terminalEl!, theme(), fontSize());
+
+			await initializeSession(id);
+
+			await resize(id, terminal.term, terminal.addons);
+
+			terminal.term.onData(v => writeToSession(id, v));
+
+			addEventListener('resize', () => resizeTerminal(id), {
+				signal: controller.signal,
+			});
+
+			terminal.term.focus();
+		} catch (e) {
+			await errorLog(e);
+		}
+	});
 
 	// refocus on tab change
 	createEffect(
@@ -149,34 +170,6 @@ function Session({ id, active }: SessionProps) {
 		}),
 	);
 
-	createEffect(
-		on(terminalRef, async ref => {
-			// do not proceed if parent dom is not ready
-			// or terminal is already initialized
-			if (!ref || terminal !== undefined) {
-				return;
-			}
-			try {
-				await traceLog(`Initialize terminal interface. Id: ${id}`);
-				terminal = await createTerminal(ref, theme(), fontSize());
-
-				await initializeSession(id);
-
-				await resize(id, terminal.term, terminal.addons);
-
-				terminal.term.onData(v => writeToSession(id, v));
-
-				addEventListener('resize', () => resizeTerminal(id), {
-					signal: controller.signal,
-				});
-
-				terminal.term.focus();
-			} catch (e) {
-				await errorLog(e);
-			}
-		}),
-	);
-
 	const unListen = listen(`data-${id}`, (e: Event<string>) =>
 		terminal?.term.write(e.payload),
 	);
@@ -191,7 +184,7 @@ function Session({ id, active }: SessionProps) {
 		<div
 			id={`terminal-${id}`}
 			class={cn(active() !== id && 'hidden', 'size-full px-2 pt-2 pb-3')}
-			ref={setTerminalRef}
+			ref={el => (terminalEl = el)}
 		/>
 	);
 }
