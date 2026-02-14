@@ -52,11 +52,11 @@ export default function Setting(props: ISettingProps) {
 							</div>
 							<div class="text-main flex flex-row flex-nowrap justify-between">
 								<span>Create New Terminal</span>
-								<span class="capitalize">Ctrl + w</span>
+								<span class="capitalize">Ctrl + t</span>
 							</div>
 							<div class="text-main flex flex-row flex-nowrap justify-between">
 								<span>Close current Terminal</span>
-								<span class="capitalize">Ctrl + t</span>
+								<span class="capitalize">Ctrl + w</span>
 							</div>
 						</div>
 					</div>
