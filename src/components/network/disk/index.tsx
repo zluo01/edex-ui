@@ -1,5 +1,5 @@
 import { type Event, listen } from '@tauri-apps/api/event';
-import isEqual from 'lodash/isEqual';
+import isEqual from 'lodash-es/isEqual';
 import prettyBytes from 'pretty-bytes';
 import { createSignal, For, onCleanup } from 'solid-js';
 import { errorLog } from '@/lib/log';
