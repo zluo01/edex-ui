@@ -2,7 +2,7 @@ use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use dashmap::DashMap;
 use log::error;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
 use std::sync::{Arc, Mutex};
@@ -35,6 +35,7 @@ fn construct_cmd() -> CommandBuilder {
 enum PtySessionCommand {
     Write { data: String },
     Resize { cols: u16, rows: u16 },
+    Exit,
 }
 
 struct PtySession {
@@ -113,6 +114,7 @@ impl PtySession {
 
         let writer = Arc::new(Mutex::new(writer));
         let master = Arc::new(Mutex::new(master));
+        let killer = Arc::new(Mutex::new(child.clone_killer()));
         let event_id = app_handle.listen(id.clone(), move |event| {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
@@ -130,6 +132,11 @@ impl PtySession {
                     let m = master.lock().unwrap(); // Clone avoided
                     if let Err(e) = m.resize(size) {
                         error!("Failed to resize session: {:?}", e);
+                    }
+                }
+                Ok(PtySessionCommand::Exit) => {
+                    if let Err(e) = killer.lock().unwrap().kill() {
+                        error!("Failed to kill session: {:?}", e);
                     }
                 }
                 Err(e) => {

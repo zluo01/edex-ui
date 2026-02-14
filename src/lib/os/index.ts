@@ -53,7 +53,9 @@ export async function initializeSession(id: string) {
 }
 
 export async function terminateSession(id: string) {
-	await writeToSession(id, 'exit\n');
+	await emit(id, {
+		type: 'Exit',
+	});
 }
 
 export async function updateCurrentSession(id: string) {
