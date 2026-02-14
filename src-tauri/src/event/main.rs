@@ -72,7 +72,8 @@ impl EventProcessor {
     // Forward output to external systems (websockets, files, etc.)
     async fn forward_pty_message(&self, id: String, data: &[u8]) {
         if !data.is_empty() {
-            self.app_handle.emit(&id, data).unwrap();
+            let event_name = format!("data-{}", id);
+            self.app_handle.emit(&event_name, data).unwrap();
         }
     }
 

@@ -177,7 +177,7 @@ function Session({ id, active }: SessionProps) {
 		}),
 	);
 
-	const unListen = listen(id, (e: Event<string>) =>
+	const unListen = listen(`data-${id}`, (e: Event<string>) =>
 		terminal?.term.write(e.payload),
 	);
 
