@@ -2,7 +2,7 @@ use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use dashmap::DashMap;
 use log::error;
-use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
 use std::sync::{Arc, Mutex};
@@ -264,6 +264,9 @@ impl PtySessionManager {
 
         match pty_session_result {
             Ok(pty_session) => {
+                if active_sessions.contains_key(id) {
+                    error!("Session {} already exists, overwriting", id);
+                }
                 let pid = pty_session.pid();
                 active_sessions.insert(id.clone(), pty_session);
 
