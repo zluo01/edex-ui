@@ -1,13 +1,17 @@
 import { type Event, listen } from '@tauri-apps/api/event';
 import prettyBytes from 'pretty-bytes';
-import { createSignal, onCleanup } from 'solid-js';
+import { createSignal, For, onCleanup } from 'solid-js';
 import { errorLog } from '@/lib/log';
+import { cn } from '@/lib/utils';
 import type { IGPUData, IMemoryInformation, SystemData } from '@/models';
 
 interface IMemLoad {
 	cpuMemory: IMemoryInformation;
 	gpu: IGPUData;
 }
+
+const MEMORY_GRID_SIZE = 440;
+const MEMORY_INDICES = Array.from({ length: MEMORY_GRID_SIZE }, (_, i) => i);
 
 function MemInfo() {
 	const [memory, setMemory] = createSignal<IMemLoad>();
@@ -23,34 +27,18 @@ function MemInfo() {
 		unListen.then(f => f()).catch(errorLog);
 	});
 
-	const memoryMap = () => {
-		if (!memory()) {
-			return (
-				<>
-					{Array.from({ length: 440 }, () => (
-						<div class="bg-active size-[0.2vh] opacity-25" />
-					))}
-				</>
-			);
-		}
+	const getCellOpacityClass = (index: number) => {
+		const mem = memory();
+		if (!mem) return 'opacity-25';
 
-		const active = memory()!.cpuMemory.active;
-		const available = memory()!.cpuMemory.available;
-		const free = 440 - active - available;
+		const active = mem.cpuMemory.active;
+		const available = mem.cpuMemory.available;
+		const availableStart = MEMORY_GRID_SIZE - active - available;
+		const activeStart = MEMORY_GRID_SIZE - active;
 
-		return (
-			<>
-				{Array.from({ length: free }, () => (
-					<div class="bg-active size-[0.2vh] opacity-25" />
-				))}
-				{Array.from({ length: available }, () => (
-					<div class="bg-active size-[0.2vh] opacity-50" />
-				))}
-				{Array.from({ length: active }, () => (
-					<div class="bg-active size-[0.2vh] opacity-100" />
-				))}
-			</>
-		);
+		if (index >= activeStart) return 'opacity-100';
+		if (index >= availableStart) return 'opacity-50';
+		return 'opacity-25';
 	};
 
 	const cpuMemoryText = () => {
@@ -78,7 +66,13 @@ function MemInfo() {
 				</span>
 			</div>
 			<div class="mb-[0.8vh] grid grid-flow-row grid-cols-[repeat(40,1fr)] grid-rows-[repeat(11,1fr)] gap-[0.23vh] pt-[0.5vh]">
-				{memoryMap()}
+				<For each={MEMORY_INDICES}>
+					{index => (
+						<div
+							class={cn('bg-active size-[0.2vh]', getCellOpacityClass(index))}
+						/>
+					)}
+				</For>
 			</div>
 			<div class="mb-[0.5vh] grid grid-cols-[15%_65%_20%] items-center">
 				<span class="sm:text-xxs m-0 self-center md:text-sm lg:text-lg xl:text-2xl">
