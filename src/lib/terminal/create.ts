@@ -54,10 +54,10 @@ export async function createTerminal(
 	term.focus();
 	addons.fit.fit();
 
-	setTimeout(() => {
+	requestAnimationFrame(() => {
 		initAddons(term, addons);
 		overrideKeyEvent(term);
-	}, 0);
+	});
 
 	return { term, addons };
 }
