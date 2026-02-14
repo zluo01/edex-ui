@@ -1,10 +1,8 @@
 import { error, trace, warn } from '@tauri-apps/plugin-log';
 
 export async function errorLog(msg: unknown) {
-	if (typeof msg === 'string') {
-		await error(msg);
-	} else if (msg instanceof Error) {
-		await error(msg.message);
+	if (msg instanceof Error) {
+		await error(`${msg.message}\n${msg.stack ?? ''}`);
 	} else {
 		await error(String(msg));
 	}
