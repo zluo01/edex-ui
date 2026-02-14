@@ -276,11 +276,13 @@ impl DirectoryFileWatcher {
             recommended_watcher(move |res: notify::Result<notify::Event>| match res {
                 Ok(event) => {
                     if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
-                        if let Some(parent) = event.paths[0].parent() {
-                            Self::update_directory(
-                                &parent.to_path_buf(),
-                                &file_watcher_event_sender,
-                            );
+                        if let Some(path) = event.paths.first() {
+                            if let Some(parent) = path.parent() {
+                                Self::update_directory(
+                                    &parent.to_path_buf(),
+                                    &file_watcher_event_sender,
+                                );
+                            }
                         }
                     }
                 }
