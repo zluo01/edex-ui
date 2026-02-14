@@ -1,4 +1,4 @@
-import { For, type Resource } from 'solid-js';
+import { createMemo, For, type Resource } from 'solid-js';
 import FileTile from '@/components/filesystem/tile';
 import { openFile, writeToSession } from '@/lib/os';
 import { useActiveTerminal } from '@/lib/terminal';
@@ -19,6 +19,12 @@ interface IFileSectionProps {
 
 function FileSection(props: IFileSectionProps) {
 	const active = useActiveTerminal();
+
+	const filteredFiles = createMemo(
+		() =>
+			props.fileSystem()?.files.filter(o => !o.hidden || props.showHidden()) ??
+			[],
+	);
 
 	async function fileAction(file: IFileInfo) {
 		if (file.t === DIRECTORY) {
@@ -42,11 +48,7 @@ function FileSection(props: IFileSectionProps) {
 				hidden={false}
 				onClick={() => writeToSession(active(), 'cd ../\n')}
 			/>
-			<For
-				each={props
-					.fileSystem()
-					?.files.filter(o => !o.hidden || props.showHidden())}
-			>
+			<For each={filteredFiles()}>
 				{file => <FileTile {...file} onClick={() => fileAction(file)} />}
 			</For>
 		</>
