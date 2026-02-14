@@ -140,7 +140,11 @@ export interface TerminalProps {
 	addons: Addons;
 }
 
-export interface TerminalContainer {
-	id: number;
+export interface TerminalContext {
+	id: string;
+	name?: string;
+}
+
+export interface TerminalContainer extends TerminalContext {
 	terminal: () => JSXElement;
 }

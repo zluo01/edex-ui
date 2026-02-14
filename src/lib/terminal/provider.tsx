@@ -6,7 +6,7 @@ import {
 } from 'solid-js';
 
 function useProviderValue() {
-	const [active, setActive] = createSignal<number>(0);
+	const [active, setActive] = createSignal<string>('');
 	return { active, setActive };
 }
 

@@ -1,10 +1,11 @@
-import { For } from 'solid-js';
+import { Index } from 'solid-js';
 import { cn } from '@/lib/utils';
+import type { TerminalContext } from '@/models';
 
 interface TerminalSelectionTabProps {
-	active: () => number;
-	terminalIds: () => number[];
-	switchTab: (id: number) => void;
+	active: () => string;
+	terminalIds: () => TerminalContext[];
+	switchTab: (id: string) => void;
 	addTerminal: VoidFunction;
 }
 
@@ -12,23 +13,23 @@ function TerminalSelectionTab(props: TerminalSelectionTabProps) {
 	return (
 		<div class="border-default/75 font-united_sans_medium flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0">
 			<div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-x-scroll overflow-y-hidden">
-				<For each={props.terminalIds()}>
-					{id => (
+				<Index each={props.terminalIds()}>
+					{(context, index) => (
 						<div
-							id={`#${id}`}
+							id={context().name || `#${index}`}
 							class={cn(
 								'border-default/75 bg-main text-main w-full max-w-[15%] min-w-[10%] skew-x-35 cursor-pointer overflow-hidden border-r-2 border-solid py-2 text-center',
-								props.active() === id &&
+								props.active() === context().id &&
 									'bg-active text-active scale-125 skew-x-35 font-medium',
 							)}
-							onMouseDown={() => props.switchTab(id)}
+							onMouseDown={() => props.switchTab(context().id)}
 						>
 							<p class="m-0 skew-x-[-35deg] sm:text-xs md:text-base lg:text-xl xl:text-3xl">
-								{id === 0 ? 'MAIN' : `#${id}`}
+								{context().name || `#${index}`}
 							</p>
 						</div>
 					)}
-				</For>
+				</Index>
 			</div>
 			<div
 				onMouseDown={() => props.addTerminal()}

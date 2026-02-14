@@ -16,8 +16,8 @@ pub enum ProcessEvent {
     Disks { disks_data: Vec<DiskUsage> },
     Process { process_data: Vec<ProcessInfo> },
     Directory { directory_info: DirectoryInfo },
-    Forward { id: u8, data: Vec<u8> }, // Handle Pty Message forwarding
-    ProcessExit { id: u8, exit_code: Option<u32> }, // Handle Pty Session Exits
+    Forward { id: String, data: Vec<u8> }, // Handle Pty Message forwarding
+    ProcessExit { id: String, exit_code: Option<u32> }, // Handle Pty Session Exits
 }
 
 pub struct EventProcessor {
@@ -70,10 +70,9 @@ impl EventProcessor {
     }
 
     // Forward output to external systems (websockets, files, etc.)
-    async fn forward_pty_message(&self, id: u8, data: &[u8]) {
+    async fn forward_pty_message(&self, id: String, data: &[u8]) {
         if !data.is_empty() {
-            let event_key = format!("data-{}", id);
-            self.app_handle.emit(&event_key, data).unwrap();
+            self.app_handle.emit(&id, data).unwrap();
         }
     }
 
@@ -87,17 +86,8 @@ impl EventProcessor {
         }
     }
 
-    async fn handle_close(&self, id: u8, exit_code: Option<u32>) {
+    async fn handle_close(&self, id: String, exit_code: Option<u32>) {
         trace!("Exit status {:?}. Id: {}", &exit_code, &id);
-
-        // exit the application if exit on the main terminal
-        if 0u8 == id {
-            self.app_handle.exit(exit_code.unwrap_or(0) as i32);
-            return;
-        }
-
-        // notify UI to remove the terminal
-        trace!("Destroy terminal {}.", id);
         self.app_handle.emit(DESTROY_TERMINAL, id).unwrap();
     }
 }

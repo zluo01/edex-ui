@@ -1,45 +1,41 @@
 import { createShortcut } from '@solid-primitives/keyboard';
 import { type Event, listen } from '@tauri-apps/api/event';
-import { createEffect, createSignal, For, on, onCleanup } from 'solid-js';
+import {
+	createEffect,
+	createSignal,
+	For,
+	on,
+	onCleanup,
+	onMount,
+} from 'solid-js';
 import Session from '@/components/terminal/session';
 import TerminalSelectionTab from '@/components/terminal/tab';
 import { errorLog } from '@/lib/log';
 import { terminateSession } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
-import type { TerminalContainer } from '@/models';
+import type { TerminalContainer, TerminalContext } from '@/models';
 
 import './index.css';
 
-function nextActiveTerminal(target: number, keys: number[]) {
-	// Base Case
-	if (keys[0] > target || keys[keys.length - 1] <= target) {
-		return keys[0];
-	}
-
-	let l = 0;
-	let h = keys.length;
-	while (l < h) {
-		const mid = l + Math.floor((h - l) / 2);
-		if (keys[mid] > target) {
-			h = mid;
-		} else {
-			l = mid + 1;
-		}
-	}
-	return keys[l % keys.length];
+function nextActiveTerminal(target: string, keys: TerminalContext[]) {
+	const ids = keys.map(o => o.id);
+	const idx = ids.indexOf(target);
+	return ids[(idx + 1) % ids.length] || ids[0];
 }
 
 function TerminalSection() {
 	const { active, setActive } = useTerminal();
 
-	const [terminals, setTerminals] = createSignal<TerminalContainer[]>([
-		{
-			id: 0,
-			terminal: () => <Session id={/*@once*/ 0} active={active} />,
-		},
-	]);
+	const [terminals, setTerminals] = createSignal<
+		Map<string, TerminalContainer>
+	>(new Map());
 
-	const terminalIds = () => terminals().map(o => o.id);
+	const terminalContexts = () =>
+		[...terminals().values()].map(o => o as TerminalContext);
+
+	onMount(() => {
+		addTerminal();
+	});
 
 	createEffect(
 		on(active, active => {
@@ -53,10 +49,10 @@ function TerminalSection() {
 	createShortcut(
 		['Control', 'Tab'],
 		() => {
-			if (terminalIds().length === 1) {
+			if (terminalContexts().length === 1) {
 				return;
 			}
-			setActive(prevState => nextActiveTerminal(prevState, terminalIds()));
+			setActive(prevState => nextActiveTerminal(prevState, terminalContexts()));
 		},
 		{ preventDefault: true },
 	);
@@ -71,10 +67,14 @@ function TerminalSection() {
 		preventDefault: true,
 	});
 
-	const unListen = listen('destroy', async (e: Event<number>) => {
+	const unListen = listen('destroy', async (e: Event<string>) => {
 		const id = e.payload;
-		const nextIndex = nextActiveTerminal(id, terminalIds());
-		setTerminals(prevState => prevState.filter(o => o.id !== id));
+		const nextIndex = nextActiveTerminal(id, terminalContexts());
+		setTerminals(prevState => {
+			const newMap = new Map(prevState);
+			newMap.delete(id);
+			return newMap;
+		});
 		setActive(nextIndex);
 	});
 
@@ -88,19 +88,20 @@ function TerminalSection() {
 	 * it will also handle updating the current index on creation.
 	 */
 	function addTerminal() {
-		const id = terminals().length;
+		const id = crypto.randomUUID();
 		setActive(id);
-		setTerminals(prevState => [
-			...prevState,
-			{
+		setTerminals(prevState => {
+			const newMap = new Map(prevState);
+			newMap.set(id, {
 				id,
 				terminal: () => <Session id={/* @once */ id} active={active} />,
-			},
-		]);
+			});
+			return newMap;
+		});
 	}
 
-	async function switchTerminal(index: number) {
-		setActive(index);
+	async function switchTerminal(id: string) {
+		setActive(id);
 	}
 
 	return (
@@ -112,11 +113,13 @@ function TerminalSection() {
 				<TerminalSelectionTab
 					addTerminal={addTerminal}
 					active={active}
-					terminalIds={terminalIds}
+					terminalIds={terminalContexts}
 					switchTab={switchTerminal}
 				/>
 				<div class="m-0 size-full overflow-hidden">
-					<For each={terminals()}>{({ terminal }) => terminal()}</For>
+					<For each={[...terminals().values()]}>
+						{({ terminal }) => terminal()}
+					</For>
 				</div>
 			</div>
 		</section>

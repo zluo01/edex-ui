@@ -43,7 +43,7 @@ struct PtySession {
 
 impl PtySession {
     pub fn new<F>(
-        id: u8,
+        id: &String,
         process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
         app_handle: AppHandle,
         cleanup: F,
@@ -80,6 +80,7 @@ impl PtySession {
 
         // Clone sender for the reader task
         let pty_reader_sender = process_event_sender.clone();
+        let id_for_reader = id.clone();
 
         // Spawn reader task to continuously read from PTY
         // We must use either spawn_blocking  or `tokio::task::yield_now().await` with async spawn,
@@ -89,7 +90,10 @@ impl PtySession {
                 Ok(data) if data.len() > 0 => {
                     let data = data.to_vec();
                     reader.consume(data.len());
-                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward { id, data }) {
+                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
+                        id: id_for_reader.clone(),
+                        data,
+                    }) {
                         error!("Fail to send output. {:?}", e);
                     }
                 }
@@ -100,7 +104,7 @@ impl PtySession {
                 Err(e) => {
                     error!(
                         "Error when reading from pty for session {}: Error: {}",
-                        id, e
+                        id_for_reader, e
                     );
                     break;
                 }
@@ -108,6 +112,7 @@ impl PtySession {
         });
 
         let child_watcher_sender = process_event_sender.clone();
+        let id_for_exit = id.clone();
         // need to use block here since child.wait is a blocking process
         tauri::async_runtime::spawn_blocking(move || {
             let exit_code = match child.wait() {
@@ -119,16 +124,17 @@ impl PtySession {
             };
             reader_handle.abort();
             cleanup();
-            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit { id, exit_code }) {
+            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
+                id: id_for_exit,
+                exit_code,
+            }) {
                 error!("Fail to send process exit event. {:?}", e);
             }
         });
 
-        let event_id = format!("terminal-{}", id);
-
         let writer = Arc::new(Mutex::new(writer));
         let master = Arc::new(Mutex::new(master));
-        app_handle.listen(event_id, move |event| {
+        app_handle.listen(id.clone(), move |event| {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
                     let mut w = writer.lock().unwrap(); // Clone avoided
@@ -164,14 +170,14 @@ impl PtySession {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum PtySessionManagerCommand {
-    Initialize { id: u8 },
-    Switch { id: u8 },
+    Initialize { id: String },
+    Switch { id: String },
 }
 
 pub struct PtySessionManager {
     process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
     directory_file_watcher_event_sender: mpsc::UnboundedSender<DirectoryWatcherEvent>,
-    active_sessions: Arc<DashMap<u8, PtySession>>,
+    active_sessions: Arc<DashMap<String, PtySession>>,
 }
 
 impl PtySessionManager {
@@ -196,7 +202,7 @@ impl PtySessionManager {
             match serde_json::from_str::<PtySessionManagerCommand>(event.payload()) {
                 Ok(PtySessionManagerCommand::Initialize { id }) => {
                     Self::spawn_pty(
-                        id,
+                        &id,
                         &active_sessions,
                         &process_event_sender,
                         &directory_file_watcher_sender,
@@ -204,7 +210,7 @@ impl PtySessionManager {
                     );
                 }
                 Ok(PtySessionManagerCommand::Switch { id }) => {
-                    Self::switch_session(id, &active_sessions, &directory_file_watcher_sender);
+                    Self::switch_session(&id, &active_sessions, &directory_file_watcher_sender);
                 }
                 Err(e) => {
                     error!("Failed to parse command for session manager: {:?}", e);
@@ -214,14 +220,16 @@ impl PtySessionManager {
     }
 
     fn spawn_pty(
-        id: u8,
-        active_sessions: &Arc<DashMap<u8, PtySession>>,
+        id: &String,
+        active_sessions: &Arc<DashMap<String, PtySession>>,
         process_event_sender: &mpsc::UnboundedSender<ProcessEvent>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
         app_handle: &AppHandle,
     ) {
         let active_sessions_inner = active_sessions.clone();
         let directory_watcher_inner = directory_file_watcher_sender.clone();
+        let id_for_cleanup = id.clone();
+        let app_handle_for_cleanup = app_handle.clone();
 
         let pty_session_result = PtySession::new(
             id,
@@ -236,14 +244,19 @@ impl PtySessionManager {
                         e
                     )
                 }
-                active_sessions_inner.remove(&id);
+                active_sessions_inner.remove(&id_for_cleanup);
+
+                // user closed all sessions, we should exit the app now.
+                if active_sessions_inner.is_empty() {
+                    app_handle_for_cleanup.exit(0i32);
+                }
             },
         );
 
         match pty_session_result {
             Ok(pty_session) => {
                 let pid = pty_session.pid();
-                active_sessions.insert(id, pty_session);
+                active_sessions.insert(id.clone(), pty_session);
 
                 if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pid)),
@@ -258,11 +271,11 @@ impl PtySessionManager {
     }
 
     fn switch_session(
-        id: u8,
-        active_sessions: &Arc<DashMap<u8, PtySession>>,
+        id: &String,
+        active_sessions: &Arc<DashMap<String, PtySession>>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
     ) {
-        match active_sessions.get(&id) {
+        match active_sessions.get(id) {
             Some(pty_session) => {
                 if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pty_session.pid())),

@@ -26,7 +26,7 @@ function gcd(a: number, b: number): number {
 	return b === 0 ? a : gcd(b, a % b);
 }
 
-async function resize(id: number, term: Terminal, addons: Addons) {
+async function resize(id: string, term: Terminal, addons: Addons) {
 	const fitAddon = addons.fit;
 	if (!fitAddon.proposeDimensions()) {
 		await errorLog('Fail to get propose dimensions');
@@ -82,8 +82,8 @@ function useScreenWidth(): Accessor<number> {
 }
 
 interface SessionProps {
-	id: number;
-	active: Accessor<number>;
+	id: string;
+	active: Accessor<string>;
 }
 
 function Session({ id, active }: SessionProps) {
@@ -108,7 +108,7 @@ function Session({ id, active }: SessionProps) {
 
 	let terminal: TerminalProps | undefined;
 
-	async function resizeTerminal(id: number) {
+	async function resizeTerminal(id: string) {
 		if (terminal) {
 			await resize(id, terminal.term, terminal.addons);
 		}
@@ -177,7 +177,7 @@ function Session({ id, active }: SessionProps) {
 		}),
 	);
 
-	const unListen = listen(`data-${id}`, (e: Event<string>) =>
+	const unListen = listen(id, (e: Event<string>) =>
 		terminal?.term.write(e.payload),
 	);
 
