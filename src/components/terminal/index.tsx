@@ -63,7 +63,7 @@ function TerminalSection() {
 
 	createShortcut(
 		['Control', 'W'],
-		async () => await terminateSession(active()),
+		() => terminateSession(active()).catch(errorLog),
 		{ preventDefault: true },
 	);
 
