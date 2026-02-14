@@ -111,30 +111,9 @@ impl PtySession {
             }
         });
 
-        let child_watcher_sender = process_event_sender.clone();
-        let id_for_exit = id.clone();
-        // need to use block here since child.wait is a blocking process
-        tauri::async_runtime::spawn_blocking(move || {
-            let exit_code = match child.wait() {
-                Ok(status) => Some(status.exit_code()),
-                Err(e) => {
-                    error!("Failed to wait for child process: {:?}", e);
-                    None
-                }
-            };
-            reader_handle.abort();
-            cleanup();
-            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
-                id: id_for_exit,
-                exit_code,
-            }) {
-                error!("Fail to send process exit event. {:?}", e);
-            }
-        });
-
         let writer = Arc::new(Mutex::new(writer));
         let master = Arc::new(Mutex::new(master));
-        app_handle.listen(id.clone(), move |event| {
+        let event_id = app_handle.listen(id.clone(), move |event| {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
                     let mut w = writer.lock().unwrap(); // Clone avoided
@@ -157,6 +136,29 @@ impl PtySession {
                     error!("Failed to parse command: {:?}", e);
                 }
             }
+        });
+
+        let id_for_exit = id.clone();
+        let app_handle_for_cleanup = app_handle;
+        let child_watcher_sender = process_event_sender.clone();
+        // need to use block here since child.wait is a blocking process
+        tauri::async_runtime::spawn_blocking(move || {
+            let exit_code = match child.wait() {
+                Ok(status) => Some(status.exit_code()),
+                Err(e) => {
+                    error!("Failed to wait for child process: {:?}", e);
+                    None
+                }
+            };
+            reader_handle.abort();
+            app_handle_for_cleanup.unlisten(event_id);
+            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
+                id: id_for_exit,
+                exit_code,
+            }) {
+                error!("Fail to send process exit event. {:?}", e);
+            }
+            cleanup();
         });
 
         Ok(Self { pid })
