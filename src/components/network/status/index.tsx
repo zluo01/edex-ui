@@ -3,12 +3,12 @@ import type { Accessor, JSX } from 'solid-js';
 import { ipInformationQueryOptions, latencyQueryOptions } from '@/lib/queries';
 import { type NETWORK_STATUS, OFFLINE, ONLINE } from '@/models';
 
-interface IBaseInformationProps {
+interface BaseInformationProps {
 	header: string;
 	value: Accessor<string>;
 }
 
-function BaseInformation(props: IBaseInformationProps) {
+function BaseInformation(props: BaseInformationProps) {
 	return (
 		<div class="box-border flex h-full flex-col items-start justify-around nth-2:pl-1.5">
 			<span class="m-0 opacity-50 sm:text-xs md:text-lg lg:text-xl xl:text-3xl">

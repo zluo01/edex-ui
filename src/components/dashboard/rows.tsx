@@ -1,11 +1,11 @@
 import { type Event, listen } from '@tauri-apps/api/event';
 import { createSignal, For, type JSX, onCleanup, Show } from 'solid-js';
 import { errorLog } from '@/lib/log';
-import type { IProcessInformation } from '@/models';
+import type { ProcessInformation } from '@/models';
 
 function TableRows(): JSX.Element {
-	const [processes, setProcesses] = createSignal<IProcessInformation[]>();
-	const unListen = listen('process', (e: Event<IProcessInformation[]>) =>
+	const [processes, setProcesses] = createSignal<ProcessInformation[]>();
+	const unListen = listen('process', (e: Event<ProcessInformation[]>) =>
 		setProcesses(e.payload),
 	);
 

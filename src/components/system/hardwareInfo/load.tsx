@@ -3,11 +3,11 @@ import { SmoothieChart, TimeSeries } from 'smoothie';
 import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
 import { errorLog } from '@/lib/log';
 import { selectStyle, useTheme } from '@/lib/themes';
-import type { ICPUData, IGPUData, SystemData } from '@/models';
+import type { CPUData, GPUData, SystemData } from '@/models';
 
-interface ILoadData {
-	cpu: ICPUData;
-	gpu: IGPUData;
+interface LoadData {
+	cpu: CPUData;
+	gpu: GPUData;
 }
 
 function Load() {
@@ -19,7 +19,7 @@ function Load() {
 		document.createElement('canvas'),
 	];
 
-	const [data, setData] = createSignal<ILoadData>();
+	const [data, setData] = createSignal<LoadData>();
 
 	const unListen = listen('system', (e: Event<SystemData>) =>
 		setData({

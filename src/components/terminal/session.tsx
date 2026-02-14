@@ -12,7 +12,7 @@ import { type Addons, createTerminal } from '@/lib/terminal';
 import { useTheme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
 import { cn } from '@/lib/utils';
-import type { ITerminalProps } from '@/models';
+import type { TerminalProps } from '@/models';
 import '@xterm/xterm/css/xterm.css';
 import {
 	type Accessor,
@@ -81,13 +81,12 @@ function useScreenWidth(): Accessor<number> {
 	return screenWidth;
 }
 
-interface ISessionProps {
+interface SessionProps {
 	id: number;
 	active: Accessor<number>;
 }
 
-// eslint-disable-next-line solid/no-destructure
-function Session({ id, active }: ISessionProps) {
+function Session({ id, active }: SessionProps) {
 	const { theme } = useTheme();
 
 	const controller = new AbortController();
@@ -107,7 +106,7 @@ function Session({ id, active }: ISessionProps) {
 
 	const [terminalRef, setTerminalRef] = createSignal<HTMLDivElement>();
 
-	let terminal: ITerminalProps | undefined;
+	let terminal: TerminalProps | undefined;
 
 	async function resizeTerminal(id: number) {
 		if (terminal) {

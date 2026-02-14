@@ -1,14 +1,14 @@
 import { For } from 'solid-js';
 import { cn } from '@/lib/utils';
 
-interface ITerminalSelectionTab {
+interface TerminalSelectionTabProps {
 	active: () => number;
 	terminalIds: () => number[];
 	switchTab: (id: number) => void;
 	addTerminal: VoidFunction;
 }
 
-function TerminalSelectionTab(props: ITerminalSelectionTab) {
+function TerminalSelectionTab(props: TerminalSelectionTabProps) {
 	return (
 		<div class="border-default/75 font-united_sans_medium flex w-full flex-row flex-nowrap items-center overflow-hidden rounded-t-sm border-b-2 p-0">
 			<div class="no-scrollbar flex w-[95%] appearance-none flex-row items-start overflow-x-scroll overflow-y-hidden">

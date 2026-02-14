@@ -3,18 +3,18 @@ import prettyBytes from 'pretty-bytes';
 import { createSignal, For, onCleanup } from 'solid-js';
 import { errorLog } from '@/lib/log';
 import { cn } from '@/lib/utils';
-import type { IGPUData, IMemoryInformation, SystemData } from '@/models';
+import type { GPUData, MemoryInformation, SystemData } from '@/models';
 
-interface IMemLoad {
-	cpuMemory: IMemoryInformation;
-	gpu: IGPUData;
+interface MemLoad {
+	cpuMemory: MemoryInformation;
+	gpu: GPUData;
 }
 
 const MEMORY_GRID_SIZE = 440;
 const MEMORY_INDICES = Array.from({ length: MEMORY_GRID_SIZE }, (_, i) => i);
 
 function MemInfo() {
-	const [memory, setMemory] = createSignal<IMemLoad>();
+	const [memory, setMemory] = createSignal<MemLoad>();
 
 	const unListen = listen('system', (e: Event<SystemData>) =>
 		setMemory({

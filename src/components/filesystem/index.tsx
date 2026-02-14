@@ -6,7 +6,7 @@ import {
 	getShowHiddenFileStatus,
 	setShowHiddenFileStatus,
 } from '@/lib/setting';
-import type { IFileSystem } from '@/models';
+import type { FileSystemStatus } from '@/models';
 
 const FileSection = lazy(async () => {
 	await new Promise(resolve => setTimeout(resolve, 200));
@@ -25,9 +25,9 @@ function FileSystem() {
 		mutate(v);
 	}
 
-	const [fileSystem, setFileSystem] = createSignal<IFileSystem>();
+	const [fileSystem, setFileSystem] = createSignal<FileSystemStatus>();
 
-	const unListen = listen('files', (e: Event<IFileSystem>) =>
+	const unListen = listen('files', (e: Event<FileSystemStatus>) =>
 		setFileSystem(e.payload),
 	);
 

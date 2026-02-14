@@ -6,18 +6,18 @@ import {
 	BACKWARD,
 	DIRECTORY,
 	FILE,
-	type IFileInfo,
-	type IFileSystem,
+	type FileInfo,
+	type FileSystemStatus,
 	SETTING,
 } from '@/models';
 
-interface IFileSectionProps {
+interface FileSectionProps {
 	open: VoidFunction;
 	showHidden: Resource<boolean>;
-	fileSystem: () => IFileSystem | undefined;
+	fileSystem: () => FileSystemStatus | undefined;
 }
 
-function FileSection(props: IFileSectionProps) {
+function FileSection(props: FileSectionProps) {
 	const active = useActiveTerminal();
 
 	const filteredFiles = createMemo(
@@ -26,7 +26,7 @@ function FileSection(props: IFileSectionProps) {
 			[],
 	);
 
-	async function fileAction(file: IFileInfo) {
+	async function fileAction(file: FileInfo) {
 		if (file.t === DIRECTORY) {
 			await writeToSession(active(), `cd '${file.path}'\n`);
 		} else if (file.t === FILE) {

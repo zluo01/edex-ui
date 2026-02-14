@@ -12,7 +12,7 @@ import {
 import { errorLog } from '@/lib/log';
 import { selectStyle, useTheme } from '@/lib/themes';
 import { cn } from '@/lib/utils';
-import type { INetworkTraffic } from '@/models';
+import type { NetworkTrafficStatus } from '@/models';
 
 type NetworkTrafficProps = {
 	connected: () => boolean;
@@ -27,9 +27,9 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 		document.createElement('canvas'),
 	];
 
-	const [traffic, setTraffic] = createSignal<INetworkTraffic>();
+	const [traffic, setTraffic] = createSignal<NetworkTrafficStatus>();
 
-	const unListen = listen('network', (e: Event<INetworkTraffic>) =>
+	const unListen = listen('network', (e: Event<NetworkTrafficStatus>) =>
 		setTraffic(e.payload),
 	);
 

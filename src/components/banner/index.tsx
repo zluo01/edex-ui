@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 
-interface IBannerProps {
+interface BannerProps {
 	title: string;
 	name: string;
 }
 
-function Banner(props: IBannerProps) {
+function Banner(props: BannerProps) {
 	return (
 		<div class="flex h-[2.5vh] w-full items-start">
 			<div

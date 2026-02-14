@@ -2,14 +2,14 @@ import type { Resource } from 'solid-js';
 import ShowHiddenFileSetting from '@/components/setting/hidden';
 import ChangeThemeSelection from '@/components/setting/theme';
 
-interface ISettingProps {
+interface SettingProps {
 	open: () => boolean;
 	showHidden: Resource<boolean>;
 	changeHidden: () => void;
 	close: VoidFunction;
 }
 
-export default function Setting(props: ISettingProps) {
+export default function Setting(props: SettingProps) {
 	return (
 		<dialog
 			class="relative z-10"

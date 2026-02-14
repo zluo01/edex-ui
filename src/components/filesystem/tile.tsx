@@ -1,14 +1,14 @@
 import Icon from '@/components/filesystem/icon';
 import type { FileType } from '@/models';
 
-interface IFileTileProps {
+interface FileTileProps {
 	name: string;
 	t: FileType;
 	hidden: boolean;
 	onClick: VoidFunction;
 }
 
-function FileTile(props: IFileTileProps) {
+function FileTile(props: FileTileProps) {
 	return (
 		<div
 			class="flex size-[8.5vh] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm text-center hover:opacity-70"

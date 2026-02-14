@@ -1,12 +1,12 @@
 import type { Resource } from 'solid-js';
 import { cn } from '@/lib/utils';
 
-interface IShowHiddenFileSettingProps {
+interface ShowHiddenFileSettingProps {
 	showHidden: Resource<boolean>;
 	changeHidden: () => void;
 }
 
-function ShowHiddenFileSetting(props: IShowHiddenFileSettingProps) {
+function ShowHiddenFileSetting(props: ShowHiddenFileSettingProps) {
 	return (
 		<div class="flex flex-row flex-nowrap items-center justify-between py-1">
 			<span class="text-main sm:text-base md:text-xl lg:text-3xl xl:text-5xl">

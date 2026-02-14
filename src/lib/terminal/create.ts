@@ -11,7 +11,7 @@ import {
 import { warnLog } from '@/lib/log';
 import type { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
-import type { ITerminalProps } from '@/models';
+import type { TerminalProps } from '@/models';
 
 export type Addons = ReturnType<typeof getAddons>;
 
@@ -30,7 +30,7 @@ export async function createTerminal(
 	terminalContainer: HTMLDivElement,
 	theme: Theme,
 	initialFontSize: number,
-): Promise<ITerminalProps> {
+): Promise<TerminalProps> {
 	const term = new Terminal({
 		fontSize: initialFontSize,
 		...INITIAL_DEFAULT_OPTIONS,

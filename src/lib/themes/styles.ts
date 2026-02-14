@@ -1,6 +1,6 @@
-import type { IStyle } from '@/models';
+import type { Style } from '@/models';
 
-const TRON: IStyle = {
+const TRON: Style = {
 	colors: {
 		main: 'rgb(170, 207, 209)',
 		black: '#000000',
@@ -16,7 +16,7 @@ const TRON: IStyle = {
 	},
 };
 
-const APOLLO: IStyle = {
+const APOLLO: Style = {
 	colors: {
 		main: 'rgb(235, 235, 235)',
 		black: '#000000',
@@ -32,7 +32,7 @@ const APOLLO: IStyle = {
 	},
 };
 
-const BLADE: IStyle = {
+const BLADE: Style = {
 	colors: {
 		main: 'rgb(204, 94, 55)',
 		black: '#000000',
@@ -48,7 +48,7 @@ const BLADE: IStyle = {
 	},
 };
 
-const CYBORG: IStyle = {
+const CYBORG: Style = {
 	colors: {
 		main: 'rgb(95, 215, 215)',
 		black: '#011f1f',
@@ -79,7 +79,7 @@ const CYBORG: IStyle = {
 	},
 };
 
-const INTERSTELLAR: IStyle = {
+const INTERSTELLAR: Style = {
 	colors: {
 		main: 'rgb(3, 169, 244)',
 		black: '#f3f3f3',

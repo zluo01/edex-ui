@@ -6,7 +6,7 @@ import TerminalSelectionTab from '@/components/terminal/tab';
 import { errorLog } from '@/lib/log';
 import { terminateSession } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
-import type { ITerminalContainer } from '@/models';
+import type { TerminalContainer } from '@/models';
 
 import './index.css';
 
@@ -32,7 +32,7 @@ function nextActiveTerminal(target: number, keys: number[]) {
 function TerminalSection() {
 	const { active, setActive } = useTerminal();
 
-	const [terminals, setTerminals] = createSignal<ITerminalContainer[]>([
+	const [terminals, setTerminals] = createSignal<TerminalContainer[]>([
 		{
 			id: 0,
 			terminal: () => <Session id={/*@once*/ 0} active={active} />,

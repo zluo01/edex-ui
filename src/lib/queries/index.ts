@@ -1,6 +1,6 @@
 import { QueryClient, queryOptions } from '@tanstack/solid-query';
 import { errorLog } from '@/lib/log';
-import type { IIPAddressInformation, IPInformation } from '@/models';
+import type { IPAddressInformation, IPInformation } from '@/models';
 
 export const QUERY_CLIENT = new QueryClient();
 
@@ -15,7 +15,7 @@ export const ipInformationQueryOptions = (enabled: boolean) =>
 		enabled,
 	});
 
-async function getIPInformation(): Promise<IIPAddressInformation> {
+async function getIPInformation(): Promise<IPAddressInformation> {
 	const response = await fetch(
 		'http://ip-api.com/json/?fields=status,countryCode,region,city,query',
 		{

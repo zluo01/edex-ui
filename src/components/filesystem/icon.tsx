@@ -2,12 +2,12 @@ import { type JSX, Match, Switch } from 'solid-js';
 import { cn } from '@/lib/utils';
 import { BACKWARD, DIRECTORY, FILE, type FileType, SETTING } from '@/models';
 
-interface IIconProps {
+interface IconProps {
 	t: FileType;
 	hidden: boolean;
 }
 
-function Icon(props: IIconProps): JSX.Element {
+function Icon(props: IconProps): JSX.Element {
 	return (
 		<Switch
 			fallback={

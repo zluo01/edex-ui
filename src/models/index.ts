@@ -4,13 +4,13 @@ import type { Addons } from '@/lib/terminal';
 
 export interface SystemData {
 	uptime: number;
-	memory: IMemoryInformation;
-	cpu: ICPUData;
-	gpu: IGPUData;
-	processes: IProcessInformation[];
+	memory: MemoryInformation;
+	cpu: CPUData;
+	gpu: GPUData;
+	processes: ProcessInformation[];
 }
 
-export interface ICPUData {
+export interface CPUData {
 	name: string;
 	core: number;
 	load: number;
@@ -18,7 +18,7 @@ export interface ICPUData {
 	temperature: number;
 }
 
-export interface IGPUData {
+export interface GPUData {
 	name: string;
 	load: number;
 	usedMemory: number;
@@ -27,7 +27,7 @@ export interface IGPUData {
 	temperature: number;
 }
 
-export interface IMemoryInformation {
+export interface MemoryInformation {
 	active: number;
 	available: number;
 	total: number;
@@ -36,7 +36,7 @@ export interface IMemoryInformation {
 	ratio: number;
 }
 
-export interface IProcessInformation {
+export interface ProcessInformation {
 	pid: number;
 	name: string;
 	cpu_usage: number;
@@ -54,7 +54,7 @@ export interface IPInformation {
 	city: string;
 }
 
-export interface IIPAddressInformation {
+export interface IPAddressInformation {
 	query: string;
 	location: string;
 }
@@ -64,14 +64,14 @@ export const ONLINE = 'ONLINE';
 
 export type NETWORK_STATUS = typeof OFFLINE | typeof ONLINE;
 
-export interface INetworkTraffic {
+export interface NetworkTrafficStatus {
 	receive: number;
 	transmitted: number;
 	totalReceive: number;
 	totalTransmitted: number;
 }
 
-export interface IDiskUsage {
+export interface DiskUsageStatus {
 	name: string;
 	internal: boolean;
 	total: number;
@@ -92,19 +92,19 @@ export type FileType =
 	| typeof SETTING
 	| typeof BACKWARD;
 
-export interface IFileInfo {
+export interface FileInfo {
 	name: string;
 	t: FileType;
 	path: string;
 	hidden: boolean;
 }
 
-export interface IFileSystem {
+export interface FileSystemStatus {
 	path: string;
-	files: IFileInfo[];
+	files: FileInfo[];
 }
 
-export type IStyle = {
+export type Style = {
 	colors: {
 		main: string;
 		black: string;
@@ -135,12 +135,12 @@ export type IStyle = {
 	};
 };
 
-export interface ITerminalProps {
+export interface TerminalProps {
 	term: TerminalType;
 	addons: Addons;
 }
 
-export interface ITerminalContainer {
+export interface TerminalContainer {
 	id: number;
 	terminal: () => JSXElement;
 }
