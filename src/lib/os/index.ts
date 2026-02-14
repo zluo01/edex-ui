@@ -1,28 +1,28 @@
-import { errorLog } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { openPath } from '@tauri-apps/plugin-opener';
+import { errorLog } from '@/lib/log';
 
 export async function openFile(path: string) {
-  try {
-    await openPath(path);
-  } catch (e) {
-    await errorLog(`${e}. Path: ${path}`);
-  }
+	try {
+		await openPath(path);
+	} catch (e) {
+		await errorLog(`${e}. Path: ${path}`);
+	}
 }
 
 export async function getKernelVersion(): Promise<string> {
-  return (await invoke('kernel_version')) || 'UNKNOWN';
+	return (await invoke('kernel_version')) || 'UNKNOWN';
 }
 
 export async function resizeSession(id: number, rows: number, cols: number) {
-  await emit('terminal-' + id, {
-    type: 'Resize',
-    payload: {
-      cols,
-      rows,
-    },
-  });
+	await emit(`terminal-${id}`, {
+		type: 'Resize',
+		payload: {
+			cols,
+			rows,
+		},
+	});
 }
 
 /**
@@ -31,12 +31,12 @@ export async function resizeSession(id: number, rows: number, cols: number) {
  * @param data payload
  */
 export async function writeToSession(id: number, data: string) {
-  await emit('terminal-' + id, {
-    type: 'Write',
-    payload: {
-      data,
-    },
-  });
+	await emit(`terminal-${id}`, {
+		type: 'Write',
+		payload: {
+			data,
+		},
+	});
 }
 
 /**
@@ -44,23 +44,23 @@ export async function writeToSession(id: number, data: string) {
  * @param id terminal index
  */
 export async function initializeSession(id: number) {
-  await emit('manager', {
-    type: 'Initialize',
-    payload: {
-      id,
-    },
-  });
+	await emit('manager', {
+		type: 'Initialize',
+		payload: {
+			id,
+		},
+	});
 }
 
 export async function terminateSession(id: number) {
-  await writeToSession(id, 'exit\n');
+	await writeToSession(id, 'exit\n');
 }
 
 export async function updateCurrentSession(id: number) {
-  await emit('manager', {
-    type: 'Switch',
-    payload: {
-      id,
-    },
-  });
+	await emit('manager', {
+		type: 'Switch',
+		payload: {
+			id,
+		},
+	});
 }

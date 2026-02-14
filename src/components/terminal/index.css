@@ -1,99 +1,99 @@
 .shell {
-  --aug-border-all: 2px;
-  --aug-border-opacity: 0.75;
+	--aug-border-all: 2px;
+	--aug-border-opacity: 0.75;
 
-  transition:
-    width 0.5s cubic-bezier(0.85, 0.5, 0.85, 0.5),
-    height 0.5s cubic-bezier(0.85, 0.5, 0.85, 0.5);
+	transition:
+		width 0.5s cubic-bezier(0.85, 0.5, 0.85, 0.5),
+		height 0.5s cubic-bezier(0.85, 0.5, 0.85, 0.5);
 }
 
 .terminal .xterm-viewport {
-  overflow: hidden;
-  cursor: default;
-  position: absolute;
-  right: 0;
-  left: 0;
-  top: 0;
-  bottom: 0;
+	overflow: hidden;
+	cursor: default;
+	position: absolute;
+	right: 0;
+	left: 0;
+	top: 0;
+	bottom: 0;
 }
 
 .xterm {
-  font-family: monospace;
-  font-feature-settings: 'liga' 0;
-  position: relative;
-  user-select: none;
-  -webkit-user-select: none;
+	font-family: monospace;
+	font-feature-settings: "liga" 0;
+	position: relative;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .xterm.focus,
 .xterm:focus {
-  outline: none;
+	outline: none;
 }
 
 .xterm .xterm-helpers {
-  position: absolute;
-  top: 0;
-  z-index: 10;
+	position: absolute;
+	top: 0;
+	z-index: 10;
 }
 
 .xterm .xterm-helper-textarea {
-  position: absolute;
-  opacity: 0;
-  left: -9999em;
-  top: 0;
-  width: 0;
-  height: 0;
-  z-index: -10;
-  white-space: nowrap;
-  overflow: hidden;
-  resize: none;
+	position: absolute;
+	opacity: 0;
+	left: -9999em;
+	top: 0;
+	width: 0;
+	height: 0;
+	z-index: -10;
+	white-space: nowrap;
+	overflow: hidden;
+	resize: none;
 }
 
 .xterm .composition-view {
-  background: #000;
-  color: #fff;
-  display: none;
-  position: absolute;
-  white-space: nowrap;
-  z-index: 1;
+	background: #000;
+	color: #fff;
+	display: none;
+	position: absolute;
+	white-space: nowrap;
+	z-index: 1;
 }
 
 .xterm .composition-view.active {
-  display: block;
+	display: block;
 }
 
 .xterm .xterm-viewport {
-  background-color: #000;
-  overflow-y: hidden;
+	background-color: #000;
+	overflow-y: hidden;
 }
 
 .xterm .xterm-screen {
-  position: relative;
+	position: relative;
 }
 
 .xterm canvas {
-  position: absolute;
-  left: 0;
-  top: 0;
+	position: absolute;
+	left: 0;
+	top: 0;
 }
 
 .xterm .xterm-scroll-area {
-  visibility: hidden;
+	visibility: hidden;
 }
 
 .xterm .xterm-char-measure-element {
-  display: inline-block;
-  visibility: hidden;
-  position: absolute;
-  left: -9999em;
-  line-height: normal;
+	display: inline-block;
+	visibility: hidden;
+	position: absolute;
+	left: -9999em;
+	line-height: normal;
 }
 
 .xterm.enable-mouse-events {
-  /* When mouse events are enabled (eg. tmux), revert to the standard pointer cursor */
-  cursor: default;
+	/* When mouse events are enabled (eg. tmux), revert to the standard pointer cursor */
+	cursor: default;
 }
 
 .xterm:not(.enable-mouse-events) {
-  cursor: text;
+	cursor: text;
 }

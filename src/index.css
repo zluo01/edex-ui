@@ -1,47 +1,47 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
-  --breakpoint-*: initial;
-  --breakpoint-sm: 1280px;
-  --breakpoint-md: 1920px;
-  --breakpoint-lg: 2560px;
-  --breakpoint-xl: 3840px;
+	--breakpoint-*: initial;
+	--breakpoint-sm: 1280px;
+	--breakpoint-md: 1920px;
+	--breakpoint-lg: 2560px;
+	--breakpoint-xl: 3840px;
 
-  --background-color-*: initial;
-  --background-color-main: rgb(var(--bg-main));
-  --background-color-secondary: rgb(var(--bg-secondary));
-  --background-color-active: rgb(var(--bg-active));
-  --background-color-hover: rgb(var(--bg-hover));
+	--background-color-*: initial;
+	--background-color-main: rgb(var(--bg-main));
+	--background-color-secondary: rgb(var(--bg-secondary));
+	--background-color-active: rgb(var(--bg-active));
+	--background-color-hover: rgb(var(--bg-hover));
 
-  --border-color-*: initial;
-  --border-color-default: rgb(var(--border-default));
+	--border-color-*: initial;
+	--border-color-default: rgb(var(--border-default));
 
-  --text-color-*: initial;
-  --text-color-main: rgb(var(--text-main));
-  --text-color-active: rgb(var(--text-active));
-  --text-color-hover: rgb(var(--text-hover));
+	--text-color-*: initial;
+	--text-color-main: rgb(var(--text-main));
+	--text-color-active: rgb(var(--text-active));
+	--text-color-hover: rgb(var(--text-hover));
 
-  --text-xxxs: 8px;
-  --text-xxxs--line-height: 8px;
-  --text-xxs: 10px;
-  --text-xxs--line-height: 12px;
+	--text-xxxs: 8px;
+	--text-xxxs--line-height: 8px;
+	--text-xxs: 10px;
+	--text-xxs--line-height: 12px;
 
-  --font-serif:
-    Fira Mono, Fira Code, ui-serif, Georgia, Cambria, 'Times New Roman', Times,
-    serif;
-  --font-united_sans_light: united-sans-light;
-  --font-united_sans_medium: united-sans-medium;
+	--font-serif:
+		Fira Mono, Fira Code, ui-serif, Georgia, Cambria, "Times New Roman", Times,
+		serif;
+	--font-united_sans_light: united-sans-light;
+	--font-united_sans_medium: united-sans-medium;
 
-  --animate-fade: fadeOut 0.25s ease-in-out;
+	--animate-fade: fadeOut 0.25s ease-in-out;
 
-  @keyframes fadeOut {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 100;
-    }
-  }
+	@keyframes fadeOut {
+		0% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 100;
+		}
+	}
 }
 
 /*
@@ -53,143 +53,143 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentcolor);
+	}
 }
 
 @utility no-scrollbar {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  &::-webkit-scrollbar {
-    display: none;
-  }
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	&::-webkit-scrollbar {
+		display: none;
+	}
 
-  /* Hide scrollbar for IE, Edge and Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+	/* Hide scrollbar for IE, Edge and Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
 }
 
 .panel {
-  --aug-border-all: 0.2vh;
-  --aug-inset: 5px;
+	--aug-border-all: 0.2vh;
+	--aug-inset: 5px;
 }
 
 .augment-border {
-  --aug-border-bg: rgb(var(--border-default));
+	--aug-border-bg: rgb(var(--border-default));
 }
 
 @font-face {
-  font-family: 'united-sans-light';
-  src: url('/fonts/united_sans_light.woff2') format('woff2');
+	font-family: "united-sans-light";
+	src: url("/fonts/united_sans_light.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: 'united-sans-medium';
-  src: url('/fonts/united_sans_medium.woff2') format('woff2');
+	font-family: "united-sans-medium";
+	src: url("/fonts/united_sans_medium.woff2") format("woff2");
 }
 
 @layer base {
-  html[data-theme='tron'] {
-    /*background*/
-    --bg-main: 5 8 13;
-    --bg-secondary: 38 40 40;
-    --bg-active: 170 207 209;
-    --bg-hover: 170 207 209;
+	html[data-theme="tron"] {
+		/*background*/
+		--bg-main: 5 8 13;
+		--bg-secondary: 38 40 40;
+		--bg-active: 170 207 209;
+		--bg-hover: 170 207 209;
 
-    /* border */
-    --border-default: 170 207 209;
+		/* border */
+		--border-default: 170 207 209;
 
-    /* text */
-    --text-main: 170 207 209;
-    --text-active: 5 8 13;
-    --text-hover: 5 8 13;
+		/* text */
+		--text-main: 170 207 209;
+		--text-active: 5 8 13;
+		--text-hover: 5 8 13;
 
-    /* colors */
-    --color-stroke: rgb(170, 207, 209);
-    --color-shade: #262828;
-  }
+		/* colors */
+		--color-stroke: rgb(170, 207, 209);
+		--color-shade: #262828;
+	}
 
-  html[data-theme='apollo'] {
-    /*background*/
-    --bg-main: 25 25 25;
-    --bg-secondary: 38 40 39;
-    --bg-active: 235 235 235;
-    --bg-hover: 235 235 235;
+	html[data-theme="apollo"] {
+		/*background*/
+		--bg-main: 25 25 25;
+		--bg-secondary: 38 40 39;
+		--bg-active: 235 235 235;
+		--bg-hover: 235 235 235;
 
-    /* border */
-    --border-default: 235 235 235;
+		/* border */
+		--border-default: 235 235 235;
 
-    /* text */
-    --text-main: 235 235 235;
-    --text-active: 25 25 25;
-    --text-hover: 25 25 25;
+		/* text */
+		--text-main: 235 235 235;
+		--text-active: 25 25 25;
+		--text-hover: 25 25 25;
 
-    /* colors */
-    --color-stroke: rgb(235, 235, 235);
-    --color-shade: #262827;
-  }
+		/* colors */
+		--color-stroke: rgb(235, 235, 235);
+		--color-shade: #262827;
+	}
 
-  html[data-theme='blade'] {
-    /*background*/
-    --bg-main: 9 11 10;
-    --bg-secondary: 38 40 39;
-    --bg-active: 204 94 55;
-    --bg-hover: 204 94 55;
+	html[data-theme="blade"] {
+		/*background*/
+		--bg-main: 9 11 10;
+		--bg-secondary: 38 40 39;
+		--bg-active: 204 94 55;
+		--bg-hover: 204 94 55;
 
-    /* border */
-    --border-default: 204 94 55;
+		/* border */
+		--border-default: 204 94 55;
 
-    /* text */
-    --text-main: 204 94 55;
-    --text-active: 9 11 10;
-    --text-hover: 9 11 10;
+		/* text */
+		--text-main: 204 94 55;
+		--text-active: 9 11 10;
+		--text-hover: 9 11 10;
 
-    /* colors */
-    --color-stroke: rgb(204, 94, 55);
-    --color-shade: #262827;
-  }
+		/* colors */
+		--color-stroke: rgb(204, 94, 55);
+		--color-shade: #262827;
+	}
 
-  html[data-theme='cyborg'] {
-    /*background*/
-    --bg-main: 10 51 51;
-    --bg-secondary: 3 71 71;
-    --bg-active: 163 194 194;
-    --bg-hover: 163 194 194;
+	html[data-theme="cyborg"] {
+		/*background*/
+		--bg-main: 10 51 51;
+		--bg-secondary: 3 71 71;
+		--bg-active: 163 194 194;
+		--bg-hover: 163 194 194;
 
-    /* border */
-    --border-default: 163 194 194;
+		/* border */
+		--border-default: 163 194 194;
 
-    /* text */
-    --text-main: 163 194 194;
-    --text-active: 10 51 51;
-    --text-hover: 10 51 51;
+		/* text */
+		--text-main: 163 194 194;
+		--text-active: 10 51 51;
+		--text-hover: 10 51 51;
 
-    /* colors */
-    --color-stroke: rgb(95, 215, 215);
-    --color-shade: #034747;
-  }
+		/* colors */
+		--color-stroke: rgb(95, 215, 215);
+		--color-shade: #034747;
+	}
 
-  html[data-theme='interstellar'] {
-    /*interstellar*/
-    --bg-main: 222 222 222;
-    --bg-secondary: 191 191 191;
-    --bg-active: 3 169 244;
-    --bg-hover: 3 169 244;
+	html[data-theme="interstellar"] {
+		/*interstellar*/
+		--bg-main: 222 222 222;
+		--bg-secondary: 191 191 191;
+		--bg-active: 3 169 244;
+		--bg-hover: 3 169 244;
 
-    /* border */
-    --border-default: 3 169 244;
+		/* border */
+		--border-default: 3 169 244;
 
-    /* text */
-    --text-main: 3 169 244;
-    --text-active: 222 222 222;
-    --text-hover: 222 222 222;
+		/* text */
+		--text-main: 3 169 244;
+		--text-active: 222 222 222;
+		--text-hover: 222 222 222;
 
-    /* colors */
-    --color-stroke: rgb(3, 169, 244);
-    --color-shade: #bfbfbf;
-  }
+		/* colors */
+		--color-stroke: rgb(3, 169, 244);
+		--color-shade: #bfbfbf;
+	}
 }

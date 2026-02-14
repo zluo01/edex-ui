@@ -1,8 +1,0 @@
-.idea
-node_modules
-.next
-package-lock.json
-.vscode
-src-tauri
-public/styles/augmented-ui.min.css
-pnpm-lock.yaml

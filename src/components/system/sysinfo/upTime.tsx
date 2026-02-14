@@ -1,50 +1,50 @@
+import { type Event, listen } from '@tauri-apps/api/event';
+import { createSignal, type JSX, onCleanup, Show } from 'solid-js';
 import BaseInformation from '@/components/system/sysinfo/base';
 import { errorLog } from '@/lib/log';
 import { formatTime } from '@/lib/utils';
-import { SystemData } from '@/models';
-import { Event, listen } from '@tauri-apps/api/event';
-import { createSignal, JSX, onCleanup, Show } from 'solid-js';
+import type { SystemData } from '@/models';
 
 function UpTimeSection() {
-  const [uptime, setUptime] = createSignal<number>();
+	const [uptime, setUptime] = createSignal<number>();
 
-  const unListen = listen('system', (e: Event<SystemData>) =>
-    setUptime(e.payload.uptime),
-  );
+	const unListen = listen('system', (e: Event<SystemData>) =>
+		setUptime(e.payload.uptime),
+	);
 
-  onCleanup(() => {
-    unListen.then(f => f()).catch(errorLog);
-  });
+	onCleanup(() => {
+		unListen.then(f => f()).catch(errorLog);
+	});
 
-  function UpTime(): JSX.Element {
-    let raw = uptime()!;
+	function UpTime(): JSX.Element {
+		let raw = uptime()!;
 
-    const days = Math.floor(raw / 86400);
-    raw -= days * 86400;
-    const hours = Math.floor(raw / 3600);
-    raw -= hours * 3600;
-    const minutes = Math.floor(raw / 60);
-    return (
-      <>
-        {days}
-        <span class="opacity-50">d</span>
-        {formatTime(hours)}
-        <span class="opacity-50">:</span>
-        {formatTime(minutes)}
-      </>
-    );
-  }
+		const days = Math.floor(raw / 86400);
+		raw -= days * 86400;
+		const hours = Math.floor(raw / 3600);
+		raw -= hours * 3600;
+		const minutes = Math.floor(raw / 60);
+		return (
+			<>
+				{days}
+				<span class="opacity-50">d</span>
+				{formatTime(hours)}
+				<span class="opacity-50">:</span>
+				{formatTime(minutes)}
+			</>
+		);
+	}
 
-  return (
-    <BaseInformation
-      header={/*@once*/ 'UPTIME'}
-      value={
-        <Show when={uptime()} fallback={<>0:0:0</>}>
-          <UpTime />
-        </Show>
-      }
-    />
-  );
+	return (
+		<BaseInformation
+			header={/*@once*/ 'UPTIME'}
+			value={
+				<Show when={uptime()} fallback={<>0:0:0</>}>
+					<UpTime />
+				</Show>
+			}
+		/>
+	);
 }
 
 export default UpTimeSection;
