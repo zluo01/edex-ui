@@ -1,6 +1,7 @@
 import { createShortcut } from '@solid-primitives/keyboard';
 import { type Event, listen } from '@tauri-apps/api/event';
 import {
+	batch,
 	createEffect,
 	createSignal,
 	For,
@@ -70,12 +71,14 @@ function TerminalSection() {
 	const unListen = listen('destroy', async (e: Event<string>) => {
 		const id = e.payload;
 		const nextIndex = nextActiveTerminal(id, terminalContexts());
-		setTerminals(prevState => {
-			const newMap = new Map(prevState);
-			newMap.delete(id);
-			return newMap;
+		batch(() => {
+			setActive(nextIndex);
+			setTerminals(prevState => {
+				const newMap = new Map(prevState);
+				newMap.delete(id);
+				return newMap;
+			});
 		});
-		setActive(nextIndex);
 	});
 
 	onCleanup(() => {
@@ -89,14 +92,16 @@ function TerminalSection() {
 	 */
 	function addTerminal() {
 		const id = crypto.randomUUID();
-		setActive(id);
-		setTerminals(prevState => {
-			const newMap = new Map(prevState);
-			newMap.set(id, {
-				id,
-				terminal: () => <Session id={/* @once */ id} active={active} />,
+		batch(() => {
+			setActive(id);
+			setTerminals(prevState => {
+				const newMap = new Map(prevState);
+				newMap.set(id, {
+					id,
+					terminal: () => <Session id={/* @once */ id} active={active} />,
+				});
+				return newMap;
 			});
-			return newMap;
 		});
 	}
 
