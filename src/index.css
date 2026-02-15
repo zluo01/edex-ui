@@ -73,6 +73,14 @@
 	scrollbar-width: none; /* Firefox */
 }
 
+@utility skew-tab {
+	clip-path: polygon(0% 100%, 100% 100%, 85% 0%, 0% 0%);
+}
+
+@utility skew-tab-inner {
+	clip-path: polygon(0% 100%, calc(100% - 2px) 100%, calc(85% - 2px) 0%, 0% 0%);
+}
+
 .panel {
 	--aug-border-all: 0.2vh;
 	--aug-inset: 5px;

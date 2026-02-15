@@ -14,12 +14,11 @@ import TerminalSelectionTab from '@/components/terminal/tab';
 import { errorLog } from '@/lib/log';
 import { terminateSession } from '@/lib/os';
 import { useTerminal } from '@/lib/terminal';
-import type { TerminalContainer, TerminalContext } from '@/models';
+import type { TerminalContainer } from '@/models';
 
 import './index.css';
 
-function nextActiveTerminal(target: string, keys: TerminalContext[]) {
-	const ids = keys.map(o => o.id);
+function nextActiveTerminal(target: string, ids: string[]) {
 	const idx = ids.indexOf(target);
 	return ids[(idx + 1) % ids.length] || ids[0];
 }
@@ -31,8 +30,7 @@ function TerminalSection() {
 		Map<string, TerminalContainer>
 	>(new Map());
 
-	const terminalContexts = () =>
-		[...terminals().values()].map(o => o as TerminalContext);
+	const terminalIds = () => [...terminals().keys()];
 
 	onMount(() => {
 		addTerminal();
@@ -50,10 +48,10 @@ function TerminalSection() {
 	createShortcut(
 		['Control', 'Tab'],
 		() => {
-			if (terminalContexts().length === 1) {
+			if (terminalIds().length === 1) {
 				return;
 			}
-			setActive(prevState => nextActiveTerminal(prevState, terminalContexts()));
+			setActive(prevState => nextActiveTerminal(prevState, terminalIds()));
 		},
 		{ preventDefault: true },
 	);
@@ -70,7 +68,7 @@ function TerminalSection() {
 
 	const unListen = listen('destroy', async (e: Event<string>) => {
 		const id = e.payload;
-		const nextIndex = nextActiveTerminal(id, terminalContexts());
+		const nextIndex = nextActiveTerminal(id, terminalIds());
 		batch(() => {
 			setActive(nextIndex);
 			setTerminals(prevState => {
@@ -118,7 +116,7 @@ function TerminalSection() {
 				<TerminalSelectionTab
 					addTerminal={addTerminal}
 					active={active}
-					terminalIds={terminalContexts}
+					terminalIds={terminalIds}
 					switchTab={switchTerminal}
 				/>
 				<div class="m-0 size-full overflow-hidden">
