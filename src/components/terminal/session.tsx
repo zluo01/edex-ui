@@ -181,11 +181,9 @@ function Session({ id, active }: SessionProps) {
 	});
 
 	return (
-		<div
-			id={`terminal-${id}`}
-			class={cn(active() !== id && 'hidden', 'size-full px-2 pt-2 pb-3')}
-			ref={el => (terminalEl = el)}
-		/>
+		<div class={cn(active() !== id && 'hidden', 'size-full p-2')}>
+			<div class="size-full" ref={el => (terminalEl = el)} />
+		</div>
 	);
 }
 
