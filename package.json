@@ -38,7 +38,7 @@
     "pretty-bytes": "7.1.0",
     "smoothie": "1.36.1",
     "solid-js": "1.9.11",
-    "tailwind-merge": "3.4.0"
+    "tailwind-merge": "3.4.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.15",
