@@ -49,7 +49,7 @@ function TerminalSelectionTab(props: TerminalSelectionTabProps) {
 					{(id, index) => (
 						<div
 							class={cn(
-								'bg-active text-main w-full max-w-[15%] min-w-[10%] skew-tab cursor-pointer overflow-hidden h-12 text-center -ml-1.5 text-base',
+								'bg-active text-main w-full max-w-[15%] min-w-[10%] skew-tab cursor-pointer overflow-hidden text-center -ml-1.5 text-base',
 								props.active() === id() && 'text-active scale-125 font-medium',
 							)}
 							style={{
@@ -59,7 +59,7 @@ function TerminalSelectionTab(props: TerminalSelectionTabProps) {
 						>
 							<div
 								class={cn(
-									'bg-main w-full h-full skew-tab-inner flex flex-row justify-center items-center',
+									'bg-main w-full h-full skew-tab-inner flex flex-row justify-center items-center p-2',
 									props.active() === id() && 'bg-active',
 								)}
 							>
