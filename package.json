@@ -16,7 +16,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@solid-primitives/date": "2.1.5",
+    "@solid-primitives/date": "2.1.6",
     "@solid-primitives/keyboard": "1.3.4",
     "@tailwindcss/vite": "4.2.0",
     "@tanstack/solid-query": "5.90.23",
