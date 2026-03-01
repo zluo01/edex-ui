@@ -7,7 +7,14 @@ use std::sync::{atomic, Arc, Mutex, RwLock};
 use std::{cmp::Ordering, fs, path::PathBuf, str};
 use tokio::sync::mpsc;
 
-// Borrow from https://github.com/hharnisc/hypercwd/blob/master/setCwd.js
+#[cfg(target_os = "linux")]
+pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
+    fs::read_link(format!("/proc/{}/cwd", pid))
+        .map(|p| p.to_string_lossy().to_string())
+        .map_err(|e| format!("Failed to read /proc/{}/cwd: {}", pid, e))
+}
+
+#[cfg(target_os = "macos")]
 pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
     let response = tokio::process::Command::new("lsof")
         .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
