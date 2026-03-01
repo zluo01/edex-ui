@@ -273,7 +273,7 @@ impl DirectoryFileWatcher {
     pub async fn run(&mut self) {
         let file_watcher_event_sender = self.process_event_sender.clone();
         let file_path_watcher =
-            recommended_watcher(move |res: notify::Result<notify::Event>| match res {
+            match recommended_watcher(move |res: notify::Result<notify::Event>| match res {
                 Ok(event) => {
                     if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
                         if let Some(path) = event.paths.first() {
@@ -287,8 +287,13 @@ impl DirectoryFileWatcher {
                     }
                 }
                 Err(e) => error!("watch error: {:?}", e),
-            })
-            .unwrap();
+            }) {
+                Ok(watcher) => watcher,
+                Err(e) => {
+                    error!("Failed to initialize directory watcher: {:?}", e);
+                    return;
+                }
+            };
 
         // start pty cwd watcher
         let pty_cwd_watcher = PtyCwdWatcher::new(file_path_watcher);
