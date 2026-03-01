@@ -3,11 +3,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
-import {
-	type ITerminalInitOnlyOptions,
-	Terminal,
-	type Terminal as TerminalType,
-} from '@xterm/xterm';
+import { type ITerminalInitOnlyOptions, Terminal } from '@xterm/xterm';
 import { warnLog } from '@/lib/log';
 import type { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
@@ -37,16 +33,14 @@ export async function createTerminal(
 		...generateTerminalTheme(theme),
 	});
 
-	const typedTerm = term as TerminalType;
-
 	const addons = getAddons();
-	Object.values(addons).forEach(addon => typedTerm.loadAddon(addon));
+	Object.values(addons).forEach(addon => term.loadAddon(addon));
 
 	term.open(terminalContainer);
 
 	try {
 		const webglAddon = new WebglAddon();
-		typedTerm.loadAddon(webglAddon);
+		term.loadAddon(webglAddon);
 	} catch (e) {
 		await warnLog(`WebGL not supported, falling back to canvas. Error: ${e}`);
 	}
