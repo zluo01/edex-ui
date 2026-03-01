@@ -112,9 +112,9 @@ impl PtySession {
             }
         });
 
-        let writer = Arc::new(Mutex::new(writer));
-        let master = Arc::new(Mutex::new(master));
-        let killer = Arc::new(Mutex::new(child.clone_killer()));
+        let writer = Mutex::new(writer);
+        let master = Mutex::new(master);
+        let killer = Mutex::new(child.clone_killer());
         let event_id = app_handle.listen(id, move |event| {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
