@@ -6,7 +6,7 @@ import { formatTime } from '@/lib/utils';
 import type { SystemData } from '@/models';
 
 function UpTimeSection() {
-	const [uptime, setUptime] = createSignal<number>();
+	const [uptime, setUptime] = createSignal(0);
 
 	const unListen = listen('system', (e: Event<SystemData>) =>
 		setUptime(e.payload.uptime),
@@ -17,7 +17,7 @@ function UpTimeSection() {
 	});
 
 	function UpTime(): JSX.Element {
-		let raw = uptime()!;
+		let raw = uptime();
 
 		const days = Math.floor(raw / 86400);
 		raw -= days * 86400;

@@ -117,7 +117,13 @@ function Session({ id, active }: SessionProps) {
 	onMount(async () => {
 		try {
 			await traceLog(`Initialize terminal interface. Id: ${id}`);
-			terminal = await createTerminal(terminalEl!, theme(), fontSize());
+			if (!terminalEl) {
+				await errorLog(
+					'terminalEl is undefined in onMount, this should not happen',
+				);
+				return;
+			}
+			terminal = await createTerminal(terminalEl, theme(), fontSize());
 
 			await initializeSession(id);
 

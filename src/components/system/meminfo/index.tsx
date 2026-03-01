@@ -42,17 +42,15 @@ function MemInfo() {
 	};
 
 	const cpuMemoryText = () => {
-		if (!memory()) {
-			return '';
-		}
-		return `USING ${prettyBytes(memory()!.cpuMemory.used)} OUT OF ${prettyBytes(memory()!.cpuMemory.total)}`;
+		const mem = memory();
+		if (!mem) return '';
+		return `USING ${prettyBytes(mem.cpuMemory.used)} OUT OF ${prettyBytes(mem.cpuMemory.total)}`;
 	};
 
 	const gpuMemoryText = () => {
-		if (!memory()) {
-			return '';
-		}
-		return `USING ${prettyBytes(memory()!.gpu.usedMemory)} OUT OF ${prettyBytes(memory()!.gpu.totalMemory)}`;
+		const mem = memory();
+		if (!mem) return '';
+		return `USING ${prettyBytes(mem.gpu.usedMemory)} OUT OF ${prettyBytes(mem.gpu.totalMemory)}`;
 	};
 
 	return (

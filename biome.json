@@ -38,9 +38,6 @@
 			"a11y": {
 				"noSvgWithoutTitle": "off",
 				"noStaticElementInteractions": "off"
-			},
-			"style": {
-				"noNonNullAssertion": "off"
 			}
 		}
 	},
