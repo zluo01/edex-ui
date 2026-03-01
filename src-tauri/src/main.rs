@@ -3,8 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-extern crate core;
-
 use log::{info, LevelFilter};
 use sysinfo::System;
 use tauri::Manager;
