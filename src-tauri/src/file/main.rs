@@ -4,7 +4,12 @@ use notify::{recommended_watcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicI32;
 use std::sync::{atomic, Arc};
-use std::{cmp::Ordering, fs, path::PathBuf, str};
+use std::{
+    cmp::Ordering,
+    fs,
+    path::{Path, PathBuf},
+    str,
+};
 use tokio::sync::mpsc;
 
 #[cfg(target_os = "linux")]
@@ -92,7 +97,7 @@ impl PartialEq for FileInfo {
     }
 }
 
-fn convert_path_to_string(path: &PathBuf, is_directory: bool) -> String {
+fn convert_path_to_string(path: &Path, is_directory: bool) -> String {
     let path_str = path.to_string_lossy().to_string();
     if is_directory && !path_str.ends_with('/') {
         return path_str + "/";
@@ -121,9 +126,7 @@ impl DirectoryInfo {
     }
 }
 
-fn scan_directory(
-    path: &PathBuf,
-) -> Result<DirectoryInfo, Box<dyn std::error::Error + Send + Sync>> {
+fn scan_directory(path: &Path) -> Result<DirectoryInfo, Box<dyn std::error::Error + Send + Sync>> {
     let entries = fs::read_dir(path)?;
     let mut file_info_list: Vec<FileInfo> = Vec::new();
 
@@ -312,7 +315,7 @@ impl DirectoryFileWatcher {
         }
     }
 
-    fn update_directory(path: &PathBuf, event_tx: &mpsc::UnboundedSender<ProcessEvent>) {
+    fn update_directory(path: &Path, event_tx: &mpsc::UnboundedSender<ProcessEvent>) {
         match scan_directory(path) {
             Ok(directory_info) => {
                 if let Err(e) = event_tx.send(ProcessEvent::Directory { directory_info }) {
