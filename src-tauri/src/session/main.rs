@@ -44,7 +44,7 @@ struct PtySession {
 
 impl PtySession {
     pub fn new<F>(
-        id: &String,
+        id: &str,
         process_event_sender: mpsc::UnboundedSender<ProcessEvent>,
         app_handle: AppHandle,
         cleanup: F,
@@ -81,7 +81,7 @@ impl PtySession {
 
         // Clone sender for the reader task
         let pty_reader_sender = process_event_sender.clone();
-        let id_for_reader = id.clone();
+        let id_for_reader = id.to_owned();
 
         // Spawn reader task to continuously read from PTY
         // We must use either spawn_blocking  or `tokio::task::yield_now().await` with async spawn,
@@ -115,7 +115,7 @@ impl PtySession {
         let writer = Arc::new(Mutex::new(writer));
         let master = Arc::new(Mutex::new(master));
         let killer = Arc::new(Mutex::new(child.clone_killer()));
-        let event_id = app_handle.listen(id.clone(), move |event| {
+        let event_id = app_handle.listen(id, move |event| {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
                     let mut w = writer.lock().unwrap(); // Clone avoided
@@ -145,7 +145,7 @@ impl PtySession {
             }
         });
 
-        let id_for_exit = id.clone();
+        let id_for_exit = id.to_owned();
         let app_handle_for_cleanup = app_handle;
         let child_watcher_sender = process_event_sender.clone();
         // need to use block here since child.wait is a blocking process
@@ -229,7 +229,7 @@ impl PtySessionManager {
     }
 
     fn spawn_pty(
-        id: &String,
+        id: &str,
         active_sessions: &Arc<DashMap<String, PtySession>>,
         process_event_sender: &mpsc::UnboundedSender<ProcessEvent>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
@@ -237,7 +237,7 @@ impl PtySessionManager {
     ) {
         let active_sessions_inner = active_sessions.clone();
         let directory_watcher_inner = directory_file_watcher_sender.clone();
-        let id_for_cleanup = id.clone();
+        let id_for_cleanup = id.to_owned();
         let app_handle_for_cleanup = app_handle.clone();
 
         let pty_session_result = PtySession::new(
@@ -268,7 +268,7 @@ impl PtySessionManager {
                     error!("Session {} already exists, overwriting", id);
                 }
                 let pid = pty_session.pid();
-                active_sessions.insert(id.clone(), pty_session);
+                active_sessions.insert(id.to_owned(), pty_session);
 
                 if let Err(e) = directory_file_watcher_sender.send(DirectoryWatcherEvent::Watch {
                     initial: Some(WatcherPayload::new(pid)),
@@ -283,7 +283,7 @@ impl PtySessionManager {
     }
 
     fn switch_session(
-        id: &String,
+        id: &str,
         active_sessions: &Arc<DashMap<String, PtySession>>,
         directory_file_watcher_sender: &mpsc::UnboundedSender<DirectoryWatcherEvent>,
     ) {
