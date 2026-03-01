@@ -26,12 +26,11 @@ async fn kernel_version() -> Result<String, String> {
 }
 
 fn main() {
-    let log_level;
-    if cfg!(debug_assertions) {
-        log_level = LevelFilter::Info;
+    let log_level = if cfg!(debug_assertions) {
+        LevelFilter::Info
     } else {
-        log_level = LevelFilter::Error;
-    }
+        LevelFilter::Error
+    };
 
     info!("Log Level: {:?}", log_level);
     tauri::Builder::default()
