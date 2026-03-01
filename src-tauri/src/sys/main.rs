@@ -484,7 +484,9 @@ impl SystemMonitor {
         loop {
             interval.tick().await;
 
-            // Todo: refresh is the bottleneck here which avg takes 84ms
+            // refresh_specifics avg ~84ms — acceptable to run on the async thread directly rather than
+            // spawn_blocking, because this monitor loop runs in its own dedicated tauri::async_runtime::spawn
+            // task and never shares the thread with latency-sensitive work.
             self.system.refresh_specifics(
                 RefreshKind::nothing()
                     .with_memory(MemoryRefreshKind::everything())
