@@ -39,38 +39,38 @@ impl EventProcessor {
 
     pub async fn run(&mut self) {
         while let Some(event) = self.event_rx.recv().await {
-            self.handle_event(event).await
+            self.handle_event(event)
         }
     }
 
-    async fn handle_event(&self, event: ProcessEvent) {
+    fn handle_event(&self, event: ProcessEvent) {
         match event {
             ProcessEvent::Forward { id, data } => {
-                self.forward_pty_message(id, &data).await;
+                self.forward_pty_message(id, &data);
             }
             ProcessEvent::ProcessExit { id, exit_code } => {
-                self.handle_close(id, exit_code).await;
+                self.handle_close(id, exit_code);
             }
             ProcessEvent::System { system_data } => {
-                self.send_data("system", system_data).await;
+                self.send_data("system", system_data);
             }
             ProcessEvent::Network { network_data } => {
-                self.send_data("network", network_data).await;
+                self.send_data("network", network_data);
             }
             ProcessEvent::Disks { disks_data } => {
-                self.send_data("disk", disks_data).await;
+                self.send_data("disk", disks_data);
             }
             ProcessEvent::Process { process_data } => {
-                self.send_data("process", process_data).await;
+                self.send_data("process", process_data);
             }
             ProcessEvent::Directory { directory_info } => {
-                self.send_data(UPDATE_FILES, directory_info).await;
+                self.send_data(UPDATE_FILES, directory_info);
             }
         }
     }
 
     // Forward output to external systems (websockets, files, etc.)
-    async fn forward_pty_message(&self, id: String, data: &[u8]) {
+    fn forward_pty_message(&self, id: String, data: &[u8]) {
         if !data.is_empty() {
             let event_name = format!("data-{}", id);
             if let Err(e) = self.app_handle.emit(&event_name, data) {
@@ -79,7 +79,7 @@ impl EventProcessor {
         }
     }
 
-    async fn send_data<T>(&self, event_name: &str, data: T)
+    fn send_data<T>(&self, event_name: &str, data: T)
     where
         T: serde::Serialize + Clone,
     {
@@ -89,7 +89,7 @@ impl EventProcessor {
         }
     }
 
-    async fn handle_close(&self, id: String, exit_code: Option<u32>) {
+    fn handle_close(&self, id: String, exit_code: Option<u32>) {
         trace!("Exit status {:?}. Id: {}", &exit_code, &id);
         if let Err(e) = self.app_handle.emit(DESTROY_TERMINAL, id) {
             error!("Fail to send {} event. Error: {}", DESTROY_TERMINAL, e);
