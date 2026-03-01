@@ -3,7 +3,7 @@ use log::error;
 use notify::{recommended_watcher, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicI32;
-use std::sync::{atomic, Arc, Mutex, RwLock};
+use std::sync::{atomic, Arc};
 use std::{cmp::Ordering, fs, path::PathBuf, str};
 use tokio::sync::mpsc;
 
@@ -173,29 +173,24 @@ pub enum DirectoryWatcherEvent {
 }
 
 struct PtyCwdWatcher {
-    file_path_watcher: Arc<Mutex<RecommendedWatcher>>,
     pid: Arc<AtomicI32>,
-    prev_cwd: Arc<RwLock<Option<String>>>,
 }
 
 impl PtyCwdWatcher {
-    fn new(file_path_watcher: RecommendedWatcher) -> Self {
+    fn new() -> Self {
         Self {
-            file_path_watcher: Arc::new(Mutex::new(file_path_watcher)),
             pid: Arc::new(AtomicI32::new(-1)),
-            prev_cwd: Arc::new(RwLock::new(None)),
         }
     }
 
-    fn start<F>(&self, update_directory: F)
+    fn start<F>(&self, mut watcher: RecommendedWatcher, update_directory: F)
     where
         F: Fn(PathBuf) + Send + 'static,
     {
         let pid = Arc::clone(&self.pid);
-        let prev_cwd = Arc::clone(&self.prev_cwd);
-        let file_watcher = Arc::clone(&self.file_path_watcher);
 
         tauri::async_runtime::spawn(async move {
+            let mut prev_cwd: Option<String> = None;
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
             loop {
                 interval.tick().await;
@@ -205,15 +200,10 @@ impl PtyCwdWatcher {
                     continue;
                 }
 
-                let prev = {
-                    let prev_cwd_guard = prev_cwd.read().unwrap();
-                    prev_cwd_guard.clone().unwrap_or_default()
-                };
+                let prev = prev_cwd.clone().unwrap_or_default();
 
                 match get_current_pty_cwd(current_pid).await {
                     Ok(cwd) => {
-                        let mut watcher = file_watcher.lock().unwrap();
-
                         // cwd has changed
                         if cwd != prev {
                             // unwatch the old path first
@@ -229,7 +219,7 @@ impl PtyCwdWatcher {
                             let proc_path = PathBuf::from(&cwd);
                             match watcher.watch(&proc_path, RecursiveMode::NonRecursive) {
                                 Ok(_) => {
-                                    *prev_cwd.write().unwrap() = Some(cwd);
+                                    prev_cwd = Some(cwd);
                                     update_directory(proc_path); // need to proactively update the directory once to refresh the current data.
                                 }
                                 Err(e) => error!("Fail to watch path: {}. Error: {}", cwd, e),
@@ -303,9 +293,9 @@ impl DirectoryFileWatcher {
             };
 
         // start pty cwd watcher
-        let pty_cwd_watcher = PtyCwdWatcher::new(file_path_watcher);
+        let pty_cwd_watcher = PtyCwdWatcher::new();
         let event_sender = self.process_event_sender.clone();
-        pty_cwd_watcher.start(move |path: PathBuf| {
+        pty_cwd_watcher.start(file_path_watcher, move |path: PathBuf| {
             Self::update_directory(&path, &event_sender);
         });
 
