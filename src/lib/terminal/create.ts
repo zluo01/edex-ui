@@ -91,10 +91,10 @@ function overrideKeyEvent(term: Terminal) {
 				return false;
 			}
 
-			for (const i in OVERRIDE_KEY_MAP) {
+			for (const entry of OVERRIDE_KEY_MAP) {
 				if (
-					OVERRIDE_KEY_MAP[i].key.toLowerCase() === e.key.toLowerCase() &&
-					OVERRIDE_KEY_MAP[i].ctrlKey === e.ctrlKey
+					entry.key.toLowerCase() === e.key.toLowerCase() &&
+					entry.ctrlKey === e.ctrlKey
 				) {
 					return false;
 				}
