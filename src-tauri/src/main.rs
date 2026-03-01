@@ -21,11 +21,10 @@ mod session;
 mod sys;
 
 #[tauri::command]
-async fn kernel_version() -> Result<String, ()> {
-    let kernel_version = System::kernel_version()
+async fn kernel_version() -> Result<String, String> {
+    System::kernel_version()
         .map(|v| v.chars().take_while(|&ch| ch != '-').collect::<String>())
-        .expect("Fail to get kernel version.");
-    Ok(kernel_version)
+        .ok_or_else(|| "Failed to get kernel version".to_string())
 }
 
 fn main() {
