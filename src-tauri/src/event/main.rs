@@ -73,7 +73,9 @@ impl EventProcessor {
     async fn forward_pty_message(&self, id: String, data: &[u8]) {
         if !data.is_empty() {
             let event_name = format!("data-{}", id);
-            self.app_handle.emit(&event_name, data).unwrap();
+            if let Err(e) = self.app_handle.emit(&event_name, data) {
+                error!("Fail to send {} data. Error: {}", event_name, e);
+            }
         }
     }
 
@@ -89,6 +91,8 @@ impl EventProcessor {
 
     async fn handle_close(&self, id: String, exit_code: Option<u32>) {
         trace!("Exit status {:?}. Id: {}", &exit_code, &id);
-        self.app_handle.emit(DESTROY_TERMINAL, id).unwrap();
+        if let Err(e) = self.app_handle.emit(DESTROY_TERMINAL, id) {
+            error!("Fail to send {} event. Error: {}", DESTROY_TERMINAL, e);
+        }
     }
 }
