@@ -43,7 +43,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@tanstack/solid-query-devtools": "5.91.3",
-    "@tauri-apps/cli": "2.10.0",
+    "@tauri-apps/cli": "2.10.1",
     "@types/color": "4.2.0",
     "@types/lodash": "4.17.24",
     "@types/lodash-es": "4.17.12",
