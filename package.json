@@ -19,7 +19,7 @@
     "@solid-primitives/date": "2.1.6",
     "@solid-primitives/keyboard": "1.3.5",
     "@tailwindcss/vite": "4.2.1",
-    "@tanstack/solid-query": "5.90.23",
+    "@tanstack/solid-query": "5.90.26",
     "@tauri-apps/api": "2.10.1",
     "@tauri-apps/plugin-log": "2.8.0",
     "@tauri-apps/plugin-opener": "2.5.3",
