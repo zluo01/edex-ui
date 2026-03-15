@@ -18,8 +18,8 @@ importers:
         specifier: 4.2.1
         version: 4.2.1(vite@7.3.1(@types/node@24.12.0)(jiti@2.6.1)(lightningcss@1.31.1)(yaml@2.8.2))
       '@tanstack/solid-query':
-        specifier: 5.90.23
-        version: 5.90.23(solid-js@1.9.11)
+        specifier: 5.90.26
+        version: 5.90.26(solid-js@1.9.11)
       '@tauri-apps/api':
         specifier: 2.10.1
         version: 2.10.1
@@ -83,7 +83,7 @@ importers:
         version: 2.4.7
       '@tanstack/solid-query-devtools':
         specifier: 5.91.3
-        version: 5.91.3(@tanstack/solid-query@5.90.23(solid-js@1.9.11))(solid-js@1.9.11)
+        version: 5.91.3(@tanstack/solid-query@5.90.26(solid-js@1.9.11))(solid-js@1.9.11)
       '@tauri-apps/cli':
         specifier: 2.10.1
         version: 2.10.1
@@ -700,8 +700,8 @@ packages:
       '@tanstack/solid-query': ^5.90.23
       solid-js: ^1.6.0
 
-  '@tanstack/solid-query@5.90.23':
-    resolution: {integrity: sha512-pbZc4+Kgm7ktzIuu01R3KOWfazQKgNp4AZvW0RSvv+sNMpYoileUDAkXEcjDJe6RJmb3fVvTR4LlcSL5pxDElQ==}
+  '@tanstack/solid-query@5.90.26':
+    resolution: {integrity: sha512-hcpJpZisOXeupB2arMAtz+RDLHi/s3Pen+rNCmoAPeAzwbhTPDMpVDF/1PAbwIGWAklvp9DTxWSI9rD3K3k04A==}
     peerDependencies:
       solid-js: ^1.6.0
 
@@ -1804,13 +1804,13 @@ snapshots:
 
   '@tanstack/query-devtools@5.93.0': {}
 
-  '@tanstack/solid-query-devtools@5.91.3(@tanstack/solid-query@5.90.23(solid-js@1.9.11))(solid-js@1.9.11)':
+  '@tanstack/solid-query-devtools@5.91.3(@tanstack/solid-query@5.90.26(solid-js@1.9.11))(solid-js@1.9.11)':
     dependencies:
       '@tanstack/query-devtools': 5.93.0
-      '@tanstack/solid-query': 5.90.23(solid-js@1.9.11)
+      '@tanstack/solid-query': 5.90.26(solid-js@1.9.11)
       solid-js: 1.9.11
 
-  '@tanstack/solid-query@5.90.23(solid-js@1.9.11)':
+  '@tanstack/solid-query@5.90.26(solid-js@1.9.11)':
     dependencies:
       '@tanstack/query-core': 5.90.20
       solid-js: 1.9.11
