@@ -52,7 +52,7 @@
     "lint-staged": "16.3.2",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vite": "7.3.1",
+    "vite": "8.0.0",
     "vite-plugin-solid": "2.11.11",
     "vite-tsconfig-paths": "6.1.1"
   },
