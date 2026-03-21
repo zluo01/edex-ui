@@ -1,10 +1,12 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [tailwindcss(), solidPlugin(), tsconfigPaths()],
+  plugins: [tailwindcss(), solidPlugin()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   clearScreen: false,
   build: {
     target: 'esnext',
