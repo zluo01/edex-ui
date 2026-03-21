@@ -1,1 +1,2 @@
-npx lint-staged
+pnpm biome check --staged --no-errors-on-unmatched
+pnpm type-check

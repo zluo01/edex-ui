@@ -3,17 +3,16 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "vite-dev": "vite",
-    "vite-build": "tsc && vite build",
-    "tauri": "tauri",
-    "dev": "WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
     "build": "tauri build",
     "build-debug": "tauri build --debug",
-    "format": "biome format --write .",
-    "lint": "biome lint .",
     "check": "biome check .",
+    "dev": "WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "lint": "biome check --write .",
+    "prepare": "husky",
+    "tauri": "tauri",
     "type-check": "tsc --pretty --noEmit",
-    "prepare": "husky"
+    "vite-build": "tsc && vite build",
+    "vite-dev": "vite"
   },
   "dependencies": {
     "@solid-primitives/date": "2.1.6",
@@ -49,14 +48,10 @@
     "@types/lodash-es": "4.17.12",
     "@types/node": "24.12.0",
     "husky": "9.1.7",
-    "lint-staged": "16.4.0",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vite": "8.0.1",
     "vite-plugin-solid": "2.11.11",
     "vite-tsconfig-paths": "6.1.1"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js}": "biome check --write"
   }
 }
