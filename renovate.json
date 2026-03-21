@@ -8,59 +8,40 @@
       "automerge": true
     },
     {
-      "matchDepTypes": ["formatter"],
-      "matchPackagePrefixes": ["lint-staged", "prettier", "@trivago/", "husky"],
-      "automerge": true
-    },
-    {
-      "groupName": "definitelyTyped",
-      "matchPackagePrefixes": ["@types/"]
-    },
-    {
-      "groupName": "eslint",
-      "matchPackagePrefixes": [
-        "eslint",
-        "@eslint",
-        "globals",
-        "@typescript-eslint/",
-        "typescript-eslint"
-      ],
-      "automerge": true
-    },
-    {
       "groupName": "tauri",
-      "matchPackagePrefixes": ["@tauri-apps/", "tauri"]
-    },
-    {
-      "groupName": "styling",
-      "matchPackagePrefixes": [
-        "tailwindcss",
-        "@tailwindcss",
-        "augmented",
-        "postcss"
-      ]
-    },
-    {
-      "groupName": "build-tools",
-      "matchPackagePrefixes": ["vite", "@vitejs/"]
+      "matchPackageNames": ["@tauri-apps/*", "tauri*"]
     },
     {
       "groupName": "framework",
-      "matchPackagePrefixes": ["solid", "@solid"]
-    },
-    {
-      "groupName": "utilities",
-      "matchPackagePrefixes": [
-        "lodash",
-        "color",
-        "clsx",
-        "pretty-bytes",
-        "smoothie"
-      ]
+      "matchPackageNames": ["solid*", "@solid-primitives/*", "@tanstack/solid-*"]
     },
     {
       "groupName": "terminal",
-      "matchPackagePrefixes": ["@xterm"]
+      "matchPackageNames": ["@xterm/*"]
+    },
+    {
+      "groupName": "styling",
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/*", "tailwind-merge", "augmented*"]
+    },
+    {
+      "groupName": "build-tools",
+      "matchPackageNames": ["vite*", "@vitejs/*", "typescript"]
+    },
+    {
+      "groupName": "code-quality",
+      "matchPackageNames": ["@biomejs/*", "husky"]
+    },
+    {
+      "groupName": "definitelyTyped",
+      "matchPackageNames": ["@types/*"]
+    },
+    {
+      "groupName": "utilities",
+      "matchPackageNames": ["lodash*", "color", "clsx", "pretty-bytes", "smoothie"]
+    },
+    {
+      "groupName": "rust-runtime",
+      "matchPackageNames": ["serde*", "tokio", "log", "sysinfo"]
     }
   ],
   "postUpdateOptions": ["pnpmDedupe"]
