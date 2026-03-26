@@ -22,7 +22,7 @@ pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
 #[cfg(target_os = "macos")]
 pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
     let response = tokio::process::Command::new("lsof")
-        .args(&["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
+        .args(["-a", "-p", &pid.to_string(), "-d", "cwd", "-Fn"])
         .output()
         .await
         .map_err(|e| format!("Fail to run command. Error: {}", e))?;
