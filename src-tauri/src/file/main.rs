@@ -105,19 +105,10 @@ fn convert_path_to_string(path: &Path, is_directory: bool) -> String {
     path_str
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DirectoryInfo {
     path: String,
     files: Vec<FileInfo>,
-}
-
-impl Default for DirectoryInfo {
-    fn default() -> Self {
-        Self {
-            path: String::new(),
-            files: Vec::new(),
-        }
-    }
 }
 
 impl DirectoryInfo {
@@ -278,10 +269,7 @@ impl DirectoryFileWatcher {
                     if event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove() {
                         if let Some(path) = event.paths.first() {
                             if let Some(parent) = path.parent() {
-                                Self::update_directory(
-                                    &parent.to_path_buf(),
-                                    &file_watcher_event_sender,
-                                );
+                                Self::update_directory(parent, &file_watcher_event_sender);
                             }
                         }
                     }

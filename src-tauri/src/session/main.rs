@@ -15,7 +15,7 @@ fn construct_cmd() -> CommandBuilder {
     #[cfg(target_os = "linux")]
     let mut cmd = CommandBuilder::new("bash");
 
-    cmd.args(&["-l"]);
+    cmd.args(["-l"]);
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("TERM_PROGRAM", "eDEX-UI");
@@ -88,7 +88,7 @@ impl PtySession {
         // otherwise, it will prevent mpsc receiver from receiving the event
         let reader_handle = tauri::async_runtime::spawn_blocking(move || loop {
             match reader.fill_buf() {
-                Ok(data) if data.len() > 0 => {
+                Ok(data) if !data.is_empty() => {
                     let data = data.to_vec();
                     reader.consume(data.len());
                     if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
