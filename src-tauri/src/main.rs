@@ -32,7 +32,6 @@ fn main() {
         LevelFilter::Error
     };
 
-    info!("Log Level: {:?}", log_level);
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -54,6 +53,8 @@ fn main() {
         }))
         .invoke_handler(tauri::generate_handler![kernel_version])
         .setup(move |app| {
+            info!("Log Level: {:?}", log_level);
+
             let (mut event_processor, process_event_sender) =
                 EventProcessor::new(app.handle().clone());
 
