@@ -108,7 +108,7 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 				<span class="sm:text-xxs md:text-sm lg:text-lg xl:text-3xl">
 					NETWORK TRAFFIC
 				</span>
-				<span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-2xl">
+				<span class="sm:text-xxxs opacity-50 md:text-xxs lg:text-xs xl:text-base">
 					{`UP ${prettyBytes(traffic()?.transmitted || 0)} / DOWN ${prettyBytes(
 						traffic()?.received || 0,
 					)}`}
