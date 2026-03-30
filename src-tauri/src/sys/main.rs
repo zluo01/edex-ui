@@ -4,7 +4,6 @@ use log::{error, warn};
 #[cfg(target_os = "linux")]
 use nvml_wrapper::Nvml;
 use serde::Serialize;
-use serde_json::{json, Value};
 #[cfg(target_os = "linux")]
 use std::sync::OnceLock;
 use std::{
@@ -90,6 +89,16 @@ pub struct ProcessInfo {
     state: String,
     start_time: String,
     run_time: u64,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct NetworkData {
+    received: f64,
+    transmitted: f64,
+    #[serde(rename = "totalReceive")]
+    total_receive: u64,
+    #[serde(rename = "totalTransmitted")]
+    total_transmitted: u64,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
@@ -390,25 +399,25 @@ fn epoch_to_date(epoch: u64) -> String {
     datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn extract_network(networks: &Networks) -> Value {
-    let mut network_receive: f64 = 0f64;
-    let mut network_transmitted: f64 = 0f64;
-    let mut network_total_receive: u64 = 0;
-    let mut network_total_transmitted: u64 = 0;
+fn extract_network(networks: &Networks) -> NetworkData {
+    let mut received: f64 = 0f64;
+    let mut transmitted: f64 = 0f64;
+    let mut total_receive: u64 = 0;
+    let mut total_transmitted: u64 = 0;
     for (_interface_name, data) in networks {
-        network_receive += data.received() as f64;
-        network_transmitted += data.transmitted() as f64;
+        received += data.received() as f64;
+        transmitted += data.transmitted() as f64;
 
-        network_total_receive += data.total_received();
-        network_total_transmitted += data.total_transmitted();
+        total_receive += data.total_received();
+        total_transmitted += data.total_transmitted();
     }
 
-    json!({
-        "received": network_receive,
-        "transmitted": network_transmitted,
-        "totalReceive": network_total_receive,
-        "totalTransmitted": network_total_transmitted,
-    })
+    NetworkData {
+        received,
+        transmitted,
+        total_receive,
+        total_transmitted,
+    }
 }
 
 fn extract_disk_usage(disks: &Disks) -> Vec<DiskUsage> {

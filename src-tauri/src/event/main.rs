@@ -1,7 +1,6 @@
 use crate::file::main::DirectoryInfo;
-use crate::sys::main::{DiskUsage, ProcessInfo, SystemData};
+use crate::sys::main::{DiskUsage, NetworkData, ProcessInfo, SystemData};
 use log::{error, trace};
-use serde_json::Value;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 
@@ -12,7 +11,7 @@ const UPDATE_FILES: &str = "files";
 #[derive(Debug, Clone)]
 pub enum ProcessEvent {
     System { system_data: SystemData },
-    Network { network_data: Value },
+    Network { network_data: NetworkData },
     Disks { disks_data: Vec<DiskUsage> },
     Process { process_data: Vec<ProcessInfo> },
     Directory { directory_info: DirectoryInfo },
