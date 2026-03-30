@@ -28,7 +28,8 @@ function FileSection(props: FileSectionProps) {
 
 	async function fileAction(file: FileInfo) {
 		if (file.t === DIRECTORY) {
-			await writeToSession(active(), `cd '${file.path}'\n`);
+			const escaped = file.path.replace(/'/g, "'\\''");
+			await writeToSession(active(), `cd '${escaped}'\n`);
 		} else if (file.t === FILE) {
 			await openFile(file.path);
 		}
