@@ -1,31 +1,26 @@
 import type { Resource } from 'solid-js';
 import ShowHiddenFileSetting from '@/components/setting/hidden';
 import ChangeThemeSelection from '@/components/setting/theme';
+import { closeModal } from '@/lib/utils';
 
 interface SettingProps {
-	open: () => boolean;
 	showHidden: Resource<boolean>;
 	changeHidden: () => void;
-	close: VoidFunction;
 }
 
 export default function Setting(props: SettingProps) {
 	return (
 		<dialog
-			class="relative z-10"
+			id="setting-modal"
+			class="relative z-10 backdrop:bg-black/25"
 			aria-labelledby="modal-title"
-			aria-modal="true"
-			open={props.open()}
+			onCancel={() => closeModal('setting-modal')}
 			onMouseDown={e => {
-				if (e.target.id === 'background') {
-					props.close();
+				if (e.target === e.currentTarget) {
+					closeModal('setting-modal');
 				}
 			}}
 		>
-			<div
-				id="background"
-				class="fixed inset-0 bg-black/25 transition-opacity"
-			/>
 			<div class="fixed inset-0 z-20 m-auto h-fit max-h-[62vh] min-h-[62vh] w-[38vw] overflow-y-auto">
 				<div
 					class="panel augment-border animate-fade font-united_sans_light relative flex size-full items-center justify-center overflow-hidden text-center shadow-xl transition-all duration-300 ease-in"

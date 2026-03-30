@@ -1,27 +1,19 @@
 import ActiveProcessTable from '@/components/dashboard/table';
+import { closeModal } from '@/lib/utils';
 
-interface ActiveProcessProps {
-	open: () => boolean;
-	close: VoidFunction;
-}
-
-function ActiveProcess(props: ActiveProcessProps) {
+function ActiveProcess() {
 	return (
 		<dialog
-			class="relative z-10"
+			id="active-process-modal"
+			class="relative z-10 backdrop:bg-black/25"
 			aria-labelledby="modal-title"
-			aria-modal="true"
-			open={props.open()}
+			onCancel={() => closeModal('active-process-modal')}
 			onMouseDown={e => {
-				if (e.target.id === 'background') {
-					props.close();
+				if (e.target === e.currentTarget) {
+					closeModal('active-process-modal');
 				}
 			}}
 		>
-			<div
-				id="background"
-				class="fixed inset-0 bg-black/25 transition-opacity"
-			/>
 			<div class="fixed inset-0 z-20 m-auto h-fit max-h-[62vh] min-h-[62vh] w-[38vw] overflow-y-auto">
 				<div
 					class="panel augment-border animate-fade font-united_sans_light text-main relative flex size-full items-center justify-center overflow-hidden text-center shadow-xl transition-all duration-300 ease-in"

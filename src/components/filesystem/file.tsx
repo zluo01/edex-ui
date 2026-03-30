@@ -2,6 +2,7 @@ import { createMemo, For, type Resource } from 'solid-js';
 import FileTile from '@/components/filesystem/tile';
 import { openFile, writeToSession } from '@/lib/os';
 import { useActiveTerminal } from '@/lib/terminal';
+import { openModal } from '@/lib/utils';
 import {
 	BACKWARD,
 	DIRECTORY,
@@ -12,7 +13,6 @@ import {
 } from '@/models';
 
 interface FileSectionProps {
-	open: VoidFunction;
 	showHidden: Resource<boolean>;
 	fileSystem: () => FileSystemStatus | undefined;
 }
@@ -41,7 +41,7 @@ function FileSection(props: FileSectionProps) {
 				name={'Setting'}
 				t={SETTING}
 				hidden={false}
-				onClick={props.open}
+				onClick={() => openModal('setting-modal')}
 			/>
 			<FileTile
 				name={'Go back'}

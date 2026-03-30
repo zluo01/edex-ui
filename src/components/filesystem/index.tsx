@@ -16,7 +16,6 @@ const FileSection = lazy(async () => {
 const Setting = lazy(() => import('@/components/setting'));
 
 function FileSystem() {
-	const [open, setOpen] = createSignal(false);
 	const [showHidden, { mutate }] = createResource(getShowHiddenFileStatus);
 
 	async function change() {
@@ -43,19 +42,10 @@ function FileSystem() {
 					name={fileSystem()?.path || ''}
 				/>
 				<div class="no-scrollbar animate-fade relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,minmax(8.5vh,1fr))] gap-[1vh] overflow-auto">
-					<FileSection
-						open={() => setOpen(true)}
-						showHidden={showHidden}
-						fileSystem={fileSystem}
-					/>
+					<FileSection showHidden={showHidden} fileSystem={fileSystem} />
 				</div>
 			</div>
-			<Setting
-				open={open}
-				close={() => setOpen(false)}
-				showHidden={showHidden}
-				changeHidden={change}
-			/>
+			<Setting showHidden={showHidden} changeHidden={change} />
 		</>
 	);
 }
