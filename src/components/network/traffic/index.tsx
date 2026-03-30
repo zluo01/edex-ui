@@ -77,6 +77,20 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 	});
 
 	createEffect(
+		on(theme, () => {
+			const color = style().colors.main;
+			for (const chart of charts) {
+				if (chart.options.grid) chart.options.grid.strokeStyle = color;
+				if (chart.options.labels) chart.options.labels.fillStyle = color;
+				for (const s of series) {
+					const opts = chart.getTimeSeriesOptions(s);
+					if (opts) opts.strokeStyle = color;
+				}
+			}
+		}),
+	);
+
+	createEffect(
 		on(traffic, traffic => {
 			if (!traffic || !props.connected()) {
 				return;

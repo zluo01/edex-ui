@@ -54,6 +54,18 @@ function Load() {
 	});
 
 	createEffect(
+		on(theme, () => {
+			const color = style().colors.main;
+			for (const chart of charts) {
+				for (const ts of [...cpuSeries, gpuSeries]) {
+					const opts = chart.getTimeSeriesOptions(ts);
+					if (opts) opts.strokeStyle = color;
+				}
+			}
+		}),
+	);
+
+	createEffect(
 		on(data, data => {
 			if (!data) {
 				return;
