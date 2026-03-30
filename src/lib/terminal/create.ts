@@ -80,7 +80,9 @@ function overrideKeyEvent(term: Terminal) {
 				e.preventDefault();
 				const selection = term.getSelection();
 				if (selection) {
-					navigator.clipboard.writeText(selection);
+					navigator.clipboard
+						.writeText(selection)
+						.catch(/* clipboard may be unavailable */);
 				}
 				return false;
 			}
