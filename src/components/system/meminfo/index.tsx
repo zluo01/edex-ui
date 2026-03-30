@@ -1,31 +1,18 @@
-import { type Event, listen } from '@tauri-apps/api/event';
 import prettyBytes from 'pretty-bytes';
-import { createSignal, For, onCleanup } from 'solid-js';
-import { errorLog } from '@/lib/log';
+import { For } from 'solid-js';
+import { useSystemData } from '@/lib/system';
 import { cn } from '@/lib/utils';
-import type { GPUData, MemoryInformation, SystemData } from '@/models';
-
-interface MemLoad {
-	cpuMemory: MemoryInformation;
-	gpu: GPUData;
-}
 
 const MEMORY_GRID_SIZE = 440;
 const MEMORY_INDICES = Array.from({ length: MEMORY_GRID_SIZE }, (_, i) => i);
 
 function MemInfo() {
-	const [memory, setMemory] = createSignal<MemLoad>();
+	const systemData = useSystemData();
 
-	const unListen = listen('system', (e: Event<SystemData>) =>
-		setMemory({
-			cpuMemory: e.payload.memory,
-			gpu: e.payload.gpu,
-		}),
-	);
-
-	onCleanup(() => {
-		unListen.then(f => f()).catch(errorLog);
-	});
+	const memory = () => {
+		const d = systemData();
+		return d ? { cpuMemory: d.memory, gpu: d.gpu } : undefined;
+	};
 
 	const getCellOpacityClass = (index: number) => {
 		const mem = memory();

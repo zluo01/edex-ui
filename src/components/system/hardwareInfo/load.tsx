@@ -1,32 +1,22 @@
-import { type Event, listen } from '@tauri-apps/api/event';
 import { SmoothieChart, TimeSeries } from 'smoothie';
-import { createEffect, createSignal, on, onCleanup, onMount } from 'solid-js';
-import { errorLog } from '@/lib/log';
+import { createEffect, on, onCleanup, onMount } from 'solid-js';
+import { useSystemData } from '@/lib/system';
 import { selectStyle, useTheme } from '@/lib/themes';
-import type { CPUData, GPUData, SystemData } from '@/models';
-
-interface LoadData {
-	cpu: CPUData;
-	gpu: GPUData;
-}
 
 function Load() {
 	const { theme } = useTheme();
 	const style = () => selectStyle(theme());
+	const systemData = useSystemData();
 
 	const canvas: HTMLCanvasElement[] = [
 		document.createElement('canvas'),
 		document.createElement('canvas'),
 	];
 
-	const [data, setData] = createSignal<LoadData>();
-
-	const unListen = listen('system', (e: Event<SystemData>) =>
-		setData({
-			cpu: e.payload.cpu,
-			gpu: e.payload.gpu,
-		}),
-	);
+	const data = () => {
+		const d = systemData();
+		return d ? { cpu: d.cpu, gpu: d.gpu } : undefined;
+	};
 
 	const charts: SmoothieChart[] = Array.from(
 		{ length: 2 },
@@ -60,7 +50,6 @@ function Load() {
 	});
 
 	onCleanup(() => {
-		unListen.then(f => f()).catch(errorLog);
 		charts.forEach(o => o.stop());
 	});
 

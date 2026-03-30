@@ -1,20 +1,12 @@
-import { type Event, listen } from '@tauri-apps/api/event';
-import { createSignal, type JSX, onCleanup, Show } from 'solid-js';
+import { type JSX, Show } from 'solid-js';
 import BaseInformation from '@/components/system/sysinfo/base';
-import { errorLog } from '@/lib/log';
+import { useSystemData } from '@/lib/system';
 import { formatTime } from '@/lib/utils';
-import type { SystemData } from '@/models';
 
 function UpTimeSection() {
-	const [uptime, setUptime] = createSignal(0);
+	const systemData = useSystemData();
 
-	const unListen = listen('system', (e: Event<SystemData>) =>
-		setUptime(e.payload.uptime),
-	);
-
-	onCleanup(() => {
-		unListen.then(f => f()).catch(errorLog);
-	});
+	const uptime = () => systemData()?.uptime ?? 0;
 
 	function UpTime(): JSX.Element {
 		let raw = uptime();

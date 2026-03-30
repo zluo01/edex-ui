@@ -1,18 +1,10 @@
-import { type Event, listen } from '@tauri-apps/api/event';
-import { createSignal, For, onCleanup } from 'solid-js';
-import { errorLog } from '@/lib/log';
-import type { ProcessInformation, SystemData } from '@/models';
+import { For } from 'solid-js';
+import { useSystemData } from '@/lib/system';
 
 function ProcessTable() {
-	const [processes, setProcesses] = createSignal<ProcessInformation[]>();
+	const systemData = useSystemData();
 
-	const unListen = listen('system', (e: Event<SystemData>) =>
-		setProcesses(e.payload.processes),
-	);
-
-	onCleanup(() => {
-		unListen.then(f => f()).catch(errorLog);
-	});
+	const processes = () => systemData()?.processes;
 
 	return (
 		<table class="w-full table-auto hover:cursor-pointer hover:opacity-75">
