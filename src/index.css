@@ -32,14 +32,14 @@
 	--font-united_sans_light: united-sans-light;
 	--font-united_sans_medium: united-sans-medium;
 
-	--animate-fade: fadeOut 0.25s ease-in-out;
+	--animate-fade: fadeIn 0.25s ease-in-out;
 
-	@keyframes fadeOut {
+	@keyframes fadeIn {
 		0% {
 			opacity: 0;
 		}
 		100% {
-			opacity: 100;
+			opacity: 1;
 		}
 	}
 }
