@@ -1,11 +1,11 @@
 import ActiveProcessTable from '@/components/dashboard/table';
 
-interface SettingProps {
+interface ActiveProcessProps {
 	open: () => boolean;
 	close: VoidFunction;
 }
 
-function ActiveProcess(props: SettingProps) {
+function ActiveProcess(props: ActiveProcessProps) {
 	return (
 		<dialog
 			class="relative z-10"
