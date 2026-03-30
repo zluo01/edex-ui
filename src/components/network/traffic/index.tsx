@@ -84,7 +84,7 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 
 			const timestamp = Date.now();
 			series[0].append(timestamp, traffic.transmitted / 1024);
-			series[1].append(timestamp, -traffic.receive / 1024);
+			series[1].append(timestamp, -traffic.received / 1024);
 		}),
 	);
 
@@ -96,7 +96,7 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 				</span>
 				<span class="sm:text-xxxs opacity-50 md:text-xs lg:text-base xl:text-2xl">
 					{`UP ${prettyBytes(traffic()?.transmitted || 0)} / DOWN ${prettyBytes(
-						traffic()?.receive || 0,
+						traffic()?.received || 0,
 					)}`}
 				</span>
 			</div>

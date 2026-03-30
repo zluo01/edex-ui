@@ -65,7 +65,7 @@ export const ONLINE = 'ONLINE';
 export type NETWORK_STATUS = typeof OFFLINE | typeof ONLINE;
 
 export interface NetworkTrafficStatus {
-	receive: number;
+	received: number;
 	transmitted: number;
 	totalReceive: number;
 	totalTransmitted: number;
