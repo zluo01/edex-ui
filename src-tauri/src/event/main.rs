@@ -8,7 +8,7 @@ const DESTROY_TERMINAL: &str = "destroy";
 const UPDATE_FILES: &str = "files";
 
 //TODO: Redesign event later.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ProcessEvent {
     System { system_data: SystemData },
     Network { network_data: NetworkData },
