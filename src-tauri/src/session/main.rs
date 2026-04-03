@@ -72,6 +72,9 @@ impl PtySession {
 
         let master = pty_pair.master;
 
+        // Intentional panic: if the PTY master cannot provide a process group
+        // leader PID after a successful spawn, the session is fundamentally
+        // broken and no recovery is possible.
         let pid = master.process_group_leader().expect("Fail to get pid.");
 
         // Get reader and writer from master
