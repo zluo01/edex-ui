@@ -143,37 +143,49 @@ function Session({ id, active }: SessionProps) {
 
 	// refocus on tab change
 	createEffect(
-		on(active, async active => {
-			try {
-				if (active === id) {
-					await resizeTerminal(id);
-					terminal?.term.focus();
-					await updateCurrentSession(id);
-				} else {
-					terminal?.term.blur();
+		on(
+			active,
+			async active => {
+				try {
+					if (active === id) {
+						await resizeTerminal(id);
+						terminal?.term.focus();
+						await updateCurrentSession(id);
+					} else {
+						terminal?.term.blur();
+					}
+				} catch (e) {
+					await errorLog(e);
 				}
-			} catch (e) {
-				await errorLog(e);
-			}
-		}),
+			},
+			{ defer: true },
+		),
 	);
 
 	// sync terminal theme
 	createEffect(
-		on(theme, async theme => {
-			if (terminal?.term) {
-				terminal.term.options = { ...generateTerminalTheme(theme) };
-			}
-		}),
+		on(
+			theme,
+			async theme => {
+				if (terminal?.term) {
+					terminal.term.options = { ...generateTerminalTheme(theme) };
+				}
+			},
+			{ defer: true },
+		),
 	);
 
 	// sync terminal font size
 	createEffect(
-		on(fontSize, async fontSize => {
-			if (terminal?.term) {
-				terminal.term.options.fontSize = fontSize;
-			}
-		}),
+		on(
+			fontSize,
+			async fontSize => {
+				if (terminal?.term) {
+					terminal.term.options.fontSize = fontSize;
+				}
+			},
+			{ defer: true },
+		),
 	);
 
 	const unListen = listen(`data-${id}`, (e: Event<string>) =>
