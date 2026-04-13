@@ -1,7 +1,7 @@
 use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use dashmap::DashMap;
-use log::error;
+use log::{error, warn};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
@@ -14,13 +14,41 @@ fn construct_cmd() -> CommandBuilder {
     let mut cmd = CommandBuilder::new("zsh");
     #[cfg(target_os = "linux")]
     let mut cmd = CommandBuilder::new("bash");
+    #[cfg(target_os = "windows")]
+    let mut cmd = CommandBuilder::new("powershell.exe");
 
+    #[cfg(target_os = "windows")]
+    {
+        cmd.args(["-NoLogo", "-NoExit", "-NoProfile"]);
+        if let Ok(home) = std::env::var("USERPROFILE") {
+            let _ = cmd.cwd(std::path::Path::new(&home));
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
     cmd.args(["-l"]);
+
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("TERM_PROGRAM", "eDEX-UI");
     cmd.env("TERM_PROGRAM_VERSION", "1.0.0");
 
+    #[cfg(target_os = "windows")]
+    for var in [
+        "USERPROFILE",
+        "USERNAME",
+        "USERDOMAIN",
+        "PATH",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+    ] {
+        if let Ok(val) = std::env::var(var) {
+            cmd.env(var, val);
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
     for var in ["HOME", "USER", "SHELL", "PATH", "LANG"] {
         if let Ok(val) = std::env::var(var) {
             cmd.env(var, val);
@@ -72,10 +100,7 @@ impl PtySession {
 
         let master = pty_pair.master;
 
-        // Intentional panic: if the PTY master cannot provide a process group
-        // leader PID after a successful spawn, the session is fundamentally
-        // broken and no recovery is possible.
-        let pid = master.process_group_leader().expect("Fail to get pid.");
+        let pid = child.process_id().unwrap_or(0) as i32;
 
         // Get reader and writer from master
         let pty_reader = master.try_clone_reader()?;
@@ -268,7 +293,7 @@ impl PtySessionManager {
         match pty_session_result {
             Ok(pty_session) => {
                 if active_sessions.contains_key(id) {
-                    error!("Session {} already exists, overwriting", id);
+                    warn!("Session {} already exists, overwriting", id);
                 }
                 let pid = pty_session.pid();
                 active_sessions.insert(id.to_owned(), pty_session);
@@ -280,7 +305,7 @@ impl PtySessionManager {
                 }
             }
             Err(e) => {
-                error!("Failed to initialize new session: {:?}", e);
+                error!("Failed to initialize new session {}: {:?}", id, e);
             }
         }
     }

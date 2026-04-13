@@ -60,6 +60,9 @@ impl Default for GpuUsage {
         #[cfg(target_os = "macos")]
         let name = String::new();
 
+        #[cfg(target_os = "windows")]
+        let name = String::new();
+
         Self {
             name,
             load: 0.0,
@@ -198,6 +201,11 @@ fn extract_cpu_temperature(components: &Components) -> f32 {
         .unwrap_or(0.0)
 }
 
+#[cfg(target_os = "windows")]
+fn extract_cpu_temperature(_components: &Components) -> f32 {
+    0.0
+}
+
 #[cfg(target_os = "linux")]
 static NVML: OnceLock<Option<Nvml>> = OnceLock::new();
 
@@ -306,6 +314,43 @@ fn extract_gpu_data(sys: &System, _components: &Components) -> GpuUsage {
         total_memory,
         memory_usage,
         temperature: 0.0, // should be same as CPU when monitor through IOHID
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn extract_gpu_data(_sys: &System, _components: &Components) -> GpuUsage {
+    use hardware_query::HardwareInfo;
+
+    match HardwareInfo::query() {
+        Ok(hw_info) => {
+            let gpus = hw_info.gpus();
+            if let Some(gpu) = gpus.first() {
+                let _vendor = gpu.vendor();
+                let memory_gb = gpu.memory_gb();
+                let memory_mb = gpu.memory_mb;
+
+                return GpuUsage {
+                    name: gpu.model_name.clone(),
+                    load: 0.0,
+                    used_memory: 0.0,
+                    total_memory: if memory_gb > 0.0 {
+                        memory_gb as f32 * 1024.0
+                    } else {
+                        memory_mb as f32
+                    },
+                    memory_usage: 0.0,
+                    temperature: 0.0,
+                };
+            }
+            GpuUsage::default()
+        }
+        Err(e) => {
+            warn!(
+                "Failed to query hardware info: {}. GPU data will not be available.",
+                e
+            );
+            GpuUsage::default()
+        }
     }
 }
 

@@ -41,6 +41,41 @@ pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
     }
 }
 
+#[cfg(target_os = "windows")]
+pub async fn get_current_pty_cwd(pid: i32) -> Result<String, String> {
+    let output = tokio::process::Command::new("powershell.exe")
+        .args([
+            "-NoProfile",
+            "-Command",
+            &format!(
+                "(Get-Process -Id {} -ErrorAction SilentlyContinue).Path",
+                pid
+            ),
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run PowerShell command: {}", e))?;
+
+    if output.status.success() {
+        let path = str::from_utf8(&output.stdout)
+            .map_err(|e| format!("Invalid UTF-8: {}", e))?
+            .trim()
+            .to_string();
+
+        if !path.is_empty() {
+            if let Some(parent) = std::path::Path::new(&path).parent() {
+                return Ok(parent.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    let cwd = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOMEPATH"))
+        .unwrap_or_else(|_| "C:\\".to_string());
+
+    Ok(cwd)
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum FileType {
     Directory,
