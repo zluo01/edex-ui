@@ -21,7 +21,7 @@ fn construct_cmd() -> CommandBuilder {
     {
         cmd.args(["-NoLogo", "-NoExit", "-NoProfile"]);
         if let Ok(home) = std::env::var("USERPROFILE") {
-            let _ = cmd.cwd(std::path::Path::new(&home));
+            cmd.cwd(std::path::Path::new(&home));
         }
     }
 
