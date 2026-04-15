@@ -8,10 +8,8 @@ function Load() {
 	const style = () => selectStyle(theme());
 	const systemData = useSystemData();
 
-	const canvas: HTMLCanvasElement[] = [
-		document.createElement('canvas'),
-		document.createElement('canvas'),
-	];
+	let cpuCanvas!: HTMLCanvasElement;
+	let gpuCanvas!: HTMLCanvasElement;
 
 	const data = () => {
 		const d = systemData();
@@ -46,7 +44,8 @@ function Load() {
 	};
 
 	onMount(() => {
-		charts.forEach((v, i) => v.streamTo(canvas[i], 1000));
+		charts[0].streamTo(cpuCanvas, 1000);
+		charts[1].streamTo(gpuCanvas, 1000);
 	});
 
 	onCleanup(() => {
@@ -110,7 +109,7 @@ function Load() {
 					</span>
 				</div>
 				<canvas
-					ref={el => (canvas[0] = el)}
+					ref={cpuCanvas}
 					height="60"
 					class="border-default/30 my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed"
 				/>
@@ -125,7 +124,7 @@ function Load() {
 					</span>
 				</div>
 				<canvas
-					ref={el => (canvas[1] = el)}
+					ref={gpuCanvas}
 					height="60"
 					class="border-default/30 my-[0.46vh] h-[4.167vh] w-[70%] border-y-[0.092vh] border-dashed"
 				/>
