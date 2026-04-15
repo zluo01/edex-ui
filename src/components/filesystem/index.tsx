@@ -8,10 +8,7 @@ import {
 } from '@/lib/setting';
 import type { FileSystemStatus } from '@/models';
 
-const FileSection = lazy(async () => {
-	await new Promise(resolve => setTimeout(resolve, 200));
-	return import('@/components/filesystem/file');
-});
+const FileSection = lazy(() => import('@/components/filesystem/file'));
 
 const Setting = lazy(() => import('@/components/setting'));
 
@@ -41,7 +38,7 @@ function FileSystem() {
 					title={/*@once*/ 'FILESYSTEM'}
 					name={fileSystem()?.path || ''}
 				/>
-				<div class="no-scrollbar animate-fade relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,minmax(8.5vh,1fr))] gap-[1vh] overflow-auto">
+				<div class="no-scrollbar animate-fade-delay-200 relative box-border grid h-full max-h-[34vh] min-h-[25.5vh] appearance-none auto-rows-[8.5vh] grid-cols-[repeat(auto-fill,minmax(8.5vh,1fr))] gap-[1vh] overflow-auto">
 					<FileSection showHidden={showHidden} fileSystem={fileSystem} />
 				</div>
 			</div>
