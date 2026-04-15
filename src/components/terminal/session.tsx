@@ -1,5 +1,4 @@
 import { type Event, listen } from '@tauri-apps/api/event';
-import type { ITerminalDimensions } from '@xterm/addon-fit';
 import type { Terminal } from '@xterm/xterm';
 import { errorLog, traceLog } from '@/lib/log';
 import {
@@ -29,11 +28,12 @@ function gcd(a: number, b: number): number {
 
 async function resize(id: string, term: Terminal, addons: Addons) {
 	const fitAddon = addons.fit;
-	if (!fitAddon.proposeDimensions()) {
+	const dimensions = fitAddon.proposeDimensions();
+	if (!dimensions) {
 		await errorLog('Fail to get propose dimensions');
 		return;
 	}
-	let { cols, rows } = fitAddon.proposeDimensions() as ITerminalDimensions;
+	let { cols, rows } = dimensions;
 
 	// Apply custom fixes based on screen ratio, see #302
 	const w = screen.width;
