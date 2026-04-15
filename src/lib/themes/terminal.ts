@@ -1,9 +1,32 @@
 import type { ITerminalOptions } from '@xterm/xterm';
-import Color from 'color';
 import { selectStyle, type Theme } from '@/lib/themes/styles';
 
+function parseHex(hex: string): [number, number, number] {
+	const h = hex.replace('#', '');
+	return [
+		Number.parseInt(h.slice(0, 2), 16),
+		Number.parseInt(h.slice(2, 4), 16),
+		Number.parseInt(h.slice(4, 6), 16),
+	];
+}
+
+function toHex(r: number, g: number, b: number): string {
+	const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+	return `#${[clamp(r), clamp(g), clamp(b)]
+		.map(v => v.toString(16).padStart(2, '0'))
+		.join('')
+		.toUpperCase()}`;
+}
+
 function colorify(color: string, theme: string) {
-	return Color(color).grayscale().mix(Color(theme), 0.3).hex();
+	const [r, g, b] = parseHex(color);
+	// Grayscale using ITU-R BT.601 weights
+	const gray = r * 0.3 + g * 0.59 + b * 0.11;
+	// Mix with theme color at weight 0.3 (same as Sass mix)
+	const [tr, tg, tb] = parseHex(theme);
+	const w1 = 0.3;
+	const w2 = 0.7;
+	return toHex(w1 * tr + w2 * gray, w1 * tg + w2 * gray, w1 * tb + w2 * gray);
 }
 
 export default function generateTerminalTheme(theme: Theme): ITerminalOptions {
