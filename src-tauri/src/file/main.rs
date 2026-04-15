@@ -194,7 +194,7 @@ impl PtyCwdWatcher {
                     continue;
                 }
 
-                let prev = prev_cwd.clone().unwrap_or_default();
+                let prev = prev_cwd.as_deref().unwrap_or_default();
 
                 match get_current_pty_cwd(current_pid).await {
                     Ok(cwd) => {
@@ -202,7 +202,7 @@ impl PtyCwdWatcher {
                         if cwd != prev {
                             // unwatch the old path first
                             if !prev.is_empty() {
-                                match watcher.unwatch(&PathBuf::from(&prev)) {
+                                match watcher.unwatch(&PathBuf::from(prev)) {
                                     Ok(_) => {}
                                     Err(e) => {
                                         error!("Fail to unwatch path: {}. Error: {}", prev, e)
