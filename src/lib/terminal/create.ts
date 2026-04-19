@@ -1,10 +1,11 @@
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { type ITerminalInitOnlyOptions, Terminal } from '@xterm/xterm';
-import { warnLog } from '@/lib/log';
+import { errorLog, warnLog } from '@/lib/log';
 import type { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
 import type { TerminalProps } from '@/models';
@@ -61,7 +62,16 @@ function getAddons() {
 		fit: new FitAddon(),
 		unicode11: new Unicode11Addon(),
 		clipboard: new ClipboardAddon(),
-		webLink: new WebLinksAddon(),
+		webLink: new WebLinksAddon((event, uri) => {
+			if (!event.ctrlKey && !event.metaKey) {
+				return;
+			}
+			// WebLinksAddon's regex only matches http(s) URLs, but guard
+			// defensively to match the allowlist in the opener capability.
+			if (/^https?:\/\//i.test(uri)) {
+				openUrl(uri).catch(errorLog);
+			}
+		}),
 	};
 }
 
