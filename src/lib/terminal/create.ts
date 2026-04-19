@@ -41,6 +41,7 @@ export async function createTerminal(
 
 	try {
 		const webglAddon = new WebglAddon();
+		webglAddon.onContextLoss(() => webglAddon.dispose());
 		term.loadAddon(webglAddon);
 	} catch (e) {
 		await warnLog(`WebGL not supported, falling back to canvas. Error: ${e}`);
