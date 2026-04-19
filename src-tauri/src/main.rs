@@ -77,9 +77,38 @@ fn main() {
             );
             pty_manager.start(app.handle().clone());
 
-            // refresh and emit system information
-            let mut monitor = SystemMonitor::new(1, process_event_sender.clone());
-            tauri::async_runtime::spawn(async move { monitor.run().await });
+            // Refresh and emit system information on a dedicated OS thread.
+            //
+            // Why a plain `std::thread` and not `tauri::async_runtime::spawn`
+            // or `spawn_blocking`? One tick of sysinfo refresh + extraction
+            // inside `SystemMonitor::run` averages ~84 ms, which is two
+            // orders of magnitude above Tokio's 10–100 µs guideline for work
+            // that runs on async worker threads, and the loop runs for the
+            // full lifetime of the app. Tokio's own docs call this case out
+            // explicitly:
+            //
+            //     For tasks that run forever ... use `std::thread::spawn`
+            //     directly.
+            //     — https://docs.rs/tokio/latest/tokio/task/index.html
+            //
+            // `spawn_blocking` would permanently park one slot in Tokio's
+            // bounded blocking-thread pool (default 512) for no benefit. A
+            // plain named OS thread is cheaper, shows up clearly in
+            // `top -H` / profilers, and decouples the monitor from the
+            // async runtime entirely.
+            //
+            // The thread is fire-and-forget. It bails on its own when the
+            // event channel receiver is dropped during shutdown (see
+            // `SystemMonitor::run`), and the OS reaps it on process exit
+            // regardless. No `JoinHandle` or shutdown signal is needed
+            // because the monitor holds no external resources that require
+            // explicit cleanup.
+            let monitor = SystemMonitor::new(1, process_event_sender.clone());
+            std::thread::Builder::new()
+                .name("edex-sysmon".into())
+                .spawn(move || monitor.run())
+                .expect("failed to spawn system monitor thread");
+
             Ok(())
         })
         .run(tauri::generate_context!())

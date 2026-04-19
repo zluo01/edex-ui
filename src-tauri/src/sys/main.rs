@@ -6,6 +6,7 @@ use nvml_wrapper::Nvml;
 use serde::Serialize;
 #[cfg(target_os = "linux")]
 use std::sync::OnceLock;
+use std::thread;
 use std::{
     str,
     time::{Duration, UNIX_EPOCH},
@@ -483,23 +484,22 @@ impl SystemMonitor {
         }
     }
 
-    pub async fn run(&mut self) {
-        let mut interval = tokio::time::interval(self.refresh_interval);
-
+    /// Synchronous monitor loop. Drive it from a dedicated OS thread
+    ///
+    /// No explicit shutdown is needed. The monitor holds no external
+    /// resources (no fds, no child processes, no files), so when the process
+    /// exits the OS reaps the thread and its memory. The only cooperative
+    /// bailout is the `event_tx.is_closed()` check below: once the async
+    /// event processor has been dropped during shutdown we stop looping so
+    /// we don't spin logging send errors.
+    pub fn run(mut self) {
         loop {
-            interval.tick().await;
-
-            // refresh_specifics avg ~84ms — acceptable to run on the async thread directly rather than
-            // spawn_blocking, because this monitor loop runs in its own dedicated tauri::async_runtime::spawn
-            // task and never shares the thread with latency-sensitive work.
             self.system.refresh_specifics(
                 RefreshKind::nothing()
                     .with_memory(MemoryRefreshKind::everything())
                     .with_cpu(CpuRefreshKind::everything())
                     .with_processes(ProcessRefreshKind::nothing().with_cpu().with_memory()),
             );
-
-            // Refresh separate modules
             self.networks.refresh(true);
             self.disks
                 .refresh_specifics(true, DiskRefreshKind::everything().without_io_usage()); // refresh_list = true to detect new/removed disks
@@ -520,10 +520,18 @@ impl SystemMonitor {
                 processes: process_data.iter().take(10).cloned().collect(),
             };
 
+            // Receiver gone => app is shutting down. Exit cleanly instead of
+            // looping forever and flooding the log with send errors.
+            if self.event_tx.is_closed() {
+                return;
+            }
+
             self.send_event(ProcessEvent::System { system_data }, "system");
             self.send_event(ProcessEvent::Network { network_data }, "network");
             self.send_event(ProcessEvent::Disks { disks_data }, "disks");
             self.send_event(ProcessEvent::Process { process_data }, "process");
+
+            thread::sleep(self.refresh_interval);
         }
     }
 
