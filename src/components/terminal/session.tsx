@@ -1,4 +1,4 @@
-import { type Event, listen } from '@tauri-apps/api/event';
+import { type Event, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { Terminal } from '@xterm/xterm';
 import { errorLog, traceLog } from '@/lib/log';
 import {
@@ -90,8 +90,6 @@ interface SessionProps {
 function Session({ id, active }: SessionProps) {
 	const { theme } = useTheme();
 
-	const controller = new AbortController();
-
 	// fontSize
 	const screenWidth = useScreenWidth();
 	const fontSize = () => {
@@ -115,6 +113,15 @@ function Session({ id, active }: SessionProps) {
 	}
 
 	onMount(async () => {
+		const controller = new AbortController();
+		let unListen: UnlistenFn | undefined;
+
+		onCleanup(() => {
+			terminal?.term.dispose();
+			unListen?.();
+			controller.abort();
+		});
+
 		try {
 			await traceLog(`Initialize terminal interface. Id: ${id}`);
 			if (!terminalEl) {
@@ -124,6 +131,13 @@ function Session({ id, active }: SessionProps) {
 				return;
 			}
 			terminal = await createTerminal(terminalEl, theme(), fontSize());
+
+			// Register the PTY output listener BEFORE spawning the shell so that
+			// no early output (login banner, first prompt) can be emitted before
+			// we are subscribed. Tauri does not queue events for pending listeners.
+			unListen = await listen(`data-${id}`, (e: Event<string>) =>
+				terminal?.term.write(e.payload),
+			);
 
 			await initializeSession(id);
 
@@ -187,16 +201,6 @@ function Session({ id, active }: SessionProps) {
 			{ defer: true },
 		),
 	);
-
-	const unListen = listen(`data-${id}`, (e: Event<string>) =>
-		terminal?.term.write(e.payload),
-	);
-
-	onCleanup(() => {
-		terminal?.term.dispose();
-		unListen.then(f => f()).catch(errorLog);
-		controller.abort();
-	});
 
 	return (
 		<div class={cn(active() !== id && 'hidden', 'size-full p-2')}>
