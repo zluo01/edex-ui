@@ -143,7 +143,7 @@ function Session({ id, active }: SessionProps) {
 
 			await resize(id, terminal.term, terminal.addons);
 
-			terminal.term.onData(v => writeToSession(id, v));
+			terminal.term.onData(v => writeToSession(id, v).catch(errorLog));
 
 			addEventListener('resize', () => resizeTerminal(id), {
 				signal: controller.signal,
