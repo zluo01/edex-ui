@@ -122,7 +122,7 @@ impl PtySession {
             match serde_json::from_str::<PtySessionCommand>(event.payload()) {
                 Ok(PtySessionCommand::Write { data }) => {
                     let mut w = writer.lock().unwrap(); // Clone avoided
-                    if let Err(e) = w.write(data.as_bytes()) {
+                    if let Err(e) = w.write_all(data.as_bytes()) {
                         error!("Failed to write to session: {:?}", e);
                     }
                 }
