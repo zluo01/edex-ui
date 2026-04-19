@@ -3,7 +3,7 @@
     windows_subsystem = "windows"
 )]
 
-use log::{info, LevelFilter};
+use log::{error, info, LevelFilter};
 use sysinfo::System;
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -31,6 +31,26 @@ fn main() {
     } else {
         LevelFilter::Error
     };
+
+    // Route panics through the log subsystem so fatal errors land in the
+    // on-disk log file as well as stderr. The default panic hook only writes
+    // to stderr, which is easy to miss for GUI apps where the user may have
+    // no terminal attached. After logging, fall through to the default hook
+    // so normal panic behavior (stack trace, eventual abort) is preserved.
+    let default_panic_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let message = info
+            .payload_as_str()
+            .unwrap_or("<non-string panic payload>");
+        let location = info
+            .location()
+            .map(|l| format!("{}:{}", l.file(), l.line()))
+            .unwrap_or_else(|| "<unknown>".to_string());
+        let thread = std::thread::current();
+        let thread_name = thread.name().unwrap_or("<unnamed>");
+        error!("panic in thread '{thread_name}' at {location}: {message}");
+        default_panic_hook(info);
+    }));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
