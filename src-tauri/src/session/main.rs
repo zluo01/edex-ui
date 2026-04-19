@@ -9,25 +9,68 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Listener};
 use tokio::sync::mpsc;
 
+/// Build the shell `CommandBuilder` used for every PTY session.
+///
+/// We use `CommandBuilder::new_default_prog()` on both macOS and Linux.
+/// Portable-pty resolves `$SHELL` (with a passwd-DB fallback) and invokes it
+/// as a login shell by prefixing `argv[0]` with `-` — the canonical Unix
+/// mechanism, the same one `login(1)` and `sshd` use.
+///
+/// On macOS this is required: GUI apps inherit launchd's minimal environment
+/// and only login shells source `~/.zprofile` / `~/.bash_profile` where
+/// users set `PATH` (Homebrew, etc.).
+///
+/// On Linux, bash's login mode technically skips `~/.bashrc`, but this is
+/// both (a) the convention every other standalone terminal follows and
+/// (b) easy for users to work around in their dotfiles. When we add a
+/// settings surface (via `tauri-plugin-store`), this can become a
+/// user-configurable toggle.
+///
+/// `portable_pty::CommandBuilder` already copies the full parent env (see
+/// `get_base_env` in portable-pty's `cmdbuilder.rs`), so we don't forward
+/// individual vars. We only:
+///   1. strip Tauri / WebKit / GTK internals and dangerous vars that would
+///      leak into the child shell (same approach as VSCode's
+///      `sanitizeProcessEnvironment` + `removeDangerousEnvVariables`),
+///   2. set terminal-identity vars last so they override anything inherited.
 fn construct_cmd() -> CommandBuilder {
-    #[cfg(target_os = "macos")]
-    let mut cmd = CommandBuilder::new("zsh");
-    #[cfg(target_os = "linux")]
-    let mut cmd = CommandBuilder::new("bash");
+    let mut cmd = CommandBuilder::new_default_prog();
 
-    cmd.args(["-l"]);
-    cmd.env("TERM", "xterm-256color");
-    cmd.env("COLORTERM", "truecolor");
-    cmd.env("TERM_PROGRAM", "eDEX-UI");
-    cmd.env("TERM_PROGRAM_VERSION", "1.0.0");
-
-    for var in ["HOME", "USER", "SHELL", "PATH", "LANG"] {
-        if let Ok(val) = std::env::var(var) {
-            cmd.env(var, val);
+    // Strip vars inherited from the Tauri/WebKit parent process that either
+    // leak bundle internals into the user's shell or can crash child
+    // processes outright. Keep in sync with the rationale above.
+    for (key, _) in std::env::vars_os() {
+        let Some(k) = key.to_str() else { continue };
+        if should_strip_env(k) {
+            cmd.env_remove(&key);
         }
     }
 
+    // Terminal identity: set last so we override anything from the parent.
+    cmd.env("TERM", "xterm-256color");
+    cmd.env("COLORTERM", "truecolor");
+    cmd.env("TERM_PROGRAM", "eDEX-UI");
+    cmd.env("TERM_PROGRAM_VERSION", env!("CARGO_PKG_VERSION"));
+
     cmd
+}
+
+fn should_strip_env(key: &str) -> bool {
+    const PREFIXES: &[&str] = &[
+        "TAURI_",
+        "WEBKIT_",
+        "GTK_",
+        "APPIMAGE",
+        "APPDIR",
+        "GDK_PIXBUF_",
+        "SNAP",
+    ];
+    const EXACT: &[&str] = &[
+        "DEBUG",
+        #[cfg(target_os = "linux")]
+        "LD_PRELOAD",
+    ];
+    PREFIXES.iter().any(|p| key.starts_with(p)) || EXACT.contains(&key)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
