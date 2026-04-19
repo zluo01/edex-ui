@@ -5,9 +5,16 @@ use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread;
 use tauri::{AppHandle, Listener};
 use tokio::sync::mpsc;
+
+/// Monotonic counter used to tag each PTY session's reader and waiter threads
+/// with a short, unique index. Linux caps thread names at 15 bytes, so we use
+/// a compact numeric suffix (e.g. `edex-ptyR-7`) rather than the full UUID.
+static SESSION_THREAD_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Build the shell `CommandBuilder` used for every PTY session.
 ///
@@ -128,40 +135,46 @@ impl PtySession {
         let pty_reader_sender = process_event_sender.clone();
         let id_for_reader = id.to_owned();
 
-        // Spawn reader task to continuously read from PTY.
-        // Must use spawn_blocking (not a regular async task) because
-        // `Read::read` is a blocking syscall; otherwise it would starve
-        // the async runtime and prevent the mpsc receiver from draining.
+        // Spawn reader on a dedicated OS thread rather than
+        // `tauri::async_runtime::spawn_blocking`. Per Tokio's guidance, tasks
+        // that run forever should use `std::thread::spawn` directly — this
+        // keeps a slot permanently out of the blocking pool and gives the
+        // thread a descriptive name (visible in `top -H`, `perf`, etc.)
+        // instead of blending into the anonymous `tokio-rt-worker` pool.
         //
         // Buffer sizing: the kernel PTY line discipline caps each `read()`
         // at ~4 KiB on Linux and less on macOS, so any buffer ≥ 8 KiB is
         // sufficient. 64 KiB gives headroom for any platform where the
         // limit might be larger without meaningful cost — Linux lazily
         // backs the pages so untouched bytes never hit physical RAM.
-        let reader_handle = tauri::async_runtime::spawn_blocking(move || {
-            let mut buf = vec![0u8; 64 * 1024];
-            loop {
-                match reader.read(&mut buf) {
-                    Ok(0) => break, // EOF
-                    Ok(n) => {
-                        if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
-                            id: id_for_reader.clone(),
-                            data: buf[..n].to_vec(),
-                        }) {
-                            error!("Fail to send output. {:?}", e);
+        let thread_idx = SESSION_THREAD_COUNTER.fetch_add(1, Ordering::Relaxed);
+        thread::Builder::new()
+            .name(format!("edex-ptyR-{thread_idx}"))
+            .spawn(move || {
+                let mut buf = vec![0u8; 64 * 1024];
+                loop {
+                    match reader.read(&mut buf) {
+                        Ok(0) => break, // EOF
+                        Ok(n) => {
+                            if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
+                                id: id_for_reader.clone(),
+                                data: buf[..n].to_vec(),
+                            }) {
+                                error!("Fail to send output. {:?}", e);
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            error!(
+                                "Error when reading from pty for session {}: Error: {}",
+                                id_for_reader, e
+                            );
                             break;
                         }
                     }
-                    Err(e) => {
-                        error!(
-                            "Error when reading from pty for session {}: Error: {}",
-                            id_for_reader, e
-                        );
-                        break;
-                    }
                 }
-            }
-        });
+            })
+            .expect("failed to spawn pty reader thread");
 
         let writer = Mutex::new(writer);
         let master = Mutex::new(master);
@@ -199,25 +212,35 @@ impl PtySession {
         let id_for_exit = id.to_owned();
         let app_handle_for_cleanup = app_handle;
         let child_watcher_sender = process_event_sender.clone();
-        // need to use block here since child.wait is a blocking process
-        tauri::async_runtime::spawn_blocking(move || {
-            let exit_code = match child.wait() {
-                Ok(status) => Some(status.exit_code()),
-                Err(e) => {
-                    error!("Failed to wait for child process: {:?}", e);
-                    None
+        // Spawn the child waiter on a dedicated OS thread; same reasoning as
+        // the reader above. `child.wait()` blocks until the shell exits,
+        // which is unbounded in duration, so it belongs outside the Tokio
+        // blocking pool.
+        //
+        // Note: there is no reader handle to abort here — the reader thread
+        // terminates naturally when the PTY's slave side is closed during
+        // child exit, which causes `read()` to return `Ok(0)` (Linux) or
+        // `Err(EIO)` (macOS) and the loop to break.
+        thread::Builder::new()
+            .name(format!("edex-ptyW-{thread_idx}"))
+            .spawn(move || {
+                let exit_code = match child.wait() {
+                    Ok(status) => Some(status.exit_code()),
+                    Err(e) => {
+                        error!("Failed to wait for child process: {:?}", e);
+                        None
+                    }
+                };
+                app_handle_for_cleanup.unlisten(event_id);
+                if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
+                    id: id_for_exit,
+                    exit_code,
+                }) {
+                    error!("Fail to send process exit event. {:?}", e);
                 }
-            };
-            reader_handle.abort();
-            app_handle_for_cleanup.unlisten(event_id);
-            if let Err(e) = child_watcher_sender.send(ProcessEvent::ProcessExit {
-                id: id_for_exit,
-                exit_code,
-            }) {
-                error!("Fail to send process exit event. {:?}", e);
-            }
-            cleanup();
-        });
+                cleanup();
+            })
+            .expect("failed to spawn pty waiter thread");
 
         Ok(Self { pid })
     }
