@@ -4,7 +4,7 @@ use dashmap::DashMap;
 use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Listener};
 use tokio::sync::mpsc;
@@ -121,39 +121,44 @@ impl PtySession {
         let pid = master.process_group_leader().expect("Fail to get pid.");
 
         // Get reader and writer from master
-        let pty_reader = master.try_clone_reader()?;
-        let mut reader = BufReader::new(pty_reader);
+        let mut reader = master.try_clone_reader()?;
         let writer = master.take_writer()?;
 
         // Clone sender for the reader task
         let pty_reader_sender = process_event_sender.clone();
         let id_for_reader = id.to_owned();
 
-        // Spawn reader task to continuously read from PTY
-        // We must use either spawn_blocking  or `tokio::task::yield_now().await` with async spawn,
-        // otherwise, it will prevent mpsc receiver from receiving the event
-        let reader_handle = tauri::async_runtime::spawn_blocking(move || loop {
-            match reader.fill_buf() {
-                Ok(data) if !data.is_empty() => {
-                    let data = data.to_vec();
-                    reader.consume(data.len());
-                    if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
-                        id: id_for_reader.clone(),
-                        data,
-                    }) {
-                        error!("Fail to send output. {:?}", e);
+        // Spawn reader task to continuously read from PTY.
+        // Must use spawn_blocking (not a regular async task) because
+        // `Read::read` is a blocking syscall; otherwise it would starve
+        // the async runtime and prevent the mpsc receiver from draining.
+        //
+        // Buffer sizing: the kernel PTY line discipline caps each `read()`
+        // at ~4 KiB on Linux and less on macOS, so any buffer ≥ 8 KiB is
+        // sufficient. 64 KiB gives headroom for any platform where the
+        // limit might be larger without meaningful cost — Linux lazily
+        // backs the pages so untouched bytes never hit physical RAM.
+        let reader_handle = tauri::async_runtime::spawn_blocking(move || {
+            let mut buf = vec![0u8; 64 * 1024];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) => break, // EOF
+                    Ok(n) => {
+                        if let Err(e) = pty_reader_sender.send(ProcessEvent::Forward {
+                            id: id_for_reader.clone(),
+                            data: buf[..n].to_vec(),
+                        }) {
+                            error!("Fail to send output. {:?}", e);
+                            break;
+                        }
                     }
-                }
-                Ok(_) => {
-                    // ✅ EOF reached - exit loop
-                    break;
-                }
-                Err(e) => {
-                    error!(
-                        "Error when reading from pty for session {}: Error: {}",
-                        id_for_reader, e
-                    );
-                    break;
+                    Err(e) => {
+                        error!(
+                            "Error when reading from pty for session {}: Error: {}",
+                            id_for_reader, e
+                        );
+                        break;
+                    }
                 }
             }
         });
