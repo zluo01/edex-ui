@@ -427,11 +427,7 @@ fn extract_disk_usage(disks: &Disks) -> Vec<DiskUsage> {
             let total_space = disk.total_space();
             let available_space = disk.available_space();
             let used_space = total_space.saturating_sub(available_space);
-            let usage_percent = if total_space > 0 {
-                (used_space * 100) / total_space
-            } else {
-                0
-            };
+            let usage_percent = (used_space * 100).checked_div(total_space).unwrap_or(0);
 
             DiskUsage {
                 name: disk.name().to_string_lossy().to_string(),
