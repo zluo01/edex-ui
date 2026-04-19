@@ -13,9 +13,9 @@ import type { TerminalProps } from '@/models';
 export type Addons = ReturnType<typeof getAddons>;
 
 const OVERRIDE_KEY_MAP = [
-	{ key: 'Tab', ctrlKey: true },
-	{ key: 'W', ctrlKey: true },
-	{ key: 'T', ctrlKey: true },
+	{ code: 'Tab', ctrlKey: true },
+	{ code: 'KeyW', ctrlKey: true },
+	{ code: 'KeyT', ctrlKey: true },
 ];
 
 const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
@@ -105,10 +105,7 @@ function overrideKeyEvent(term: Terminal) {
 			}
 
 			for (const entry of OVERRIDE_KEY_MAP) {
-				if (
-					entry.key.toLowerCase() === e.key.toLowerCase() &&
-					entry.ctrlKey === e.ctrlKey
-				) {
+				if (entry.code === e.code && entry.ctrlKey === e.ctrlKey) {
 					return false;
 				}
 			}
