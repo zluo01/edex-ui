@@ -38,7 +38,7 @@
     "tailwind-merge": "3.5.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.11",
+    "@biomejs/biome": "2.4.12",
     "@tanstack/solid-query-devtools": "5.99.0",
     "@tauri-apps/cli": "2.10.1",
     "@types/lodash": "4.17.24",
