@@ -517,7 +517,7 @@ impl SystemMonitor {
                 memory,
                 cpu,
                 gpu,
-                processes: process_data.iter().take(10).cloned().collect(),
+                processes: process_data,
             };
 
             // Receiver gone => app is shutting down. Exit cleanly instead of
@@ -529,7 +529,6 @@ impl SystemMonitor {
             self.send_event(ProcessEvent::System { system_data }, "system");
             self.send_event(ProcessEvent::Network { network_data }, "network");
             self.send_event(ProcessEvent::Disks { disks_data }, "disks");
-            self.send_event(ProcessEvent::Process { process_data }, "process");
 
             thread::sleep(self.refresh_interval);
         }

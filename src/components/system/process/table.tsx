@@ -4,7 +4,7 @@ import { useSystemData } from '@/lib/system';
 function ProcessTable() {
 	const systemData = useSystemData();
 
-	const processes = () => systemData()?.processes;
+	const processes = () => systemData()?.processes.slice(0, 10);
 
 	return (
 		<table class="w-full table-auto hover:cursor-pointer hover:opacity-75">

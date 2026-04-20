@@ -1,15 +1,10 @@
-import { type Event, listen } from '@tauri-apps/api/event';
-import { createSignal, For, type JSX, onCleanup, Show } from 'solid-js';
-import { errorLog } from '@/lib/log';
-import type { ProcessInformation } from '@/models';
+import { For, type JSX, Show } from 'solid-js';
+import { useSystemData } from '@/lib/system';
 
 function TableRows(): JSX.Element {
-	const [processes, setProcesses] = createSignal<ProcessInformation[]>();
-	const unListen = listen('process', (e: Event<ProcessInformation[]>) =>
-		setProcesses(e.payload),
-	);
+	const systemData = useSystemData();
 
-	onCleanup(() => unListen.then(f => f()).catch(errorLog));
+	const processes = () => systemData()?.processes;
 
 	return (
 		<Show when={processes()} fallback={<div />}>
