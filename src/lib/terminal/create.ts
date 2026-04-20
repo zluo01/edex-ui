@@ -91,22 +91,16 @@ function overrideKeyEvent(term: Terminal) {
 				e.preventDefault();
 				const selection = term.getSelection();
 				if (selection) {
-					navigator.clipboard.writeText(selection).catch(errorLog);
+					navigator.clipboard
+						.writeText(selection)
+						.catch(/* clipboard may be unavailable */);
 				}
 				return false;
 			}
 
 			// paste
+			// https://github.com/xtermjs/xterm.js/issues/2478#issuecomment-2325204572
 			if ((isMac || isLinux) && e.code === 'KeyV') {
-				e.preventDefault();
-				navigator.clipboard
-					.readText()
-					.then(text => {
-						if (text) {
-							term.paste(text);
-						}
-					})
-					.catch(errorLog);
 				return false;
 			}
 
