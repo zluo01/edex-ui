@@ -1,16 +1,18 @@
 import ActiveProcessTable from '@/components/dashboard/table';
 import { closeModal } from '@/lib/utils';
 
+const MODAL_ID = 'active-process-modal';
+
 function ActiveProcess() {
 	return (
 		<dialog
-			id="active-process-modal"
+			id={MODAL_ID}
 			class="relative z-10 backdrop:bg-black/25"
 			aria-labelledby="modal-title"
-			onCancel={() => closeModal('active-process-modal')}
+			onCancel={() => closeModal(MODAL_ID)}
 			onMouseDown={e => {
 				if (e.target === e.currentTarget) {
-					closeModal('active-process-modal');
+					closeModal(MODAL_ID);
 				}
 			}}
 		>

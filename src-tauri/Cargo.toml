@@ -6,26 +6,26 @@ authors = ["zluo01"]
 license = ""
 repository = "https://github.com/zluo01/edex-ui"
 edition = "2021"
-rust-version = "1.85.0"
+rust-version = "1.95.0"
 
 [build-dependencies]
-tauri-build = { version = "2.5.5", features = [] }
+tauri-build = { version = "2.5.6", features = [] }
 
 [dependencies]
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
-tauri = { version = "2.10.2", features = [] }
+tauri = { version = "2.10.3", features = [] }
 tauri-plugin-store = "2.4.2"
 tauri-plugin-log = { version = "2.8.0" }
-tauri-plugin-single-instance = { version = "2.4.0" }
+tauri-plugin-single-instance = { version = "2.4.1" }
 tauri-plugin-os = "2.3.2"
 tauri-plugin-opener = "2.5.3"
-tokio = { version = "1.49.0", features = ["time", "process"] }
+tokio = { version = "1.52.1", features = ["time", "process"] }
 log = "0.4.29"
-sysinfo = "0.38.0"
+sysinfo = "0.38.4"
 portable-pty = "0.9.0"
 notify = { version = "8.2.0" }
-chrono = "0.4.43"
+chrono = "0.4.44"
 dashmap = "7.0.0-rc2"
 nvml-wrapper = "0.12.1"
 

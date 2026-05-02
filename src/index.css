@@ -33,6 +33,8 @@
 	--font-united_sans_medium: united-sans-medium;
 
 	--animate-fade: fadeIn 0.25s ease-in-out;
+	--animate-fade-delay-100: fadeIn 0.25s ease-in-out 100ms backwards;
+	--animate-fade-delay-200: fadeIn 0.25s ease-in-out 200ms backwards;
 
 	@keyframes fadeIn {
 		0% {

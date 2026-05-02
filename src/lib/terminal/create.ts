@@ -1,10 +1,11 @@
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { type ITerminalInitOnlyOptions, Terminal } from '@xterm/xterm';
-import { warnLog } from '@/lib/log';
+import { errorLog, warnLog } from '@/lib/log';
 import type { Theme } from '@/lib/themes';
 import generateTerminalTheme from '@/lib/themes/terminal';
 import type { TerminalProps } from '@/models';
@@ -12,9 +13,9 @@ import type { TerminalProps } from '@/models';
 export type Addons = ReturnType<typeof getAddons>;
 
 const OVERRIDE_KEY_MAP = [
-	{ key: 'Tab', ctrlKey: true },
-	{ key: 'W', ctrlKey: true },
-	{ key: 'T', ctrlKey: true },
+	{ code: 'Tab', ctrlKey: true },
+	{ code: 'KeyW', ctrlKey: true },
+	{ code: 'KeyT', ctrlKey: true },
 ];
 
 const INITIAL_DEFAULT_OPTIONS: ITerminalInitOnlyOptions = {
@@ -40,6 +41,7 @@ export async function createTerminal(
 
 	try {
 		const webglAddon = new WebglAddon();
+		webglAddon.onContextLoss(() => webglAddon.dispose());
 		term.loadAddon(webglAddon);
 	} catch (e) {
 		await warnLog(`WebGL not supported, falling back to canvas. Error: ${e}`);
@@ -61,7 +63,16 @@ function getAddons() {
 		fit: new FitAddon(),
 		unicode11: new Unicode11Addon(),
 		clipboard: new ClipboardAddon(),
-		webLink: new WebLinksAddon(),
+		webLink: new WebLinksAddon((event, uri) => {
+			if (!event.ctrlKey && !event.metaKey) {
+				return;
+			}
+			// WebLinksAddon's regex only matches http(s) URLs, but guard
+			// defensively to match the allowlist in the opener capability.
+			if (/^https?:\/\//i.test(uri)) {
+				openUrl(uri).catch(errorLog);
+			}
+		}),
 	};
 }
 
@@ -94,10 +105,7 @@ function overrideKeyEvent(term: Terminal) {
 			}
 
 			for (const entry of OVERRIDE_KEY_MAP) {
-				if (
-					entry.key.toLowerCase() === e.key.toLowerCase() &&
-					entry.ctrlKey === e.ctrlKey
-				) {
+				if (entry.code === e.code && entry.ctrlKey === e.ctrlKey) {
 					return false;
 				}
 			}
