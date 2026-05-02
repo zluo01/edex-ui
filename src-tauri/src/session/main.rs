@@ -1,7 +1,7 @@
 use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use dashmap::DashMap;
-use log::error;
+use log::{error, warn};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -41,23 +41,50 @@ static SESSION_THREAD_COUNTER: AtomicU64 = AtomicU64::new(0);
 ///      `sanitizeProcessEnvironment` + `removeDangerousEnvVariables`),
 ///   2. set terminal-identity vars last so they override anything inherited.
 fn construct_cmd() -> CommandBuilder {
-    let mut cmd = CommandBuilder::new_default_prog();
+    #[cfg(target_os = "macos")]
+    let mut cmd = CommandBuilder::new("zsh");
+    #[cfg(target_os = "linux")]
+    let mut cmd = CommandBuilder::new("bash");
+    #[cfg(target_os = "windows")]
+    let mut cmd = CommandBuilder::new("powershell.exe");
 
-    // Strip vars inherited from the Tauri/WebKit parent process that either
-    // leak bundle internals into the user's shell or can crash child
-    // processes outright. Keep in sync with the rationale above.
-    for (key, _) in std::env::vars_os() {
-        let Some(k) = key.to_str() else { continue };
-        if should_strip_env(k) {
-            cmd.env_remove(&key);
+    #[cfg(target_os = "windows")]
+    {
+        cmd.args(["-NoLogo", "-NoExit", "-NoProfile"]);
+        if let Ok(home) = std::env::var("USERPROFILE") {
+            cmd.cwd(std::path::Path::new(&home));
         }
     }
 
-    // Terminal identity: set last so we override anything from the parent.
+    #[cfg(not(target_os = "windows"))]
+    cmd.args(["-l"]);
+
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("TERM_PROGRAM", "eDEX-UI");
-    cmd.env("TERM_PROGRAM_VERSION", env!("CARGO_PKG_VERSION"));
+    cmd.env("TERM_PROGRAM_VERSION", "1.0.0");
+
+    #[cfg(target_os = "windows")]
+    for var in [
+        "USERPROFILE",
+        "USERNAME",
+        "USERDOMAIN",
+        "PATH",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+    ] {
+        if let Ok(val) = std::env::var(var) {
+            cmd.env(var, val);
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    for var in ["HOME", "USER", "SHELL", "PATH", "LANG"] {
+        if let Ok(val) = std::env::var(var) {
+            cmd.env(var, val);
+        }
+    }
 
     cmd
 }
@@ -122,10 +149,7 @@ impl PtySession {
 
         let master = pty_pair.master;
 
-        // Intentional panic: if the PTY master cannot provide a process group
-        // leader PID after a successful spawn, the session is fundamentally
-        // broken and no recovery is possible.
-        let pid = master.process_group_leader().expect("Fail to get pid.");
+        let pid = child.process_id().unwrap_or(0) as i32;
 
         // Get reader and writer from master
         let mut reader = master.try_clone_reader()?;
@@ -339,7 +363,7 @@ impl PtySessionManager {
         match pty_session_result {
             Ok(pty_session) => {
                 if active_sessions.contains_key(id) {
-                    error!("Session {} already exists, overwriting", id);
+                    warn!("Session {} already exists, overwriting", id);
                 }
                 let pid = pty_session.pid();
                 active_sessions.insert(id.to_owned(), pty_session);
@@ -351,7 +375,7 @@ impl PtySessionManager {
                 }
             }
             Err(e) => {
-                error!("Failed to initialize new session: {:?}", e);
+                error!("Failed to initialize new session {}: {:?}", id, e);
             }
         }
     }

@@ -18,7 +18,8 @@
         "title": "EDEX-UI",
         "maximized": true,
         "minWidth": 1280,
-        "minHeight": 720
+        "minHeight": 720,
+        "devtools": true
       }
     ],
     "security": {
@@ -34,6 +35,13 @@
       "icons/256x256.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": true,
+        "languages": ["English", "French"],
+        "installMode": "currentUser"
+      }
+    }
   }
 }
