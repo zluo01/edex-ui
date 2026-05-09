@@ -76,6 +76,15 @@ fn should_strip_env(key: &str) -> bool {
         "DEBUG",
         #[cfg(target_os = "linux")]
         "LD_PRELOAD",
+        // dyld(1) injection vectors — the macOS counterparts of LD_PRELOAD.
+        // Inheriting these from the Tauri parent forces arbitrary dylibs
+        // into every shell-spawned child.
+        #[cfg(target_os = "macos")]
+        "DYLD_INSERT_LIBRARIES",
+        #[cfg(target_os = "macos")]
+        "DYLD_LIBRARY_PATH",
+        #[cfg(target_os = "macos")]
+        "DYLD_FRAMEWORK_PATH",
     ];
     PREFIXES.iter().any(|p| key.starts_with(p)) || EXACT.contains(&key)
 }
@@ -373,5 +382,35 @@ impl PtySessionManager {
                 error!("Session {} not found on switching", id);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_strip_env;
+
+    // Regression tests for the macOS dyld(1) env-injection vectors that
+    // `should_strip_env` previously failed to filter. These vars are the
+    // direct counterparts of `LD_PRELOAD` on Linux: they let an attacker
+    // (or a stale shell config) force arbitrary dylibs into every process
+    // spawned from the terminal. They were silently inherited from the
+    // Tauri parent process before this fix.
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn should_strip_dyld_insert_libraries() {
+        assert!(should_strip_env("DYLD_INSERT_LIBRARIES"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn should_strip_dyld_library_path() {
+        assert!(should_strip_env("DYLD_LIBRARY_PATH"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn should_strip_dyld_framework_path() {
+        assert!(should_strip_env("DYLD_FRAMEWORK_PATH"));
     }
 }
