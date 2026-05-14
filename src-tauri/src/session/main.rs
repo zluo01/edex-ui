@@ -1,7 +1,7 @@
 use crate::event::main::ProcessEvent;
 use crate::file::main::{DirectoryWatcherEvent, WatcherPayload};
 use dashmap::DashMap;
-use log::{error, warn};
+use log::error;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
@@ -100,7 +100,7 @@ impl PtySession {
 
         let master = pty_pair.master;
 
-        let pid = child.process_id().unwrap_or(0) as i32;
+        let pid = child.process_id().expect("Failed to get child process id") as i32;
 
         // Get reader and writer from master
         let pty_reader = master.try_clone_reader()?;
@@ -293,7 +293,7 @@ impl PtySessionManager {
         match pty_session_result {
             Ok(pty_session) => {
                 if active_sessions.contains_key(id) {
-                    warn!("Session {} already exists, overwriting", id);
+                    error!("Session {} already exists, overwriting", id);
                 }
                 let pid = pty_session.pid();
                 active_sessions.insert(id.to_owned(), pty_session);
