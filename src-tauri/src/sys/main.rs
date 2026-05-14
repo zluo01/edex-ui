@@ -261,7 +261,6 @@ fn get_nvidia_gpu_data() -> GpuUsage {
                 GpuUsage::default()
             }
         },
-        #[cfg(target_os = "linux")]
         None => GpuUsage::default(),
     }
 }
