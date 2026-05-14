@@ -1,5 +1,4 @@
 import { type Event, listen } from '@tauri-apps/api/event';
-import isEqual from 'lodash-es/isEqual';
 import prettyBytes from 'pretty-bytes';
 import { createSignal, For, onCleanup } from 'solid-js';
 import { errorLog } from '@/lib/log';
@@ -9,9 +8,7 @@ function DiskUsage() {
 	const [disks, setDisks] = createSignal<DiskUsageStatus[]>();
 
 	const unListen = listen('disk', (e: Event<DiskUsageStatus[]>) =>
-		setDisks(prevState =>
-			isEqual(prevState, e.payload) ? prevState : e.payload,
-		),
+		setDisks(e.payload),
 	);
 
 	onCleanup(() => {

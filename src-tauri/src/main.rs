@@ -3,7 +3,7 @@
     windows_subsystem = "windows"
 )]
 
-use log::{info, LevelFilter};
+use log::{error, info, LevelFilter};
 use sysinfo::System;
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -31,6 +31,26 @@ fn main() {
     } else {
         LevelFilter::Error
     };
+
+    // Route panics through the log subsystem so fatal errors land in the
+    // on-disk log file as well as stderr. The default panic hook only writes
+    // to stderr, which is easy to miss for GUI apps where the user may have
+    // no terminal attached. After logging, fall through to the default hook
+    // so normal panic behavior (stack trace, eventual abort) is preserved.
+    let default_panic_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let message = info
+            .payload_as_str()
+            .unwrap_or("<non-string panic payload>");
+        let location = info
+            .location()
+            .map(|l| format!("{}:{}", l.file(), l.line()))
+            .unwrap_or_else(|| "<unknown>".to_string());
+        let thread = std::thread::current();
+        let thread_name = thread.name().unwrap_or("<unnamed>");
+        error!("panic in thread '{thread_name}' at {location}: {message}");
+        default_panic_hook(info);
+    }));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -77,9 +97,38 @@ fn main() {
             );
             pty_manager.start(app.handle().clone());
 
-            // refresh and emit system information
-            let mut monitor = SystemMonitor::new(1, process_event_sender.clone());
-            tauri::async_runtime::spawn(async move { monitor.run().await });
+            // Refresh and emit system information on a dedicated OS thread.
+            //
+            // Why a plain `std::thread` and not `tauri::async_runtime::spawn`
+            // or `spawn_blocking`? One tick of sysinfo refresh + extraction
+            // inside `SystemMonitor::run` averages ~84 ms, which is two
+            // orders of magnitude above Tokio's 10–100 µs guideline for work
+            // that runs on async worker threads, and the loop runs for the
+            // full lifetime of the app. Tokio's own docs call this case out
+            // explicitly:
+            //
+            //     For tasks that run forever ... use `std::thread::spawn`
+            //     directly.
+            //     — https://docs.rs/tokio/latest/tokio/task/index.html
+            //
+            // `spawn_blocking` would permanently park one slot in Tokio's
+            // bounded blocking-thread pool (default 512) for no benefit. A
+            // plain named OS thread is cheaper, shows up clearly in
+            // `top -H` / profilers, and decouples the monitor from the
+            // async runtime entirely.
+            //
+            // The thread is fire-and-forget. It bails on its own when the
+            // event channel receiver is dropped during shutdown (see
+            // `SystemMonitor::run`), and the OS reaps it on process exit
+            // regardless. No `JoinHandle` or shutdown signal is needed
+            // because the monitor holds no external resources that require
+            // explicit cleanup.
+            let monitor = SystemMonitor::new(1, process_event_sender.clone());
+            std::thread::Builder::new()
+                .name("edex-sysmon".into())
+                .spawn(move || monitor.run())
+                .expect("failed to spawn system monitor thread");
+
             Ok(())
         })
         .run(tauri::generate_context!())

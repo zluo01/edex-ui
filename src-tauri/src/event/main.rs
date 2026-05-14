@@ -1,5 +1,5 @@
 use crate::file::main::DirectoryInfo;
-use crate::sys::main::{DiskUsage, NetworkData, ProcessInfo, SystemData};
+use crate::sys::main::{DiskUsage, NetworkData, SystemData};
 use log::{error, trace};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
@@ -13,7 +13,6 @@ pub enum ProcessEvent {
     System { system_data: SystemData },
     Network { network_data: NetworkData },
     Disks { disks_data: Vec<DiskUsage> },
-    Process { process_data: Vec<ProcessInfo> },
     Directory { directory_info: DirectoryInfo },
     Forward { id: String, data: Vec<u8> }, // Handle Pty Message forwarding
     ProcessExit { id: String, exit_code: Option<u32> }, // Handle Pty Session Exits
@@ -58,9 +57,6 @@ impl EventProcessor {
             }
             ProcessEvent::Disks { disks_data } => {
                 self.send_data("disk", disks_data);
-            }
-            ProcessEvent::Process { process_data } => {
-                self.send_data("process", process_data);
             }
             ProcessEvent::Directory { directory_info } => {
                 self.send_data(UPDATE_FILES, directory_info);

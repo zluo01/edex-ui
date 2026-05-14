@@ -22,10 +22,8 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 	const { theme } = useTheme();
 	const style = () => selectStyle(theme());
 
-	const canvas: HTMLCanvasElement[] = [
-		document.createElement('canvas'),
-		document.createElement('canvas'),
-	];
+	let uploadCanvas!: HTMLCanvasElement;
+	let downloadCanvas!: HTMLCanvasElement;
 
 	const [traffic, setTraffic] = createSignal<NetworkTrafficStatus>();
 
@@ -68,7 +66,8 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 	charts.forEach((v, i) => v.addTimeSeries(series[i], timeSeriesOptions));
 
 	onMount(() => {
-		charts.forEach((v, i) => v.streamTo(canvas[i], 1000));
+		charts[0].streamTo(uploadCanvas, 1000);
+		charts[1].streamTo(downloadCanvas, 1000);
 	});
 
 	onCleanup(() => {
@@ -126,14 +125,14 @@ function NetworkTraffic(props: NetworkTrafficProps): JSX.Element {
 			</div>
 			<div class="flex w-full flex-col items-center justify-center">
 				<canvas
-					ref={el => (canvas[0] = el)}
+					ref={uploadCanvas}
 					class={cn(
 						'border-default/30 z-10 mx-0 my-[0.46vh] max-h-[10vh] min-h-[8vh] w-full border-t-[0.092vh] border-dashed',
 						props.connected() ? 'opacity-100' : 'opacity-30',
 					)}
 				/>
 				<canvas
-					ref={el => (canvas[1] = el)}
+					ref={downloadCanvas}
 					class={cn(
 						'border-t-default/40 border-b-default/30 z-10 mx-0 max-h-[10vh] min-h-[8vh] w-full border-t-[0.139vh] border-b-[0.092vh] border-solid',
 						props.connected() ? 'opacity-100' : 'opacity-30',
