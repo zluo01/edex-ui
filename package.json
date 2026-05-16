@@ -41,7 +41,7 @@
     "@biomejs/biome": "2.4.15",
     "@tanstack/solid-query-devtools": "5.100.9",
     "@tauri-apps/cli": "2.11.1",
-    "@types/node": "24.12.3",
+    "@types/node": "24.12.4",
     "husky": "9.1.7",
     "tailwindcss": "4.3.0",
     "typescript": "6.0.3",
