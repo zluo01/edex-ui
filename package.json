@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tauri build",
     "build-debug": "tauri build --debug",
-    "dev": "WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "dev": "tauri dev",
     "lint": "biome check --write . && cargo fmt --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
     "prepare": "husky",
     "tauri": "tauri",
