@@ -1,10 +1,10 @@
 use crate::event::main::ProcessEvent;
 use chrono::{DateTime, Local};
 use log::{error, warn};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use nvml_wrapper::Nvml;
 use serde::Serialize;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 use std::sync::OnceLock;
 use std::thread;
 use std::{
@@ -58,7 +58,7 @@ impl Default for GpuUsage {
         #[cfg(target_os = "linux")]
         let name = "Unknown".to_string();
 
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "windows"))]
         let name = String::new();
 
         Self {
@@ -199,10 +199,19 @@ fn extract_cpu_temperature(components: &Components) -> f32 {
         .unwrap_or(0.0)
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(target_os = "windows")]
+fn extract_cpu_temperature(components: &Components) -> f32 {
+    components
+        .iter()
+        .find(|c| c.label().to_lowercase().contains("computer"))
+        .and_then(|c| c.temperature())
+        .unwrap_or(0.0)
+}
+
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 static NVML: OnceLock<Option<Nvml>> = OnceLock::new();
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn init_nvml() -> Option<Nvml> {
     match Nvml::init() {
         Ok(nvml) => Some(nvml),
@@ -216,56 +225,89 @@ fn init_nvml() -> Option<Nvml> {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn get_nvidia_gpu_data() -> GpuUsage {
     let nvml = NVML.get_or_init(init_nvml);
 
     match nvml {
-        Some(nvml) => {
-            // Get first GPU (index 0)
-            match nvml.device_by_index(0) {
-                Ok(device) => {
-                    let name = device.name().unwrap_or_else(|_| "UNKNOWN".to_string());
+        Some(nvml) => match nvml.device_by_index(0) {
+            Ok(device) => {
+                let name = device.name().unwrap_or_else(|_| "UNKNOWN".to_string());
 
-                    let temperature = device
-                        .temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)
-                        .unwrap_or(0) as f32;
+                let temperature = device
+                    .temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)
+                    .unwrap_or(0) as f32;
 
-                    let memory_info = device.memory_info().ok();
-                    let (used_memory, total_memory) = match memory_info {
-                        Some(info) => (info.used as f32, info.total as f32),
-                        None => (0.0, 0.0),
-                    };
-                    let (load, memory_usage) = device
-                        .utilization_rates()
-                        .map(|rates| (rates.gpu as f32, rates.memory as f32))
-                        .unwrap_or((0.0, 0.0));
+                let memory_info = device.memory_info().ok();
+                let (used_memory, total_memory) = match memory_info {
+                    Some(info) => (info.used as f32, info.total as f32),
+                    None => (0.0, 0.0),
+                };
+                let (load, memory_usage) = device
+                    .utilization_rates()
+                    .map(|rates| (rates.gpu as f32, rates.memory as f32))
+                    .unwrap_or((0.0, 0.0));
 
-                    GpuUsage {
-                        name,
-                        load,
-                        used_memory,
-                        total_memory,
-                        memory_usage,
-                        temperature,
-                    }
-                }
-                Err(e) => {
-                    error!("Failed to get GPU data: {}", e);
-                    GpuUsage::default()
+                GpuUsage {
+                    name,
+                    load,
+                    used_memory,
+                    total_memory,
+                    memory_usage,
+                    temperature,
                 }
             }
-        }
+            Err(e) => {
+                error!("Failed to get GPU data: {}", e);
+                GpuUsage::default()
+            }
+        },
         None => GpuUsage::default(),
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn extract_gpu_data(_sys: &System, _components: &Components) -> GpuUsage {
     let nvml = NVML.get_or_init(init_nvml);
 
     match nvml {
         Some(_) => get_nvidia_gpu_data(),
+        #[cfg(target_os = "windows")]
+        None => {
+            use hardware_query::HardwareInfo;
+
+            match HardwareInfo::query() {
+                Ok(hw_info) => {
+                    let gpus = hw_info.gpus();
+                    if let Some(gpu) = gpus.first() {
+                        let memory_gb = gpu.memory_gb();
+                        let memory_mb = gpu.memory_mb;
+
+                        return GpuUsage {
+                            name: gpu.model_name.clone(),
+                            load: 0.0,
+                            used_memory: 0.0,
+                            total_memory: if memory_gb > 0.0 {
+                                memory_gb as f32 * 1024.0
+                            } else {
+                                memory_mb as f32
+                            },
+                            memory_usage: 0.0,
+                            temperature: 0.0,
+                        };
+                    }
+                    GpuUsage::default()
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to query hardware info: {}. GPU data will not be available.",
+                        e
+                    );
+                    GpuUsage::default()
+                }
+            }
+        }
+        #[cfg(target_os = "linux")]
         None => GpuUsage::default(),
     }
 }
