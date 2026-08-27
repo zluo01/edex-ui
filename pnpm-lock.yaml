@@ -9,20 +9,20 @@ importers:
   .:
     dependencies:
       '@solid-primitives/date':
-        specifier: 2.1.7
-        version: 2.1.7(solid-js@1.9.14)
+        specifier: 2.1.8
+        version: 2.1.8(solid-js@1.9.15)
       '@solid-primitives/keyboard':
-        specifier: 1.3.5
-        version: 1.3.5(solid-js@1.9.14)
+        specifier: 1.3.7
+        version: 1.3.7(solid-js@1.9.15)
       '@tailwindcss/vite':
         specifier: 4.3.2
         version: 4.3.2(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0))
       '@tanstack/solid-query':
-        specifier: 5.101.2
-        version: 5.101.2(solid-js@1.9.14)
+        specifier: 5.102.8
+        version: 5.102.8(solid-js@1.9.15)
       '@tanstack/solid-table':
         specifier: 8.21.3
-        version: 8.21.3(solid-js@1.9.14)
+        version: 8.21.3(solid-js@1.9.15)
       '@tauri-apps/api':
         specifier: 2.11.1
         version: 2.11.1
@@ -69,8 +69,8 @@ importers:
         specifier: 1.36.1
         version: 1.36.1
       solid-js:
-        specifier: 1.9.14
-        version: 1.9.14
+        specifier: 1.9.15
+        version: 1.9.15
       tailwind-merge:
         specifier: 3.6.0
         version: 3.6.0
@@ -79,8 +79,8 @@ importers:
         specifier: 2.5.2
         version: 2.5.2
       '@tanstack/solid-query-devtools':
-        specifier: 5.101.2
-        version: 5.101.2(@tanstack/solid-query@5.101.2(solid-js@1.9.14))(solid-js@1.9.14)
+        specifier: 5.102.8
+        version: 5.102.8(@tanstack/solid-query@5.102.8(solid-js@1.9.15))(solid-js@1.9.15)
       '@tauri-apps/cli':
         specifier: 2.11.4
         version: 2.11.4
@@ -101,7 +101,7 @@ importers:
         version: 8.1.3(@types/node@24.13.2)(jiti@2.7.0)
       vite-plugin-solid:
         specifier: 2.11.12
-        version: 2.11.12(solid-js@1.9.14)(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0))
+        version: 2.11.12(solid-js@1.9.15)(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0))
 
 packages:
 
@@ -375,28 +375,28 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@solid-primitives/date@2.1.7':
-    resolution: {integrity: sha512-/4ZRSIrxLN7GNSeSBh9JJpIXdzBZSG7mihfg9daTpfsHGrvOQrZDODl1jzjwYf7/xwMiu0k4nG53H8jqxlwSaw==}
+  '@solid-primitives/date@2.1.8':
+    resolution: {integrity: sha512-MD2B6b7XlnZPiOlp7x02TsAbYOoUAI2/Yz+grHBjUFNM8sNkZPQ2yMkq5cFLZCaEdyoqVUla056o5olrh2ZlwQ==}
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solid-primitives/event-listener@2.4.5':
-    resolution: {integrity: sha512-nwRV558mIabl4yVAhZKY8cb6G+O1F0M6Z75ttTu5hk+SxdOnKSGj+eetDIu7Oax1P138ZdUU01qnBPR8rnxaEA==}
+  '@solid-primitives/event-listener@2.4.6':
+    resolution: {integrity: sha512-5I0YJcTVYIWoMmgBSROBZGcz+ymhew/pGTg2dHW74BUjFKsV8Li4bOZYl0YAGP4mHw5o4UBd9/BEesqBci3wxw==}
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solid-primitives/keyboard@1.3.5':
-    resolution: {integrity: sha512-sav+l+PL+74z3yaftVs7qd8c2SXkqzuxPOVibUe5wYMt+U5Hxp3V3XCPgBPN2I6cANjvoFtz0NiU8uHVLdi9FQ==}
+  '@solid-primitives/keyboard@1.3.7':
+    resolution: {integrity: sha512-558RPNYnXx4nGh537DSqAn4xMrC8iFipl/5+xzgzWoTNFst4RnUN3BOLmtDjJ0UGGoQXVMALYR3bNOHM0xnt1Q==}
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solid-primitives/memo@1.5.0':
-    resolution: {integrity: sha512-nSMHpFdnOMP88t7lqtktUXJlhQdJk0BQs2v3jUqcn+OtFwUm27Oa/coKl1BHDxL/65jR5drjqxxvuhaIpiUi0w==}
+  '@solid-primitives/memo@1.5.1':
+    resolution: {integrity: sha512-VDPrkl9epp0tbby9MvsqphGFCYCtDRC5J8FKzTqHbQiG5hhR8n6xv4MfjhTW231IaBxxPHLxS43EE8c5Q23mSQ==}
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solid-primitives/rootless@1.5.3':
-    resolution: {integrity: sha512-N8cIDAHbWcLahNRLr0knAAQvXyEdEMoAZvIMZKmhNb1mlx9e2UOv9BRD5YNwQUJwbNoYVhhLwFOEOcVXFx0HqA==}
+  '@solid-primitives/rootless@1.5.4':
+    resolution: {integrity: sha512-TOIZa1VUfVJ+9nkCcRajw3U4t9vBOP1HxX1WHNTbXq32mXwlqTvUnC4CRIilohcryBkT9u2ZkhUDSHRTaGp55g==}
     peerDependencies:
       solid-js: ^1.6.12
 
@@ -410,8 +410,8 @@ packages:
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solid-primitives/utils@6.4.0':
-    resolution: {integrity: sha512-AeGTBg8Wtkh/0s+evyLtP8piQoS4wyqqQaAFs2HJcFMMjYAtUgo+ZPduRXLjPlqKVc2ejeR544oeqpbn8Egn8A==}
+  '@solid-primitives/utils@6.4.1':
+    resolution: {integrity: sha512-ISSB5QX1qP2ynrheIpYwc4oKR5Ny4siNuUyf1qZniy+Il+p/PtDB0QK1Dnle8noiHpwRD3gpPdubOC3qI/Zamg==}
     peerDependencies:
       solid-js: ^1.6.12
 
@@ -509,20 +509,20 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tanstack/query-core@5.101.2':
-    resolution: {integrity: sha512-hH5MLoJhF7KaIGd7q3xTXGXvslI+GYlM1Z/35aSHHWaCJWB7XvTSHYuV3eM7tw+aE0mT/xMro4M4Q9rCGHT0lw==}
+  '@tanstack/query-core@5.102.8':
+    resolution: {integrity: sha512-ZNjkJ33CqvPNec/6lZBnHqLc3EVGPZ9ySLhYahU9TcuRFdmwXewuj0c4hwSWcGHqEUwcSrKeZ+oGcvPBqXcQcg==}
 
-  '@tanstack/query-devtools@5.101.2':
-    resolution: {integrity: sha512-o+wHcqgN7Pp0s8v1i0UGq/ZrrEKrxdIiMQmKRdYb2w7NPtylYSJ4+wg/tIn71m9DLstwUwdEGAvROdly6HXP6w==}
+  '@tanstack/query-devtools@5.102.8':
+    resolution: {integrity: sha512-ZgeMKuF5d/zOE+tgWm3cSbD6Zcbr6IugVsnbHzUcSismqLZDSUPBKM6ILUxExgwe6rPAOox2x5bA5T+PSOQG0Q==}
 
-  '@tanstack/solid-query-devtools@5.101.2':
-    resolution: {integrity: sha512-+3DYnxni6HmR15zhVuZ8+tgiF7NgQZc7uJzLcuVfD6LC3okvPKLwnCTS6v1pEv65JvoFLu2tsOQbmwR5z/pKsQ==}
+  '@tanstack/solid-query-devtools@5.102.8':
+    resolution: {integrity: sha512-vUHZkdXAEofNgrOF5pEPTb2bDc2XOmI+1E2vxSHESLQunVMGaAVZJ4lLTQx23LrdvnsiCbBnfwUgxPqquD7CqQ==}
     peerDependencies:
-      '@tanstack/solid-query': ^5.101.2
+      '@tanstack/solid-query': ^5.102.8
       solid-js: ^1.6.0
 
-  '@tanstack/solid-query@5.101.2':
-    resolution: {integrity: sha512-IbCeM23gEbU0lW4wWFQhS4ELjgdmVXjhyCUh8pFemdMIuA5UswlkqEMryEE+lCMtxLS7m0oN1yWMocKi7vwXdw==}
+  '@tanstack/solid-query@5.102.8':
+    resolution: {integrity: sha512-qna3S2XOsE++t31viQNeZziOO/gDEkoEnHG+2hVoYLG3cYFYDKWuhUYLvpsYKhbGz0qQed22qCnB55rVt3QB6Q==}
     peerDependencies:
       solid-js: ^1.6.0
 
@@ -919,8 +919,8 @@ packages:
   smoothie@1.36.1:
     resolution: {integrity: sha512-499Vr2od6TicP8s7ykcyTfddh/6n11BB41G9RE7gqQRyfoPIAYotUTzwAxQpAfOdVOb+BvcG2qla+hjyqwe+PA==}
 
-  solid-js@1.9.14:
-    resolution: {integrity: sha512-sAEXC0Kk0S1EDg+8ysEWJDbYhA3RRoEjwuySUGlKIemeo0I5YZfOyumNjNs9Sv3y2nmhD+0rW66ag2HsMuQiGQ==}
+  solid-js@1.9.15:
+    resolution: {integrity: sha512-EeiY2xfpZJqPLjXspVEKjAII4yv8NyG//NxZ3IpOFHdUNnnTyL0uJOeS9LWGvA7cFCz5y94cjFwYlmw5Luncsg==}
 
   solid-refresh@0.6.3:
     resolution: {integrity: sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA==}
@@ -1269,47 +1269,47 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@solid-primitives/date@2.1.7(solid-js@1.9.14)':
+  '@solid-primitives/date@2.1.8(solid-js@1.9.15)':
     dependencies:
-      '@solid-primitives/memo': 1.5.0(solid-js@1.9.14)
-      '@solid-primitives/timer': 1.4.4(solid-js@1.9.14)
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@solid-primitives/memo': 1.5.1(solid-js@1.9.15)
+      '@solid-primitives/timer': 1.4.4(solid-js@1.9.15)
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@solid-primitives/event-listener@2.4.5(solid-js@1.9.14)':
+  '@solid-primitives/event-listener@2.4.6(solid-js@1.9.15)':
     dependencies:
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@solid-primitives/keyboard@1.3.5(solid-js@1.9.14)':
+  '@solid-primitives/keyboard@1.3.7(solid-js@1.9.15)':
     dependencies:
-      '@solid-primitives/event-listener': 2.4.5(solid-js@1.9.14)
-      '@solid-primitives/rootless': 1.5.3(solid-js@1.9.14)
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@solid-primitives/event-listener': 2.4.6(solid-js@1.9.15)
+      '@solid-primitives/rootless': 1.5.4(solid-js@1.9.15)
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@solid-primitives/memo@1.5.0(solid-js@1.9.14)':
+  '@solid-primitives/memo@1.5.1(solid-js@1.9.15)':
     dependencies:
-      '@solid-primitives/scheduled': 1.5.3(solid-js@1.9.14)
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@solid-primitives/scheduled': 1.5.3(solid-js@1.9.15)
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@solid-primitives/rootless@1.5.3(solid-js@1.9.14)':
+  '@solid-primitives/rootless@1.5.4(solid-js@1.9.15)':
     dependencies:
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@solid-primitives/scheduled@1.5.3(solid-js@1.9.14)':
+  '@solid-primitives/scheduled@1.5.3(solid-js@1.9.15)':
     dependencies:
-      solid-js: 1.9.14
+      solid-js: 1.9.15
 
-  '@solid-primitives/timer@1.4.4(solid-js@1.9.14)':
+  '@solid-primitives/timer@1.4.4(solid-js@1.9.15)':
     dependencies:
-      solid-js: 1.9.14
+      solid-js: 1.9.15
 
-  '@solid-primitives/utils@6.4.0(solid-js@1.9.14)':
+  '@solid-primitives/utils@6.4.1(solid-js@1.9.15)':
     dependencies:
-      solid-js: 1.9.14
+      solid-js: 1.9.15
 
   '@tailwindcss/node@4.3.2':
     dependencies:
@@ -1379,25 +1379,25 @@ snapshots:
       tailwindcss: 4.3.2
       vite: 8.1.3(@types/node@24.13.2)(jiti@2.7.0)
 
-  '@tanstack/query-core@5.101.2': {}
+  '@tanstack/query-core@5.102.8': {}
 
-  '@tanstack/query-devtools@5.101.2': {}
+  '@tanstack/query-devtools@5.102.8': {}
 
-  '@tanstack/solid-query-devtools@5.101.2(@tanstack/solid-query@5.101.2(solid-js@1.9.14))(solid-js@1.9.14)':
+  '@tanstack/solid-query-devtools@5.102.8(@tanstack/solid-query@5.102.8(solid-js@1.9.15))(solid-js@1.9.15)':
     dependencies:
-      '@tanstack/query-devtools': 5.101.2
-      '@tanstack/solid-query': 5.101.2(solid-js@1.9.14)
-      solid-js: 1.9.14
+      '@tanstack/query-devtools': 5.102.8
+      '@tanstack/solid-query': 5.102.8(solid-js@1.9.15)
+      solid-js: 1.9.15
 
-  '@tanstack/solid-query@5.101.2(solid-js@1.9.14)':
+  '@tanstack/solid-query@5.102.8(solid-js@1.9.15)':
     dependencies:
-      '@tanstack/query-core': 5.101.2
-      solid-js: 1.9.14
+      '@tanstack/query-core': 5.102.8
+      solid-js: 1.9.15
 
-  '@tanstack/solid-table@8.21.3(solid-js@1.9.14)':
+  '@tanstack/solid-table@8.21.3(solid-js@1.9.15)':
     dependencies:
       '@tanstack/table-core': 8.21.3
-      solid-js: 1.9.14
+      solid-js: 1.9.15
 
   '@tanstack/table-core@8.21.3': {}
 
@@ -1521,12 +1521,12 @@ snapshots:
       html-entities: 2.3.3
       parse5: 7.3.0
 
-  babel-preset-solid@1.9.12(@babel/core@7.29.0)(solid-js@1.9.14):
+  babel-preset-solid@1.9.12(@babel/core@7.29.0)(solid-js@1.9.15):
     dependencies:
       '@babel/core': 7.29.0
       babel-plugin-jsx-dom-expressions: 0.40.6(@babel/core@7.29.0)
     optionalDependencies:
-      solid-js: 1.9.14
+      solid-js: 1.9.15
 
   baseline-browser-mapping@2.10.18: {}
 
@@ -1704,18 +1704,18 @@ snapshots:
 
   smoothie@1.36.1: {}
 
-  solid-js@1.9.14:
+  solid-js@1.9.15:
     dependencies:
       csstype: 3.2.3
       seroval: 1.5.4
       seroval-plugins: 1.5.4(seroval@1.5.4)
 
-  solid-refresh@0.6.3(solid-js@1.9.14):
+  solid-refresh@0.6.3(solid-js@1.9.15):
     dependencies:
       '@babel/generator': 7.29.1
       '@babel/helper-module-imports': 7.28.6
       '@babel/types': 7.29.0
-      solid-js: 1.9.14
+      solid-js: 1.9.15
     transitivePeerDependencies:
       - supports-color
 
@@ -1745,14 +1745,14 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  vite-plugin-solid@2.11.12(solid-js@1.9.14)(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0)):
+  vite-plugin-solid@2.11.12(solid-js@1.9.15)(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0)):
     dependencies:
       '@babel/core': 7.29.0
       '@types/babel__core': 7.20.5
-      babel-preset-solid: 1.9.12(@babel/core@7.29.0)(solid-js@1.9.14)
+      babel-preset-solid: 1.9.12(@babel/core@7.29.0)(solid-js@1.9.15)
       merge-anything: 5.1.7
-      solid-js: 1.9.14
-      solid-refresh: 0.6.3(solid-js@1.9.14)
+      solid-js: 1.9.15
+      solid-refresh: 0.6.3(solid-js@1.9.15)
       vite: 8.1.3(@types/node@24.13.2)(jiti@2.7.0)
       vitefu: 1.1.3(vite@8.1.3(@types/node@24.13.2)(jiti@2.7.0))
     transitivePeerDependencies:
